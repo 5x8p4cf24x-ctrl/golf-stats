@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin — Logros {{ player.name }}</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+<main class="container">
+
+  <h1>Logros de {{ player.name }}</h1>
+
+  <p><a href="/admin/players">← Volver a jugadores</a></p>
+
+  <section class="card">
+    <h2>Asignar logro</h2>
+
+    <form method="post" action="/admin/players/{{ player.id }}/achievements/add" style="display:flex; gap:8px;">
+      <select name="achievement_id">
+        {% for a in all_achievements %}
+          {% if a.id not in owned_ids %}
+            <option value="{{ a.id }}">{{ a.name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <button type="submit">Asignar</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Logros actuales</h2>
+
+    {% if owned_ids|length == 0 %}
+      <p>Este jugador no tiene logros.</p>
+    {% else %}
+      <table>
+        <thead>
+          <tr>
+            <th>Logro</th>
+            <th>Descripción</th>
+            <th>Icono</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in all_achievements %}
+            {% if a.id in owned_ids %}
+            <tr>
+              <td>{{ a.name }}</td>
+              <td>{{ a.description }}</td>
+              <td>
+                {% if a.icon %}
+                  <img src="/static/{{ a.icon }}" style="width:32px; height:32px;">
+                {% endif %}
+              </td>
+              <td>
+                <form method="post" action="/admin/players/{{ player.id }}/achievements/remove">
+                  <input type="hidden" name="achievement_id" value="{{ a.id }}">
+                  <button type="submit" style="background:#dc2626; color:white;">Quitar</button>
+                </form>
+              </td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,3918 @@
+:root{
+  /* Fondo y superficies */
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --panel-2: #ffffff;
+
+  /* Bordes */
+  --border: #e5e7eb;
+
+  /* Texto */
+  --text: #0f172a;
+  --muted: #64748b;
+
+  /* Colores Golf Mode */
+  --accent: #22c55e;     /* verde principal */
+  --accent-2: #60a5fa;   /* azul info */
+  --warn: #f59e0b;
+  --bad: #ef4444;
+
+  /* Marca */
+  --gm-green: #14532d;
+  --gm-green-soft: rgba(20, 83, 45, 0.15);
+
+  --field-bg: #ffffff;
+  --field-text: #0f172a;
+  --field-border: #d1d5db;
+  --field-border-hover: #22c55e;
+  --field-ring: rgba(34,197,94,0.18);
+  --field-placeholder: #94a3b8;
+
+  --btn-bg: #22c55e;
+  --btn-text: #052012;
+  --btn-bg-hover: #1fb453;
+}
+
+*{box-sizing:border-box}
+
+body{
+  font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial,  sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin:0;
+}
+
+.container{
+  max-width:1100px;
+  margin:32px auto;
+  padding:0 16px;
+}
+
+h1{font-size:2rem; margin:0 0 8px 0;}
+h2{
+  font-size:1.2rem;
+  margin:0 0 12px 0;
+  color: var(--text);
+}
+
+p{color:var(--muted);}
+
+a{
+  color:var(--accent-2);
+  text-decoration:none;
+}
+a:hover{opacity:.9; text-decoration:underline;}
+
+.card{
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding:16px;
+  border-radius:14px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  margin-top:14px;
+}
+
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.95rem;
+}
+th,td{
+  padding:8px 6px;
+  border-bottom:1px solid var(--border);
+}
+/*th{
+  color:#fff;
+  font-weight:600;
+  text-align:center;
+}
+td{ text-align:center; }*/
+
+th{
+  color: var(--text);
+  font-weight:700;
+  text-align:left;
+  background: transparent;
+}
+
+td{
+  text-align:left;
+}
+
+td:first-child, th:first-child{ text-align:left; }
+
+input, select, textarea{
+  background: var(--field-bg);
+  color: var(--field-text);
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+input::placeholder, textarea::placeholder{
+  color: var(--field-placeholder);
+}
+
+input:hover, select:hover, textarea:hover{
+  border-color: var(--field-border-hover);
+}
+
+input:focus, select:focus, textarea:focus{
+  outline: none;
+  border-color: var(--field-border-hover);
+  box-shadow: 0 0 0 3px var(--field-ring);
+}
+
+select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--gm-green) 50%),
+    linear-gradient(135deg, var(--gm-green) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+}
+
+button{
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-weight: 800;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
+  box-shadow: 0 10px 20px rgba(15,23,42,0.08);
+}
+
+button:hover{
+  filter: brightness(1.03);
+}
+
+button:active{
+  transform: translateY(1px);
+}
+
+input:disabled, select:disabled, textarea:disabled, button:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+input[readonly], textarea[readonly]{
+  background: #f8fafc;
+}
+
+
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:.8rem;
+  font-weight:700;
+  background:#0b1020;
+  border:1px solid var(--border);
+}
+.badge.win{background:rgba(34,197,94,.12); color:var(--accent);}
+.badge.tie{background:rgba(96,165,250,.12); color:var(--accent-2);}
+.badge.loss{background:rgba(239,68,68,.12); color:var(--bad);}
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+.kpi{
+  background:#0b1020;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+}
+.kpi .label{color:var(--muted); font-size:.85rem;}
+.kpi .value{font-size:1.6rem; font-weight:800; margin-top:2px;}
+.kpi .sub{color:var(--muted); font-size:.8rem;}
+
+
+/* ================================================================================================= */
+/* =========================================== ADMIN HOME ========================================== */
+/* ================================================================================================= */
+
+/* =========================
+   ADMIN TABLE IMAGES
+   ========================= */
+
+.admin-table img{
+  max-width: 42px;
+  max-height: 42px;
+  object-fit: contain;
+  border-radius: 8px;
+  display:block;
+}
+
+
+.admin-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin: 10px 0 14px 0;
+}
+
+.admin-toolbar-left,
+.admin-toolbar-right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* Inputs y selects dentro de admin */
+.admin-field input,
+.admin-field select{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+}
+
+/* Botón secundario (si no lo tienes) */
+.btn-secondary{
+  display:inline-flex;
+  align-items:center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+  color:#14532d;
+  font-weight:800;
+  text-decoration:none;
+}
+.btn-secondary:hover{
+  border-color:#14532d;
+  background: rgba(20,83,45,0.04);
+}
+
+/* =========================
+   ADMIN TABLE (estándar)
+   ========================= */
+
+.admin-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.95rem;
+}
+
+.admin-table th,
+.admin-table td{
+  padding:10px 10px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  vertical-align:middle;
+}
+
+.admin-table thead th{
+  background: var(--gm-green);
+  color: #fff;
+  font-weight:800;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.admin-table tbody tr:hover{
+  background: rgba(20, 83, 45, 0.04);
+}
+
+.admin-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.admin-logo{
+  height: 160px;
+  width:auto;
+  opacity:0.95;
+}
+
+/* =========================
+   ADMIN NAV (Golf Mode)
+   ========================= */
+.admin-nav{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  padding: 12px 12px;
+  margin-bottom: 14px;
+}
+
+.admin-nav-item{
+  display:inline-flex;
+  align-items:center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--gm-green) !important;   /* <- clave: no azul */
+  font-weight: 800;
+  text-decoration:none !important;     /* <- clave: no subrayado */
+  font-size: .92rem;
+  box-shadow: 0 6px 14px rgba(15,23,42,0.06);
+}
+
+.admin-nav-item:hover{
+  border-color: var(--gm-green);
+  background: rgba(20,83,45,0.06);
+}
+
+.admin-nav-item.is-active{
+  border-color: var(--gm-green);
+  background: rgba(20,83,45,0.12);
+}
+
+.admin-nav-item--ghost{
+  border-color: transparent;
+  background: transparent;
+  box-shadow:none;
+  color: var(--gm-green) !important;
+}
+
+.admin-nav-item--push-right{ margin-left:auto; }
+
+.admin-nav-item--primary{
+  background: var(--gm-green);
+  color: #fff !important;
+  border-color: rgba(0,0,0,0.06);
+}
+.admin-nav-item--primary:hover{
+  filter: brightness(1.02);
+  background: var(--gm-green);
+}
+
+/* =========================
+   ADMIN HOME CARDS
+   ========================= */
+.admin-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+@media (max-width: 980px){
+  .admin-grid{ grid-template-columns: 1fr; }
+}
+
+.admin-card{
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.admin-card h3{
+  margin:0 0 6px 0;
+  color: var(--gm-green);
+  font-weight: 900;
+}
+
+.admin-card-text{
+  margin:0 0 12px 0;
+  color: var(--muted);
+}
+
+/* =========================
+   SCORE MATRIX (horizontal)
+   ========================= */
+.score-matrix{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+.score-label{
+  position: sticky;
+  left: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  color: var(--gm-green);
+  text-align: left;
+  white-space: nowrap;
+  box-shadow: 6px 0 14px rgba(15,23,42,0.04);
+}
+
+.score-cell{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  text-align: center;
+  background: #fff;
+  min-width: 42px;
+}
+
+.score-row--head .score-cell,
+.score-row--head th.score-cell{
+  background: rgba(20,83,45,0.10);
+  border-color: rgba(20,83,45,0.25);
+  font-weight: 900;
+}
+
+.score-input{
+  width: 42px;
+  text-align: center;
+  padding: 6px 4px;
+  font-size: 0.9rem;
+}
+
+.score-sep td{
+  padding: 0;
+  height: 8px;
+  border: none;
+  background: transparent;
+}
+/* =========================
+   SCORE MATRIX — COMPACT
+   ========================= */
+.score-matrix{
+  border-spacing: 4px;         /* menos aire entre celdas */
+}
+
+.score-cell{
+  min-width: 38px;             /* antes 48/54 */
+  padding: 4px;                /* antes 8 */
+}
+
+.score-input{
+  width: 34px;                 /* el “recuadro rojo” */
+  padding: 4px 2px;            /* más compacto */
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.score-label{
+  padding: 8px 10px;           /* etiqueta izquierda más compacta */
+}
+
+
+/* ============================================================================= */
+/* ============================= PUBLIC LANDING ================================ */
+/* ============================================================================= */
+
+
+
+/* ============================================================================== */
+/* ========================== GOLF MODE LANDING HOME ============================ */
+/* ============================================================================== */
+
+
+/* Fondo blanco general */
+.gm-body {
+  margin: 0;
+  background: #ffffff;
+ font-family: 'Montserrat', sans-serif;
+  color: #14532d;
+}
+
+.gm-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 32px 32px;
+}
+
+/* LOGO + MENÚ CENTRADOS */
+
+.gm-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.gm-logo {
+  height: 450px;      /* ajusta el tamaño a tu gusto */
+  display: block;
+  margin: 0 auto 2px auto;
+}
+
+/* Menú horizontal centrado */
+
+.gm-menu-horizontal {
+  max-width: 850px;                  /* mismo ancho que la imagen */
+  margin: 0 auto;                    /* centrado */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;    /* reparte los enlaces a lo ancho */
+  margin-top: -60px;
+}
+
+
+/* Texto script en verde con sombrita tipo botón */
+.gm-menu-link {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600; /* similar al grosor del logo */
+  font-size: 1rem;
+  color: #14532d;
+  text-decoration: none;
+
+  /* sombra opcional tipo glow verde suave 
+  text-shadow: 1px 1px 2px rgba(34, 197, 94, 0.25);*/
+}
+
+/* hover sencillo */
+.gm-menu-link:hover {
+  text-decoration: underline;
+}
+
+
+/* IMAGEN PRINCIPAL CENTRADA */
+
+.gm-hero {
+  position: relative;
+  margin-top: 10px;
+}
+
+/* marco centrado de la imagen */
+.gm-hero-frame {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;              /* por si más adelante queremos redondear bordes */
+  /* box-shadow: 0 22px 45px rgba(0, 0, 0, 0.35);  si quieres sombra, descomenta */
+}
+
+/* imagen que respeta su proporción completa */
+.gm-hero-img {
+  display: block;
+  width: 100%;
+  height: auto;                  /* clave: NO recorta, solo escala */
+}
+
+/* contenedor centrado, ancho máximo */
+.gm-hero-image {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  height: min(50vh, 400px);
+  background-image: url("/static/golf_hero.jpg"); /* <-- CAMBIA AQUÍ TU IMAGEN */
+
+  /* Ajustes para menos zoom / mejor encuadre */
+  background-size: cover;            /* mantiene el relleno */
+  background-position: 50% 20%;      /* mueve la foto hacia arriba (menos recorte) */
+
+  border-radius: 20px;
+  position: relative;
+}
+
+
+
+
+/* Firma abajo centrada a la derecha visualmente */
+.gm-signature {
+  margin-top: 10px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: right;
+  padding-right: 8px;
+  font-family: "Segoe Script", "Dancing Script", cursive;
+  font-size: 0.95rem;
+  color: #363535;
+  text-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .gm-wrap {
+    padding: 16px 12px 24px;
+  }
+
+  .gm-logo {
+    height: 220px;
+  }
+
+  .gm-menu-horizontal {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .gm-hero-image {
+    height: 220px;
+  }
+}
+
+
+
+
+/* ============================================================================== */
+/* =========================== PÁGINA DE JUGADORES ============================== */
+/* ============================================================================== */
+
+
+.players-page {
+  padding-top: 32px;
+}
+
+/* Header con título + logo alineado */
+.players-header {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 32px auto;  /* más separación respecto al grid */
+}
+
+.players-title {
+  margin: 0;
+  font-size: 2rem;      /* más grande */
+  font-weight: 700;
+  color: #14532d;
+}
+
+/* Logo arriba a la derecha */
+.players-logo {
+  position: absolute;
+  top: -10px;
+  right: 0;
+  height: 110px;          /* tamaño ajustable */
+}
+
+.players-subtitle {
+  margin: 6px 0 0 0;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* ===== GRID ===== */
+
+.players-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-top: 80px;          /* separación más grande */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));   /* CUADROS GRANDES */
+  gap: 22px;
+}
+
+/* ===== TARJETA DE JUGADOR ===== */
+
+.player-card {
+  display: flex;
+  flex-direction: column;     /* ahora formato vertical tipo "tarjeta" */
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  color: #14532d;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.player-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.15);
+  border-color: #22c55e;
+}
+
+/* ===== AVATAR MUCHO MÁS GRANDE ===== */
+
+.player-avatar {
+  width: 130px;           /* antes 54px */
+  height: 130px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #22c55e;
+}
+
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* fallback inicial */
+.player-avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ecfdf5;
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 2.5rem;   /* MUCHO MÁS GRANDE */
+}
+
+/* ===== INFO DEL JUGADOR ===== */
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.player-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.player-nick {
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.player-hcp {
+  margin-top: 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #15803d;
+}
+
+/* enlace volver */
+
+.players-back {
+  max-width: 1200px;
+  margin: 32px auto 0 auto;
+  font-size: 0.95rem;
+}
+
+.players-back a {
+  color: #14532d;
+  text-decoration: none;
+}
+
+.players-back a:hover {
+  text-decoration: underline;
+}
+
+
+/* =============================================================================
+   PERFIL DE JUGADOR (PUBLIC / PROFILE)
+   ========================================================================== */
+
+/* ================================================
+   LAYOUT GENERAL PÁGINA PERFIL (fondo claro)
+   ================================================ */
+
+.gm-body {
+  background: #f3f4f6;
+}
+
+.gm-wrap {
+  padding: 20px;
+}
+
+/* Todas las cards del perfil (y en general) en blanco */
+.player-header,
+.card,
+.player-advanced-card,
+.player-history-card {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+/* Tablas internas del perfil */
+.player-mini-table,
+.player-history-table {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.player-mini-table th,
+.player-mini-table td,
+.player-history-table th,
+.player-history-table td {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+/* Cabecera historial */
+.player-history-table thead tr {
+  background: #f3f4f6 !important;
+}
+
+.player-history-table tbody tr {
+  background: #ffffff !important;
+}
+
+/* =============================================================================
+   BLOQUE 1: HEADER DEL JUGADOR
+   ========================================================================== */
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;    /* + aire respecto a versión anterior */
+  margin-bottom: 18px;
+}
+
+.player-header-main {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Sirve tanto si es <div><img></div> como si es <img class="player-header-avatar"> */
+.player-header-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-header-avatar--fallback span {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #14532d;
+}
+
+.player-header-name {
+  margin: 0 0 4px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #14532d;
+}
+
+.player-nick-badge {
+  background: #14532d;   /* verde corporativo */
+  color: #ffffff;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+
+.player-header-meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* Contenedor de las badges de victorias/empates */
+.player-header-right,
+.player-header-badges {        /* alias por si el HTML tiene el nombre antiguo */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* =============================================================================
+   FILTRO: POR AÑO
+   ========================================================================== */
+
+/* ====== FILTRO DE AÑO – GOLFMODE ====== */
+
+.player-filters-row{
+  display:flex;
+  justify-content:flex-end;  /* lo manda a la derecha */
+  margin: 12px 0 18px 0;     /* mantenemos tus márgenes */
+}
+
+
+.player-year-filter label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #14532d;
+}
+
+.player-year-filter select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 6px 32px 6px 12px;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #14532d;
+
+  cursor: pointer;
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, #14532d 50%),
+    linear-gradient(135deg, #14532d 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.player-year-filter select:hover {
+  border-color: #22c55e;
+}
+
+.player-year-filter select:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.15);
+}
+
+
+
+
+/* =============================================================================
+   BLOQUE 2: KPIs DE JUGADOR (CUADRÍCULAS)
+   ========================================================================== */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+/* Cada “cuadricula” */
+.kpi-grid .kpi {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 90px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+/* Título dentro de la card */
+.kpi-grid .kpi .label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #14532d;     /* verde Golf Mode */
+  margin-bottom: 8px;
+}
+
+/* Valor principal */
+.kpi-grid .kpi .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1f8347;
+}
+
+/* Texto descriptivo – SIEMPRE abajo */
+.kpi-grid .kpi .sub {
+  margin-top: auto;
+  padding-top: 4px;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+/* =============================================================================
+   PERFIL JUGADOR – BLOQUE 3 ESTILO LIGA (GOLPES / DONUT / FIR-GIR)
+   ========================================================================== */
+
+.player-league-grid {
+  margin-top: 4px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 16px;
+  align-items: stretch;   /* clave */
+}
+
+@media (max-width: 1024px) {
+  .player-league-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.player-league-block {
+  height: 100%;           /* clave */
+  display: flex;          /* para poder “empujar” contenido hacia abajo */
+  flex-direction: column; /* mantiene título arriba + contenido abajo */
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 14px 16px;
+}
+
+.player-league-block h2 {
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #14532d;
+}
+
+/* Columna GOLPES POR HOYOS (reutiliza la mini-table del perfil) */
+.player-league-block--shots .player-mini-table {
+  font-size: 0.8rem;
+}
+
+.player-league-block--shots .player-mini-table th,
+.player-league-block--shots .player-mini-table td {
+  padding: 3px 6px;
+}
+
+/* Donut centrado – mismo tamaño que en Liga Detail */
+.player-league-block--donut .player-donut-wrapper {
+  margin-top: 8px;
+  padding-top: 4px;
+  height: 210px;          /* igual que .league-chart-wrapper */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#playerShotsChart {
+  max-width: 220px;       /* igual que #leagueShotsChart */
+  max-height: 220px;
+}
+
+
+/* Nota / mensajes vacíos */
+.player-note {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Donut + leyenda lado a lado */
+.player-donut-split{
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+@media (max-width: 1024px){
+  .player-donut-split{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================
+   LEYENDA DONUT – VARIABLES
+   ============================ */
+.player-donut-legend{
+  /* 🔧 AJUSTA AQUÍ */
+  --legend-label-size: 0.70rem;
+  --legend-label-weight: 500;
+  --legend-label-color: #374151;
+
+  --legend-value-size: 0.70rem;
+  --legend-value-weight: 500;
+  --legend-value-color: #14532d;
+
+  --legend-gap: 10px;
+}
+
+/* Layout donut + leyenda */
+.player-donut-split{
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+@media (max-width: 1024px){
+  .player-donut-split{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Contenedor leyenda */
+.player-donut-legend{
+  display: flex;
+  flex-direction: column;
+  gap: var(--legend-gap);
+}
+
+/* Fila */
+.player-donut-legend-item{
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Color cuadradito */
+.player-donut-legend-swatch{
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+/* Texto */
+.player-donut-legend-name{
+  font-size: var(--legend-label-size);
+  font-weight: var(--legend-label-weight);
+  color: var(--legend-label-color);
+}
+
+.player-donut-legend-val{
+  font-size: var(--legend-value-size);
+  font-weight: var(--legend-value-weight);
+  color: var(--legend-value-color);
+}
+
+
+
+/* ====== PAR 3 / 4 / 5 + FIR/GIR (columna central) ====== */
+/* ====== MEDIAS POR PAR + FIR/GIR (PARSTATS) ====== */
+
+.player-league-block--parstats{
+  display: flex;
+  flex-direction: column;
+  
+  height: 100%;
+}
+
+/* KPIs Par 3/4/5 arriba */
+.player-league-block--parstats .par-kpis{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 6px;
+  margin-bottom: 14px;
+}
+
+.player-league-block--parstats .par-kpi{
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.player-league-block--parstats .par-kpi-label{
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.player-league-block--parstats .par-kpi-value{
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1f8347;
+  line-height: 1;
+}
+
+/* Zona donuts ocupa el resto del alto del bloque */
+.player-league-block--parstats .par-big-donuts{
+  flex: 1;
+  margin-top: 6px;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  align-items: end;      /* donuts abajo */
+}
+
+.player-league-block--parstats .big-donut{
+  height: 100%;
+  display: flex;
+  align-items: center;   /* centra vertical dentro de la celda */
+  justify-content: center;
+}
+
+/* Donuts GRANDES */
+.player-league-block--parstats .big-donut-ring{
+  --pct: 0;
+  --target: 0;
+
+  /* ✅ se adapta al alto del bloque */
+  width: clamp(120px, 12vw, 150px);
+  height: clamp(120px, 12vw, 150px);
+
+  border-radius: 50%;
+  position: relative;
+
+  animation: donutFill 900ms ease-out forwards;
+}
+
+
+/* Colores del anillo */
+.player-league-block--parstats .big-donut-ring.fir{
+  background: conic-gradient(#22c55e calc(var(--pct) * 1%), #e5e7eb 0);
+}
+.player-league-block--parstats .big-donut-ring.gir{
+  background: conic-gradient(#60a5fa calc(var(--pct) * 1%), #e5e7eb 0);
+}
+
+/* Agujero interior (grosor del aro) */
+.player-league-block--parstats .big-donut-ring::after{
+  content:"";
+  position:absolute;
+  inset: clamp(14px, 1.4vw, 18px);
+  background:#ffffff;
+  border-radius:50%;
+}
+
+
+/* Texto centrado */
+.player-league-block--parstats .big-donut-center{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:2;
+  text-align:center;
+}
+
+.player-league-block--parstats .big-donut-label{
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #4b5563;
+  letter-spacing: 0.02em;
+}
+
+.player-league-block--parstats .big-donut-value{
+  margin-top: 4px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1f8347;
+  line-height: 1;
+
+  opacity: 0;
+  transform: scale(0.9);
+  animation: valueIn 300ms ease-out forwards;
+  animation-delay: 700ms;
+}
+@keyframes valueIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animación donut */
+@keyframes donutFill {
+  from { --pct: 0; }
+  to   { --pct: var(--target); }
+}
+
+
+
+/* ======================== EVOLUCIÓN (columna 1) ==================== */
+/* ======================== Ultimas 10 vueltas ======================= */
+
+.player-league-block--trend .player-trend-wrapper {
+  margin-top: 6px;
+  height: 210px;              /* ajusta a tu gusto */
+  display: flex;
+  align-items: flex-end;      /* ✅ pega la gráfica abajo */
+  justify-content: center;
+  padding-top: 0;             /* ✅ quita aire arriba */
+  padding-bottom: 6px;        /* un pelín de respiración abajo */
+}
+
+.player-league-block--trend .player-trend-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+
+
+/* ================================================
+   LOGROS EN PERFIL DE JUGADOR (PUBLIC)
+   ================================================ */
+
+.player-achievements-card h2 {
+  margin-bottom: 18px;
+  font-size: 1rem;
+  color: #14532d;
+}
+
+/* grid de logros en perfil */
+.player-achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+/* tarjeta individual */
+.player-achievement-card {
+  position: relative;  /* necesario para el tooltip */
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 10px 8px;
+  text-align: center;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/* LOGRO DESBLOQUEADO: a todo color */
+.player-achievement-card.unlocked {
+  opacity: 1;
+  filter: none;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+/* LOGRO BLOQUEADO: gris + transparente (marca de agua) */
+.player-achievement-card.locked {
+  opacity: 0.35;
+  filter: grayscale(1);
+  box-shadow: none;
+  border-style: dashed;
+}
+
+/* icono (más grande) */
+.player-achievement-icon {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 2px auto;
+  border-radius: 16px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.player-achievement-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.player-achievement-icon span {
+  font-size: 1.4rem;
+}
+
+/* título del logro (más pequeño) */
+.player-achievement-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #222836;
+  text-align: center;
+}
+
+/* descripción como TOOLTIP con delay */
+.player-achievement-desc {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #f9fafb;
+  font-size: 0.6rem;
+  line-height: 1.2;
+  text-align: left;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  z-index: 20;
+  pointer-events: none;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+
+/* aparece al hacer hover, con retraso ~1 segundo */
+.player-achievement-card:hover .player-achievement-desc {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition-delay: 1s;  /* ⬅️ delay del tooltip */
+}
+
+
+/* ============================================================================================ */
+/* ============================= PÁGINA DE CAMPOS (GOLF MODE) ================================= */
+/* ============================================================================================ */
+
+
+.courses-page {
+  padding-top: 32px;
+}
+
+/* Header: título + logo derecha */
+
+.courses-header {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 80px auto;
+}
+
+.courses-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #14532d;
+}
+
+.courses-logo {
+  position: absolute;
+  top: -10px;
+  right: 0;
+  height: 110px;
+}
+
+.courses-subtitle {
+  margin: 6px 0 0 0;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* FILTROS */
+
+.courses-filters {
+  max-width: 1200px;
+  margin: 0 auto 16px auto;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+.courses-filters-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  font-size: 0.95rem;
+}
+
+.courses-filters-form label {
+  font-weight: 600;
+  color: #14532d;
+}
+
+.courses-filters-form select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+}
+
+.courses-filters-form button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: none;
+  background: #14532d;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.courses-filters-form button:hover {
+  background: #15803d;
+}
+
+.courses-clear-filter {
+  font-size: 0.9rem;
+  color: #14532d;
+  text-decoration: none;
+}
+
+.courses-clear-filter:hover {
+  text-decoration: underline;
+}
+
+/* Select blanco + texto negro */
+.courses-filters-form select {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+
+  /* Quita estilos del navegador (Chrome/Edge) */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Fondo y texto del desplegable */
+.courses-filters-form select option {
+  background-color: #ffffff;
+  color: #000000;
+  font-family: 'Montserrat', sans-serif;
+}
+
+
+/* GRID DE TARJETAS GRANDES (formato vertical, como players) */
+.courses-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-top: 24px;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); /* 3 por fila en pantallas grandes */
+  gap: 22px;
+}
+
+/* TARJETA DE CAMPO – IGUAL ESTILO QUE PLAYER CARD, PERO PARA CAMPOS */
+.course-card {
+  display: flex;
+  flex-direction: column;   /* vertical */
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  color: #14532d;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.15);
+  border-color: #22c55e;
+}
+
+/* LOGO DEL CAMPO – CUADRADO GRANDE */
+.course-logo-box {
+  width: 130px;
+  height: 130px;
+  border-radius: 20px;        /* cuadrado con esquinas redondeadas */
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid #14532d;
+}
+
+.course-logo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;        /* como ahora, sin recortar el logo */
+}
+
+/* Fallback con inicial del campo */
+.course-logo-box--fallback {
+  background: #ecfdf5;
+}
+
+.course-logo-box--fallback span {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  color: #15803d;
+}
+
+/* INFO DEL CAMPO, CENTRADA, COMO EN PLAYERS */
+.course-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.course-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.course-meta {
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.course-link {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #15803d;
+}
+
+/* Responsive: en móvil se verán 1–2 por fila */
+@media (max-width: 640px) {
+  .course-card {
+    padding: 14px 16px;
+  }
+
+  .course-logo-box {
+    width: 110px;
+    height: 110px;
+  }
+}
+
+
+/*============================================================================================================================================================*/
+
+.scorecard-wrap{
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+
+table.scorecard{
+  width: 100%;
+  min-width: 900px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+table.scorecard th,
+table.scorecard td{
+  padding: 8px 10px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+  white-space: nowrap;
+
+  font-size: 0.85rem;      /* ⬅ más fino */
+  font-weight: 500;        /* ⬅ antes 700 */
+  color: #0f172a;
+}
+
+table.scorecard th.rowhdr{
+  text-align: left;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 600;        /* ⬅ más elegante */
+  min-width: 120px;
+
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+table.scorecard th.colhdr,
+table.scorecard th.totalhdr{
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 600;
+}
+
+table.scorecard td.totalcell{
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+table.scorecard th:last-child,
+table.scorecard td:last-child{
+  border-right: none !important;
+}
+
+table.scorecard tr:last-child th,
+table.scorecard tr:last-child td{
+  border-bottom: none !important;
+}
+/* SOLO celdas de hoyos en la fila Metros */
+.scorecard tr.row-meters td{
+  background: #fff7cc;          /* amarillo suave */
+  color: #92400e;               /* texto ámbar oscuro */
+  font-weight: 600;
+}
+
+/* Pero NO pintar la columna Total */
+.scorecard tr.row-meters td.totalcell{
+  background: #f9fafb;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.back-link{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 32px auto 0 auto;
+  margin-bottom: 12px;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gm-green);
+  text-decoration: none;
+}
+
+.back-link:hover{
+  text-decoration: underline;
+}
+
+/* Course detail header */
+.course-head{
+  display:flex;
+  gap:16px;
+  align-items:center;
+}
+
+.course-head-logo{
+  width:72px;
+  height:72px;
+  object-fit:contain;
+  background:#ffffff;
+  border-radius:12px;
+  padding:6px;
+}
+
+.course-head-title{
+  margin:0 0 4px 0;
+}
+
+.course-head-city{
+  margin:0;
+  opacity:.8;
+}
+
+.course-head-meta{
+  margin:4px 0 0 0;
+  font-size:0.95rem;
+}
+
+
+/* =============================================================================================== */
+/* ================================== PÁGINA PÚBLICA: RONDAS ===================================== */
+/* =============================================================================================== */
+
+
+.rounds-page {
+  padding-top: 32px;
+}
+
+/* HEADER RONDAS */
+
+.rounds-header {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 80px auto;
+}
+
+.rounds-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #14532d;
+}
+
+.rounds-logo {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  height: 110px;
+}
+
+.rounds-subtitle {
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* FILTROS RONDAS */
+
+.rounds-filters {
+  max-width: 1200px;
+  margin: 0 auto 20px auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.rounds-filters-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.rounds-filters-form label {
+  font-weight: 600;
+  color: #14532d;
+}
+
+/* inputs y selects blancos, texto negro */
+.rounds-filters-form select,
+.rounds-filters-form input[type="number"] {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #000000;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.rounds-filters-form select option {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.rounds-filters-form button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  background: #14532d;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rounds-filters-form button:hover {
+  background: #15803d;
+}
+
+.rounds-clear-filter {
+  text-decoration: none;
+  color: #14532d;
+  font-size: 0.9rem;
+}
+
+.rounds-clear-filter:hover {
+  text-decoration: underline;
+}
+
+/* LISTA DE RONDAS */
+
+.rounds-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ITEM RONDA */
+
+.round-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  text-decoration: none;
+  color: #14532d;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.round-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  border-color: #22c55e;
+}
+
+/* AVATAR CIRCULAR DEL CAMPO */
+
+.round-course-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 20%;
+  border: 1px solid #14532d;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ecfdf5;
+  flex-shrink: 0;
+}
+
+.round-course-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.round-course-avatar span {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #15803d;
+}
+
+/* INFO DE LA RONDA */
+
+.round-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* fila superior: fecha + tipo */
+.round-info-top {
+  display: flex;
+  justify-content: space-between;
+}
+
+.round-date {
+  color: #14532d;
+  font-weight: 600;
+}
+
+.round-type {
+  color: #15803d;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Campo */
+.round-field {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Jugadores */
+.round-players {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Etiqueta de tipo de ronda (Liga / Amistosa) */
+.round-type-tag {
+  min-width: 80px;
+  text-align: right;
+  font-weight: 600;
+  color: #15803d;
+  font-size: 1rem;
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;   /* centra verticalmente */
+  justify-content: flex-end;
+}
+
+
+/* Enlace volver */
+
+.rounds-back {
+  max-width: 1200px;
+  margin: 32px auto 0 auto;
+  font-size: 0.95rem;
+}
+
+.rounds-back a {
+  color: #14532d;
+  text-decoration: none;
+}
+
+.rounds-back a:hover {
+  text-decoration: underline;
+}
+
+/* CHIP DE TIPO DE RONDA (LIGA / AMISTOSA) */
+.round-type-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  min-width: 70px;
+  text-align: center;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ESTILO PARA LIGA */
+.round-type-chip.liga {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+/* ESTILO PARA AMISTOSA */
+.round-type-chip.amistosa {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+/* ========== DETALLE PÚBLICO DE VUELTA (GOLF MODE) ========== */
+
+.round-public {
+  padding-top: 24px;
+}
+
+/* Sobrescribimos el estilo oscuro de .card SOLO dentro de .round-public */
+.round-public .card {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  padding: 16px 18px 18px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+  color: #111827;
+}
+
+/* Títulos y textos */
+.round-public h1,
+.round-public h2 {
+  color: #14532d;
+  margin-top: 0;
+}
+
+.round-public p {
+  color: #4b5563;
+}
+
+/* HEADER con logo a la derecha */
+
+.round-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.round-header-main {
+  max-width: 800px;
+}
+
+.round-header-logo {
+  height: 150px;
+}
+
+/* Fila ganador / empate */
+
+.round-winner-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.round-winner-names {
+  font-size: 0.95rem;
+  color: #14532d;
+}
+
+/* Badge ganador / empate al estilo chips verdes */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.badge.win {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.badge.tie {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #facc15;
+}
+
+
+
+
+/* ==========================================================================================
+   ================================ PUBLIC ROUND DETAIL =====================================
+   ========================================================================================== */
+
+
+
+
+/* ---------------------------------------------------------
+   SCORECARD TARJETA (detalle por jugador)
+   --------------------------------------------------------- */
+
+.scorecard-container {
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+/* Tabla blanca de la tarjeta */
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.scorecard-table th,
+.scorecard-table td {
+  padding: 6px 8px;
+  text-align: center;
+  border-bottom: 1px solid #d1d5db; /* líneas grises */
+  white-space: nowrap;
+}
+
+/* Cabecera de hoyos */
+.scorecard-header-row th {
+  font-weight: 500;
+  background: #f3f4f6; /* gris claro */
+  color: #111827;
+  
+}
+
+/* Fila metros amarilla (suave) */
+.scorecard-table .row-meters th,
+.scorecard-table .row-meters td {
+  background: #fef9c3; /* amarillo muy suave */
+  color: #111827;
+  font-weight: 500;
+}
+
+/* En la fila de Metros, mantener primera y última celda en gris */
+.scorecard-table .row-meters th.metric-cell,
+.scorecard-table .row-meters td.metric-total,
+.scorecard-table .row-meters td.total-cell,
+.scorecard-table .row-meters td.total-stableford {
+  background: #f3f4f6;  /* mismo gris que el resto de métricas */
+  font-weight: 600;
+}
+
+
+/* Primera columna (métrica) en gris claro */
+.scorecard-table .metric-cell {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.80rem;
+  background: #f3f4f6;  /* gris claro */
+  color: #111827;
+  position: sticky;
+  left: 0;
+  border-right: 1px solid #d1d5db;
+}
+
+/* Última columna (Tot) en gris claro */
+.scorecard-table .metric-total,
+.scorecard-table .total-cell,
+.scorecard-table .total-stableford {
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.80rem;
+}
+
+/* Fila de separación Par/Bruto: blanca */
+.scorecard-table .gap-row td {
+  border: none;
+  height: 6px;
+  padding: 0;
+  background: #ffffff;
+}
+
+/* Celdas mínimas para que sean compactas */
+.scorecard-table td {
+  min-width: 32px;
+}
+
+/* Colores para resultado bruto -------------------------- */
+/* HIO */
+.cell-hio {
+  background: #ffc000;
+  color: #000000;
+  font-weight: 700;
+}
+/* Albatros */
+.cell-albatros {
+  background: #ffe5b4;
+  color: #000000;
+}
+/* Eagle */
+.cell-eagle {
+  background: #fff7cc;
+  color: #000000;
+}
+/* Birdie */
+.cell-birdie {
+  background: #ffe4d6;
+  color: #000000;
+}
+/* Par */
+.cell-par {
+  background: #e2f0d9;
+  color: #000000;
+}
+/* Bogey */
+.cell-bogey {
+  background: #d9e1f2;
+  color: #000000;
+}
+/* Doble Bogey */
+.cell-dblbogey {
+  background: #f2f2f2;
+  color: #000000;
+}
+/* > Doble Bogey */
+.cell-overdbl {
+  background: #e0e0e0;
+  color: #000000;
+}
+
+/* Iconos FIR / GIR */
+.icon-good {
+  color: #22c55e;
+  font-size: 0.9rem;
+}
+.icon-bad {
+  color: #ef4444;
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   TARJETA – Fila "Otros" (versión limpia y funcional)
+   ========================================================= */
+
+.scorecard-otros {
+  margin-top: 8px;
+  width: 100%;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 10px;
+
+  /* Borde exterior de la tabla */
+  border: 1px solid #e5e7eb;
+
+  /* Importante: NO colapsar bordes, NO overflow hidden */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Celdas de la fila */
+.scorecard-otros th,
+.scorecard-otros td {
+  padding: 6px 12px;
+  text-align: center;
+  white-space: nowrap;
+
+  /* Borde interno superior e inferior visible SIEMPRE */
+  /*border-top: 1px solid #d1d5db;
+  border-bottom: 1px solid #d1d5db;*/
+}
+
+/* Primera celda "Otros" con estilo igual que la columna 1 de la tarjeta */
+.scorecard-otros .metric-cell {
+  background: #f3f4f6;
+  font-weight: 600;
+  text-align: left;
+  min-width: 80px;
+  padding: 6px 8px;
+ /*border-right: 1px solid #d1d5db;*/
+}
+
+/* Estilo del valor destacado */
+.otros-value {
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+
+
+/* ---------------------------------------------------------
+   RESUMEN DE JUGADORES (tabla blanca profesional)
+   --------------------------------------------------------- */
+
+/* Contenedor (si lo usas) */
+.summary-table-wrapper {
+  width: 100%;
+  margin-top: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* Tabla principal */
+.summary-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;   /* respeta el radius */
+  border-spacing: 0;
+  font-size: 0.9rem;
+  color: #111827;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Colorear la columna Ptos HCP (solo datos) */
+.summary-table td:nth-child(5) {
+  background: #fffcd9;   /* amarillo muy suave */
+  font-weight: 600;
+}
+
+/* Cabecera */
+.summary-header-row {
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Primera columna (Jugador) */
+.summary-metric-col {
+  background: #f3f4f6;
+  font-weight: 600;
+  text-align: left;
+  color: #111827;
+}
+
+/* Anchos por columna */
+.summary-table thead th {
+  color: #111827 !important;
+  background: #e5e7eb !important;
+  font-weight: 600;
+}
+
+/* Jugador */
+.summary-table td:nth-child(1),
+.summary-table th:nth-child(1) { width: 100px; }
+
+/* Hcp */
+.summary-table td:nth-child(2),
+.summary-table th:nth-child(2) { width: 40px; }
+
+/* G.Bruto */
+.summary-table td:nth-child(3),
+.summary-table th:nth-child(3) { width: 50px; }
+
+/* G.Neto */
+.summary-table td:nth-child(4),
+.summary-table th:nth-child(4) { width: 50px; }
+
+/* Pts HCP */
+.summary-table td:nth-child(5),
+.summary-table th:nth-child(5) { width: 55px; }
+
+/* Pts Scr */
+.summary-table td:nth-child(6),
+.summary-table th:nth-child(6) { width: 55px; }
+
+/* Putts */
+.summary-table td:nth-child(7),
+.summary-table th:nth-child(7) { width: 50px; }
+
+/* Putt/H */
+.summary-table td:nth-child(8),
+.summary-table th:nth-child(8) { width: 55px; }
+
+/* Nivel juego */
+.summary-table td:nth-child(9),
+.summary-table th:nth-child(9) { width: 70px; }
+
+/* FIR */
+.summary-table td:nth-child(10),
+.summary-table th:nth-child(10) { width: 100px; }
+
+/* GIR */
+.summary-table td:nth-child(11),
+.summary-table th:nth-child(11) { width: 100px; }
+
+/* % Golpes */
+.summary-table td:nth-child(12),
+.summary-table th:nth-child(12) { width: 200px; }
+
+.summary-table thead tr:first-child th:first-child {
+  border-top-left-radius: 12px;
+}
+.summary-table thead tr:first-child th:last-child {
+  border-top-right-radius: 12px;
+}
+.summary-table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 12px;
+}
+.summary-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 12px;
+}
+
+
+
+/* FIR / GIR – barras de porcentaje anchas ---------------- */
+
+.summary-firgir-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.summary-bar {
+  position: relative;
+  width: 70px;
+  height: 25px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.summary-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c3fad8, #6bf8a1);
+}
+
+.summary-bar-fill.gir {
+  background: linear-gradient(90deg, #bfdbfe, #69acfd);
+}
+
+.summary-bar-label {
+  margin-left: 3px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+
+
+/* % GOLPES – barra apilada por tipo de resultado -------- */
+
+.summary-shots-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.shots-bar {
+  display: flex;
+  width: 200px;
+  height: 25px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #f3f4f6;
+  margin: 0 auto;
+}
+
+/* cada segmento se pinta con width en línea (style="width: X%") */
+.shots-seg {
+  position: relative;
+  height: 100%;
+  font-size: 0.6rem;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.shots-seg span {
+  padding: 0 2px;
+}
+
+/* Colores por tipo de golpe */
+.shots-seg.hio  { background: #ffc000; }
+.shots-seg.alb  { background: #ffe5b4; }
+.shots-seg.eag  { background: #fff7cc; }
+.shots-seg.bird { background: #ffe4d6; }
+.shots-seg.par  { background: #e2f0d9; }
+.shots-seg.bogey{ background: #d9e1f2; }
+.shots-seg.dbl  { background: #f2f2f2; }
+.shots-seg.over { background: #e0e0e0; }
+
+
+/* ---------------------------------------------------------
+   AJUSTES FINOS DETALLE DE VUELTA (PÚBLICO)
+   --------------------------------------------------------- */
+
+/* Resumen de jugadores: texto un poco más pequeño y separado del título */
+.round-public .summary-table {
+  font-size: 0.8rem;
+  margin-top: 20px;
+}
+
+.round-public .summary-table th,
+.round-public .summary-table td {
+  padding: 4px 6px;
+}
+
+/* Espaciado entre h2 y contenido dentro de las cards */
+.round-public .card > h2 {
+  margin-bottom: 30px;
+}
+
+/* Filtro "Jugador" con fondo blanco y texto negro */
+.round-public .card form label {
+  color: #14532d;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.round-public .card form select {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.80rem;
+}
+.summary-table td.summary-metric-col,
+.summary-table th.summary-metric-col {
+  text-align: left !important;
+}
+
+
+
+
+/*==========================================================================================*/
+/*=================================== PUBLIC: LIGA DETAIL===================================*/
+/*==========================================================================================*/
+
+
+/* ---------------------------------------------------------
+   RESUMEN JUGADORES LIGA – resaltados amarillos
+   --------------------------------------------------------- */
+
+.summary-league-table .summary-league-highlight {
+  background: #ffffff;
+  font-weight: 500;
+}
+
+/* 6 = G. Netos, 8 = Ptos Scr., 12 = Ptos Liga */
+.summary-league-table td:nth-child(6),
+.summary-league-table th:nth-child(6),
+.summary-league-table td:nth-child(8),
+.summary-league-table th:nth-child(8),
+.summary-league-table td:nth-child(12),
+.summary-league-table th:nth-child(12) {
+  background: #fffed6;
+}
+
+
+
+/* ---------------------------------------------------------
+   CLASIFICACIÓN LIGA (tabla blanca profesional)
+   --------------------------------------------------------- */
+
+.summary-league-table {
+  /* hereda de .summary-table: fondo blanco, bordes, radio, etc. */
+  table-layout: fixed;
+  font-size: 0.80rem;
+}
+
+/* Primera columna: jugador */
+.summary-league-table th:nth-child(1),
+.summary-league-table td:nth-child(1) {
+  width: 110px;
+  text-align: left;
+}
+
+/* P. jugados / ganados / empatados */
+.summary-league-table th:nth-child(2),
+.summary-league-table td:nth-child(2),
+.summary-league-table th:nth-child(3),
+.summary-league-table td:nth-child(3),
+.summary-league-table th:nth-child(4),
+.summary-league-table td:nth-child(4) {
+  width: 75px;
+}
+
+/* G. Brutos / G. Netos / Ptos Stb / Ptos Scr */
+.summary-league-table th:nth-child(5),
+.summary-league-table td:nth-child(5),
+.summary-league-table th:nth-child(6),
+.summary-league-table td:nth-child(6),
+.summary-league-table th:nth-child(7),
+.summary-league-table td:nth-child(7),
+.summary-league-table th:nth-child(8),
+.summary-league-table td:nth-child(8) {
+  width: 75px;
+}
+
+/* Med golpes, HCP juego, mejor vuelta, puntos liga */
+.summary-league-table th:nth-child(9),
+.summary-league-table td:nth-child(9),
+.summary-league-table th:nth-child(10),
+.summary-league-table td:nth-child(10),
+.summary-league-table th:nth-child(11),
+.summary-league-table td:nth-child(11),
+.summary-league-table th:nth-child(12),
+.summary-league-table td:nth-child(12) {
+  width: 85px;
+}
+
+/* Columna 5 (G. Br) en la tabla de liga:
+   solo las celdas de datos, no el encabezado */
+.summary-league-table tbody td:nth-child(5) {
+  background: #ffffff !important;   /* mismo fondo blanco que el resto */
+  font-weight: 400 !important;      /* peso normal */
+}
+
+/* Cabeceras de la tabla de clasificación */
+.summary-league-table thead th {
+  font-size: 0.75rem;     /* tamaño */
+  font-weight: 600;       /* grosor */
+  color: #374151;         /* gris profesional */
+}
+
+/* Celdas de datos en la clasificación */
+.summary-league-table tbody td {
+  font-size: 0.75rem;     /* tamaño */
+  font-weight: 500;       /* grosor */
+  color: #111827;
+}
+
+
+/* ---------------------------------------------------------
+   Detalle por jugador en liga – versión clara
+   --------------------------------------------------------- */
+
+.league-player-detail-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 
+
+    300px           /* Columna 1: Jugador (igual) */
+    minmax(0, 0.7fr) /* Columna 2: Golpes por hoyos (igual) */
+    300px           /* Columna 3: DONUT - MÁS ANCHA */
+    minmax(0, 0.7fr) /* Columna 4: Estadísticas de golpes - MÁS ESTRECHA */;
+
+  gap: 16px;
+}
+
+
+@media (max-width: 1100px) {
+  .league-player-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Panel del jugador (avatar + info básica) */
+.league-player-panel {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  text-align: center;
+  color: #14532d;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.league-player-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 16px;
+  margin: 0 auto 12px auto;
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #022c22;
+}
+
+.league-player-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.league-player-meta {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* Bloques de la derecha (Golpes por hoyo / Estadísticas) */
+.league-block {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  color: #14532d;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.league-block h3 {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+}
+
+/* mini tablas internas */
+.league-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.league-mini-table th,
+.league-mini-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.league-mini-table th {
+  text-align: left;
+  color: #4b5563;
+  width: 65%;
+}
+
+.league-mini-table td {
+  text-align: right;
+  color: #111827;
+}
+
+/* fila total (Hoyos jugados) */
+.league-mini-total th,
+.league-mini-total td {
+  font-weight: 700;
+  background: #f9fafb;
+}
+
+/* barra de distribución un poco más baja */
+.shots-bar-league {
+  margin-top: 6px;
+  height: 18px;
+}
+
+/* FIR / GIR */
+.league-firgir-wrap {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.league-firgir-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.league-firgir-label {
+  width: 32px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ===== DETALLE LIGA – Select de jugador ===== */
+
+.league-player-select label {
+  font-weight: 600;
+  color: #14532d;
+  margin-right: 6px;
+}
+
+.league-player-select select {
+  background: #ffffff !important;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.league-player-select select:hover {
+  border-color: #22c55e;
+}
+
+.league-player-select select:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.25);
+}
+
+/* Foto grande del jugador */
+.league-player-photo {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 14px auto;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.league-player-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Si no hay foto → fallback verde */
+.league-player-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #022c22;
+}
+
+/* ==================== BLOQUE 2: GOLPES POR HOYOS ==================== */
+
+/* Tabla de GOLPES POR HOYOS (columna 2) */
+.league-mini-table-shots {
+  width: 100%;
+
+  /* ⭐ ESTA ES LA CLAVE PARA QUE SE VEA EL BORDE EXTERIOR + RADIUS */
+  border-collapse: separate;
+  border-spacing: 0;
+
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;   /* ⭐ borde exterior visible */
+}
+
+/* Celdas --------------------------------------------- */
+.league-mini-table-shots th,
+.league-mini-table-shots td {
+  padding: 4px 8px;             /* ⬅️ AJUSTA altura entre filas */
+  /*border-bottom: 1px solid #e5e7eb;*/
+}
+
+/* Última fila sin borde inferior */
+.league-mini-table-shots tr:last-child td {
+  border-bottom: none;
+}
+
+/* Columna izquierda (nombres) */
+.league-mini-table-shots th {
+  width: 70%;                   /* ⬅️ AJUSTA ANCHURA COLUMNA IZQUIERDA */
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4b5563;
+  text-align: left;
+}
+
+/* Columna derecha (valores) */
+.league-mini-table-shots td.league-mini-value {
+  width: 30%;                   /* ⬅️ AJUSTA ANCHURA COLUMNA DERECHA */
+  text-align: right;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding-right: 10px;
+}
+
+/* Scratch – color configurable */
+.cell-scratch {
+  background: #f9dfdb;
+  color: #111827;
+  font-weight: 700;
+}
+
+/* Separador visual */
+.row-separator td {
+  padding: 5px 0;
+  border-bottom: 1px solid #d1d5db;
+}
+
+/* Fila Puntos Scratch */
+.row-scratch th {
+  font-weight: 600;
+  color: #374151;
+}
+
+.row-scratch td {
+  font-weight: 700;
+}
+
+/* Separación entre título y tabla del bloque Golpes por Hoyos */
+.league-block--holes h3 {
+  margin-bottom: 12px;   /* ⬅️ ajusta la separación a tu gusto */
+}
+
+
+
+
+/* ==================== BLOQUE 3: ESTADÍSTICAS + DONUT + FIR/GIR ==================== */
+
+.league-block-chart {
+  text-align: left;
+}
+
+/* envuelve el canvas y centra el gráfico */
+.league-chart-wrapper {
+  margin-top: 8px;
+  padding-top: 4px;
+  height: 210px;                 /* alto disponible para el donut */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#leagueShotsChart {
+  max-width: 220px;              /* ⬅️ tamaño máx. ancho del donut */
+  max-height: 220px;             /* ⬅️ tamaño máx. alto del donut */
+}
+
+.league-chart-empty {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* FIR / GIR horizontales debajo del donut */
+.league-firgir-horizontal {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.league-firgir-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.league-firgir-label {
+  width: 20px;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+/* aquí controlas ALTURA y “grosor” de las barras FIR/GIR */
+.league-firgir-bar {
+  flex: 1;              /* ocupa todo el ancho disponible de la columna 3 */
+  height: 20px;         /* ⬅️ cambia esto para subir/bajar la altura */
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.league-firgir-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* Colores FIR / GIR */
+.league-firgir-fill.fir {
+  background: #22c55e;
+}
+
+.league-firgir-fill.gir {
+  background: #60a5fa;
+}
+
+.league-firgir-value {
+  width: 15px;
+  text-align: right;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* ========================================================= */
+/* ============== BLOQUE 4: ESTADÍSTICAS DE GOLPES ========= */
+/* ========================================================= */
+
+.league-mini-table-stats {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;   /* ⭐ borde exterior igual que en golpes por hoyos */
+}
+
+/* --------- CELDAS --------- */
+.league-mini-table-stats th,
+.league-mini-table-stats td {
+  padding: 4px 8px;          /* ⭐ ajusta altura entre filas */
+  font-size: 0.8rem;         /* ⭐ tamaño texto */
+  font-weight: 500;           /* ⭐ grosor texto */
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* última fila sin borde inferior */
+.league-mini-table-stats tr:last-child td {
+  border-bottom: none;
+}
+
+/* --------- COLUMNA IZQUIERDA (nombres) --------- */
+.league-mini-table-stats th {
+  width: 70%;                 /* ⭐ ajusta anchura */
+  text-align: left;
+  color: #4b5563;
+}
+
+/* --------- COLUMNA DERECHA (valores) --------- */
+.league-mini-table-stats td.stats-value {
+  width: 30%;                 /* ⭐ ajusta anchura */
+  text-align: right;
+  font-weight: 600;           /* resaltado */
+  color: #4b5563;
+}
+
+/* --------- FILA SEPARADORA --------- */
+.stats-row-separator td {
+  padding: 6px 0 !important;
+  border-bottom: 1px solid #d1d5db !important;
+}
+
+/* --------- KPI DE HCP MEDIO --------- */
+.stats-hcp-avg {
+  background: #f9dfdb;        /* amarillo KPI suave */
+  color: #7a5a00;
+  font-weight: 800;
+}
+
+/* --------- NUEVA FILA “HCP Actual” --------- */
+.stats-hcp-current td {
+  font-weight: 700;
+  color: #14532d;
+}
+/* Separación entre título y tabla del bloque de estadísticas */
+.league-block--stats h3 {
+  margin-bottom: 12px;   /* ⬅️ ajusta a tu gusto (px) */
+}
+
+
+
+/* ==================== HISTORIAL DE VUELTAS JUGADOR ==================== */
+
+.league-history-title {
+  margin-top: 24px;          /* separación respecto al bloque de arriba */
+  margin-bottom: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #14532d;
+}
+
+.league-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.80rem;
+
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.league-history-table thead tr {
+  background: #f3f4f6;       /* fila cabecera gris claro */
+}
+
+.league-history-table th {
+  padding: 6px 10px;
+  text-align: center;
+  font-weight: 600;
+  color: #171f31;            /* texto negro */
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.league-history-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* última fila sin borde inferior */
+.league-history-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* alineamos columnas numéricas al centro/derecha */
+.league-history-table td:nth-child(3),
+.league-history-table td:nth-child(4),
+.league-history-table td:nth-child(5),
+.league-history-table td:nth-child(6),
+.league-history-table td:nth-child(7),
+.league-history-table td:nth-child(8),
+.league-history-table td:nth-child(9),
+.league-history-table td:nth-child(10) {
+  text-align: center;
+}
+
+/* badge Resultado (Win / Tie / Loss) */
+.league-result-badge {
+  display: inline-block;
+  min-width: 52px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.league-result-badge.win {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.league-result-badge.tie {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.league-result-badge.loss {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Alinear a la izquierda Fecha (columna 1) y Campo (columna 2) */
+.league-history-table thead th:nth-child(1),
+.league-history-table thead th:nth-child(2),
+.league-history-table tbody td:nth-child(1),
+.league-history-table tbody td:nth-child(2) {
+  text-align: left !important;
+}
+
+/* ---------------------------------------------------------
+   Campeones Mini (tarjeta baja, horizontal + sombras)
+   --------------------------------------------------------- */
+
+.league-champions-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.league-mini-card {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: 150px;              /* un poco más alto para incluir descripción */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* Columna izquierda */
+.league-mini-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; 
+  height: 100%;
+  flex: 1;
+  gap: 3px;
+}
+
+/* Título */
+.league-mini-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #14532d;
+  margin-bottom: 2px;
+}
+
+/* Descripción bajo el título */
+.league-mini-description {
+  font-size: 0.80rem;
+  color: #6b7280;
+  margin-bottom: 1px;
+}
+
+/* Ganadores */
+.league-mini-winners .winner-name {
+  margin-top: 14px;   /* <-- AJUSTA ESTE VALOR */
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #d4af37;         /* dorado */
+  line-height: 0.5rem;
+}
+
+/* Pastilla gris sombreada */
+.league-mini-meta-pill {
+  margin-top: auto;   /* ⬅️ ESTO LA PEGA ABAJO */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #f3f4f6;     /* gris claro */
+  color: #374151;          /* gris oscuro */
+  font-size: 0.70rem;
+  border-radius: 8px;
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.1);
+  width: fit-content;
+}
+
+/* Imagen derecha */
+.league-mini-right img {
+  height: 110px;
+  width: auto;
+  object-fit: contain;
+  margin-left: 10px;
+}
+
+
+
+/* ---------------------------------------------------------
+   PUBLIC: LIGA DETAIL – cards en blanco
+   --------------------------------------------------------- */
+
+.league-detail-page .card {
+  background: #ffffff !important;
+  border-radius: 18px;
+  border: 1px solid #c3c4c6ea;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+}
+
+/* Títulos de los bloques en Liga Detail (sobre fondo blanco) */
+.league-detail-page .card > h2,
+.league-detail-page .card > h3 {
+  color: #14532d;        /* mismo verde que en Ligas / Rondas */
+}
+
+/* Por si tienes párrafos de cabecera dentro de la card */
+.league-detail-page .card > p {
+  color: #4b5563;
+}
+
+/* --- Título pequeño dentro de bloques --- */
+.league-subtitle {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+
+
+
+/* ================================================================================= */
+/* =========================== LIGAS HOME(PÚBLICO) ================================= */
+/* ================================================================================= */
+
+/* Header Ligas: H1 + descripción + logo derecha (igual que Rondas) */
+
+/* HEADER LIGAS - mismo layout que Rondas */
+
+.public-header {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 80px auto;   /* mismo margen inferior que rondas */
+}
+
+/* Título dentro de public-header (equivalente a .rounds-title) */
+.public-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #14532d;
+}
+
+/* Subtítulo (equivalente a .rounds-subtitle) */
+.public-subtitle {
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* Logo a la derecha, en absoluto (equivalente a .rounds-logo) */
+.public-header-logo {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  height: 110px;
+}
+
+
+
+/* ================================================================================= */
+/* =========================== LIGAS HOME(PÚBLICO) ================================= */
+/* ================================================================================= */
+
+/* El <section class="card public-leagues-card"> SOLO sirve de contenedor,
+   le quitamos fondo y borde para que no se vea un segundo “marco”. */
+.public-leagues-card {
+  margin-top: 12px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Cada liga en formato “fila”, mismo estilo que las rondas */
+.public-league-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 16px 20px;
+  margin-bottom: 12px;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
+
+  text-decoration: none;
+  color: #14532d;
+
+  transition: transform 0.15s ease,
+              box-shadow 0.15s ease,
+              border-color 0.15s ease;
+}
+
+.public-league-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  border-color: #22c55e;
+}
+
+/* Bloque izquierdo: logo + textos */
+.public-league-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Imagen cuadrada redondeada para la liga */
+.public-league-logo {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  border: 1px solid #14532d;
+  background: #f0fdf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #14532d;
+  overflow: hidden; /* IMPORTANTE para que la imagen quede dentro */
+}
+
+.public-league-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+/* Nombre de la liga */
+.public-league-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #14532d;
+  margin-bottom: 4px;
+}
+
+/* Jugadores debajo */
+.public-league-players {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+/* Estado a la derecha */
+.public-league-status {
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid #bbf7d0;
+  background: #dcfce7;
+  color: #14532d;
+  white-space: nowrap;
+}
+
+.public-league-status--closed {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+/* Responsive: en móvil se apilan */
+@media (max-width: 768px) {
+  .public-league-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .public-league-status {
+    align-self: flex-end;
+    margin-top: 4px;
+  }
+}
+
+
+/* ==========================================================================
+   PUBLIC RANKINGS
+   ========================================================================== */
+
+.rankings-back-wrap{
+  max-width: 1200px;
+  margin: -60px auto 18px auto;
+}
+.rankings-back{
+  color: var(--gm-green);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: .9rem;
+}
+.rankings-back:hover{ text-decoration: underline; }
+
+.rankings-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 980px){
+  .rankings-grid{ grid-template-columns: 1fr; }
+}
+
+.rankings-card{ padding: 14px; }
+
+.rankings-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rankings-h2{
+  margin:0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--gm-green);
+}
+.rankings-sub{
+  margin: 4px 0 0 0;
+  color: #6b7280;
+  font-size: .9rem;
+}
+
+.rankings-chip{
+  border: 1px solid var(--gm-green-soft);
+  background: #f0fdf4;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .78rem;
+  color: var(--gm-green);
+  white-space: nowrap;
+}
+
+/* tabla */
+.rankings-table-wrap{
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.rankings-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+  font-size: .86rem;
+}
+
+.rankings-table th,
+.rankings-table td{
+  padding: 9px 10px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #eef2f7;
+  white-space: nowrap;
+  font-weight: 400;
+  color: #14532d;
+}
+
+.rankings-table thead th{
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.rankings-table .num{ text-align: right; }
+.rankings-table .c-rank{ width: 44px; text-align: center; font-weight: 800; }
+
+.rankings-player-link{
+  color: #14532d;
+  font-weight: 400;
+  text-decoration: none;
+}
+.rankings-player-link:hover{ text-decoration: underline; }
+
+.rankings-table tbody tr:hover td{
+  background: rgba(34,197,94,0.06);
+}
+
+.rankings-table th:last-child,
+.rankings-table td:last-child{ border-right:none; }
+.rankings-table tr:last-child th,
+.rankings-table tr:last-child td{ border-bottom:none; }
+
+/* ===== TOP 3 refinado (GolfMode) ===== */
+
+/* Top 1: borde verde sutil 
+.rankings-table tbody tr.top1{
+  outline: 1px solid rgba(34,197,94,0.25);
+  outline-offset: -2px;
+  border-radius: 8px;
+}*/
+
+/* Iconos más protagonistas */
+.rankings-table tbody tr.top1 .c-rank,
+.rankings-table tbody tr.top2 .c-rank,
+.rankings-table tbody tr.top3 .c-rank{
+  font-size: 1rem;
+}
+
+/* Hover mantiene coherencia */
+.rankings-table tbody tr:hover td{
+  background: rgba(34,197,94,0.06);
+}
+
+
+.rankings-title-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.rankings-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--gm-green-soft);
+  background: #f0fdf4;
+  color: var(--gm-green);
+  font-weight: 800;
+  font-size: .88rem;
+  line-height: 1;
+}
+
+
+/* ==========================================================================
+   PUBLIC STATS – Layout + KPIs + Table
+   ========================================================================== */
+
+/* ==========================================================
+   HEADER ESTADÍSTICAS (mismo estilo que Rondas)
+   ========================================================== */
+
+.stats-header-main{
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 80px auto;
+}
+
+.stats-title-main{
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #14532d;   /* verde Golf Mode */
+}
+
+.stats-logo{
+  position: absolute;
+  top: -6px;
+  right: 0;
+  height: 110px;
+}
+
+.stats-subtitle-main{
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* Volver fuera del header */
+.stats-back-wrap{
+  max-width: 1200px;
+  margin: -60px auto 24px auto; /* lo sube visualmente pero fuera del header */
+}
+
+.stats-back{
+  color: #14532d;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: .9rem;
+}
+
+.stats-back:hover{
+  text-decoration: underline;
+}
+
+
+
+/* ---------- Filtros ---------- */
+
+.stats-filters{
+  display:flex;
+  gap:12px;
+  align-items:end;
+  flex-wrap:wrap;
+}
+
+.stats-filter{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:200px;
+}
+
+.stats-filter label{
+  font-size:.78rem;
+  font-weight:500;
+  color:var(--muted);
+}
+
+.stats-apply{
+  padding:10px 14px;
+  border-radius:10px;
+  font-weight:700;
+}
+
+/* ---------- Secciones ---------- */
+
+.stats-section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.stats-h2{
+  margin:0;
+  font-size:1.05rem;
+  font-weight:700;
+  color: var(--gm-green);   /* GolfMode */
+}
+
+
+.stats-chip{
+  border:1px solid var(--gm-green-soft);
+  background:#f0fdf4;
+  padding:5px 10px;
+  border-radius:999px;
+  font-weight:600;
+  font-size:.8rem;
+  color: var(--gm-green);
+}
+
+
+/* ---------- KPIs ---------- */
+
+/* KPIs: 4 columnas en desktop */
+.stats-grid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:12px;
+}
+
+/* responsive */
+@media (max-width: 980px){
+  .stats-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px){
+  .stats-grid{ grid-template-columns: 1fr; }
+}
+
+
+.stat-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+}
+
+.stat-label{
+  font-size:0.78rem;
+  font-weight:500;
+  color:var(--muted);
+}
+
+.stat-value{
+  margin-top:6px;
+  font-size:1.5rem;
+  font-weight:700;
+  color: var(--gm-green);   /* GolfMode */
+  line-height:1;
+  font-variant-numeric: tabular-nums;
+}
+
+
+
+/* responsive KPIs */
+@media (max-width: 980px){
+  .stats-grid{ grid-template-columns:repeat(2, 1fr); }
+}
+@media (max-width: 560px){
+  .stats-grid{ grid-template-columns:1fr; }
+}
+
+/* ---------- Tabla (Excel-like + FIT ALL COLUMNS) ---------- */
+
+.stats-table-wrap{
+  overflow:auto;
+  border-radius:12px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+}
+
+/* Base: mantiene look (bordes/cabecera/hover) + entra todo */
+.stats-table{
+  width:100%;
+  min-width:0;                 /* ✅ clave: no forzar 1700px */
+  border-collapse:separate;
+  border-spacing:0;
+  background:#fff;
+  font-variant-numeric: tabular-nums;
+  table-layout:fixed;          /* ✅ respeta anchos */
+  font-size:0.70rem;           /* ✅ compacto para ver todo */
+}
+
+.stats-table th,
+.stats-table td{
+  padding:3px 4px;             /* ✅ compacto */
+  border-right:1px solid #e5e7eb;
+  border-bottom:1px solid #eef2f7;
+  white-space:nowrap;
+  font-weight:500;
+  color:var(--text);
+}
+
+.stats-table thead th{
+  background:#f3f4f6;
+  color:#111827;
+  font-weight:600;
+  position:sticky;
+  top:0;
+  z-index:5;
+  font-size:0.70rem;
+  letter-spacing:0.01em;
+}
+
+.stats-table .num{ text-align:right; }
+
+/* Links jugador */
+.stats-player-link{
+  color:var(--text);
+  font-weight:600;
+  text-decoration:none;
+}
+.stats-player-link:hover{ text-decoration: underline; }
+
+/* Hover suave */
+.stats-table tbody tr:hover td{
+  background: rgba(34,197,94,0.06);
+}
+
+/* Quitar borde final */
+.stats-table th:last-child,
+.stats-table td:last-child{ border-right:none; }
+.stats-table tr:last-child th,
+.stats-table tr:last-child td{ border-bottom:none; }
+
+/* Anchos columnas (modo ver TODO) */
+.stats-table .c-n{ width:32px; }
+.stats-table .c-date{ width:68px; }
+.stats-table .c-course{ width:130px; }
+.stats-table .c-player{ width:110px; }
+.stats-table .c-tour{ width:110px; }
+.stats-table .c-hcp{ width: 38px; }
+.stats-table .c-lvl{ width:52px; }
+.stats-table .c-hole{ width:20px; text-align:center; }
+.stats-table .c-tot{ width:40px; font-weight:600; }
+.stats-table .c-pts{ width:38px; font-weight:600; }
+
+/* Ellipsis para texto largo */
+.stats-table td.c-course,
+.stats-table td.c-player,
+.stats-table td.c-tour{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Sticky primeras columnas (tipo Excel) */
+.stats-table .sticky { position:sticky; left:0; background:#fff; z-index:4; }
+.stats-table .sticky2{ position:sticky; left:32px; background:#fff; z-index:4; }
+.stats-table .sticky3{ position:sticky; left:100px; background:#fff; z-index:4; }  /* 32+68 */
+.stats-table .sticky4{ position:sticky; left:220px; background:#fff; z-index:4; }  /* +120 */
+
+/* Header sticky para esas mismas columnas */
+.stats-table thead .sticky,
+.stats-table thead .sticky2,
+.stats-table thead .sticky3,
+.stats-table thead .sticky4{
+  background:#f3f4f6;
+  z-index:6;
+}
+/* ---------- Ajuste fino Stats: más espacio a hoyos ---------- */
+
+/* Columna Lvl Juego más compacta */
+.stats-table .c-lvl{
+  width: 44px;   /* antes 52px */
+}
+
+/* Hoyos un poco más anchos */
+.stats-table .c-hole{
+  width: 28px;   /* antes 20px */
+}
+/* --- Separación visual entre Lvl J. y Hoyo 1 --- */
+.stats-table td.c-lvl,
+.stats-table th.c-lvl{
+  padding-right: 10px;   /* antes ~4px */
+}
+/* --- Filas un poco más respiradas --- */
+.stats-table th,
+.stats-table td{
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.stats-table tbody td{
+  height: 26px;   /* antes 22px */
+}
+/* Aire extra antes del Hoyo 1 */
+.stats-table .c-hole:first-of-type{
+  padding-left: 6px;
+}
+/* ---------- Colores golpes por hoyo ---------- */
+
+.stats-table td.hio   { background:#ffc000; }
+.stats-table td.alb   { background:#ffe5b4; }
+.stats-table td.eag   { background:#fff7cc; }
+.stats-table td.bird  { background:#ffe4d6; }
+.stats-table td.par   { background:#e2f0d9; }
+.stats-table td.bogey { background:#d9e1f2; }
+.stats-table td.dbl   { background:#f2f2f2; }
+.stats-table td.over  { background:#e0e0e0; }
+
+/* que no rompa hover */
+.stats-table tbody tr:hover td.hio,
+.stats-table tbody tr:hover td.alb,
+.stats-table tbody tr:hover td.eag,
+.stats-table tbody tr:hover td.bird,
+.stats-table tbody tr:hover td.par,
+.stats-table tbody tr:hover td.bogey,
+.stats-table tbody tr:hover td.dbl,
+.stats-table tbody tr:hover td.over{
+  filter: brightness(0.97);
+}
+
+/* Mejor vuelta: un pelín de énfasis sin romper el look
+.stats-table tr.best-row td{
+  box-shadow: inset 0 0 0 2px rgba(34,197,94,0.18);
+}*/

@@ -1,0 +1,18 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Login{% endblock %}
+{% block header_title %}Acceso admin{% endblock %}
+{% block header_subtitle %}Introduce la clave para acceder al panel.{% endblock %}
+
+{% block content %}
+<section class="card" style="max-width:520px; margin: 0 auto;">
+  {% if error %}
+    <p style="color:#dc2626; font-weight:800; margin-top:0;">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/admin/login" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <input name="key" type="password" placeholder="Clave admin" required style="flex:1; min-width:220px;">
+    <button class="btn-primary" type="submit">Entrar</button>
+  </form>
+</section>
+{% endblock %}

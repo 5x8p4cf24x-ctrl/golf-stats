@@ -1,0 +1,72 @@
+{% extends "public_base.html" %}
+
+{% block title %}Ligas · Golf Mode{% endblock %}
+
+{% block container_class %}gm-wrap{% endblock %}
+
+{% block header %}
+  <!-- HEADER -->
+  <header class="public-header">
+    <div>
+      <h1>Ligas</h1>
+      <p class="public-subtitle">
+        Aquí encontrarás todas las ligas disputadas con el grupo.
+      </p>
+    </div>
+    <img src="/static/golfmode_logo.png" alt="Golf Mode" class="public-header-logo">
+  </header>
+{% endblock %}
+
+{% block content %}
+
+  {% if leagues|length == 0 %}
+
+    <section class="card public-leagues-card">
+      <p>No hay ligas todavía.</p>
+    </section>
+
+  {% else %}
+
+    <section class="card public-leagues-card">
+      {% for l in leagues %}
+        <a href="/public/leagues/{{ l.id }}" class="public-league-item">
+
+          <!-- Izquierda: logo + nombre + jugadores -->
+          <div class="public-league-main">
+
+            <div class="public-league-logo">
+              {% if l.logo_url %}
+                <img src="/static/{{ l.logo_url }}" alt="{{ l.name }}" class="public-league-logo-img">
+              {% else %}
+                {{ l.name[0] }}
+              {% endif %}
+            </div>
+
+            <div>
+              <div class="public-league-title">
+                {{ l.name }}
+              </div>
+
+              <div class="public-league-players">
+                {{ l.players_names if l.players_names is defined else "" }}
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Derecha: estado -->
+          <div class="public-league-status {% if l.is_closed %}public-league-status--closed{% endif %}">
+            {% if l.is_closed %}Cerrada{% else %}En vigor{% endif %}
+          </div>
+
+        </a>
+      {% endfor %}
+    </section>
+
+  {% endif %}
+
+  <p class="public-back">
+    <a href="/public">← Volver al inicio</a>
+  </p>
+
+{% endblock %}

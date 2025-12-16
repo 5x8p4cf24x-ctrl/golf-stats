@@ -1,0 +1,88 @@
+{% extends "public_base.html" %}
+
+{% block title %}{{ course.name }} · Campo{% endblock %}
+{% block container_class %}container{% endblock %}
+
+{% block content %}
+
+  <!-- CABECERA CAMPO -->
+  <section class="card course-head">
+    {% if course.logo_url %}
+      <img
+        src="/static/{{ course.logo_url }}"
+        alt="Logo {{ course.name }}"
+        class="course-head-logo"
+      >
+    {% endif %}
+
+    <div class="course-head-info">
+      <h1 class="course-head-title">{{ course.name }}</h1>
+
+      <p class="course-head-city">
+        {{ course.city or "Ciudad desconocida" }}
+      </p>
+
+      <p class="course-head-meta">
+        Par total: <strong>{{ course.par_total }}</strong>
+        {% if course.meters_total %}
+          · Metros: <strong>{{ course.meters_total }} m</strong>
+        {% endif %}
+        · Slope: <strong>{{ course.slope_yellow }}</strong>
+        · Rating: <strong>{{ "%.1f"|format(course.rating_yellow) }}</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- TABLA HOYO A HOYO -->
+  <section class="card">
+    <h2>Hoyo a hoyo</h2>
+
+    {% if holes|length == 0 %}
+      <p>No hay datos de hoyos todavía para este campo.</p>
+    {% else %}
+      {% set meters_total = (holes | map(attribute='meters_yellow') | select | sum) %}
+      {% set par_total_calc = (holes | map(attribute='par') | select | sum) %}
+
+      <div class="scorecard-wrap">
+        <table class="scorecard" cellspacing="0" cellpadding="0">
+          <tbody>
+            <tr>
+              <th class="rowhdr">Hoyos</th>
+              {% for h in holes %}
+                <th class="colhdr">{{ h.number }}</th>
+              {% endfor %}
+              <th class="totalhdr">Tot</th>
+            </tr>
+
+            <tr class="row-meters">
+              <th class="rowhdr">Metros</th>
+              {% for h in holes %}
+                <td>{{ h.meters_yellow if h.meters_yellow is not none else "-" }}</td>
+              {% endfor %}
+              <td class="totalcell">{{ meters_total if meters_total else "-" }}</td>
+            </tr>
+
+            <tr>
+              <th class="rowhdr">Par</th>
+              {% for h in holes %}
+                <td>{{ h.par }}</td>
+              {% endfor %}
+              <td class="totalcell">{{ par_total_calc }}</td>
+            </tr>
+
+            <tr>
+              <th class="rowhdr">HCP</th>
+              {% for h in holes %}
+                <td>{{ h.stroke_index }}</td>
+              {% endfor %}
+              <td class="totalcell">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+
+  <a href="/public/courses" class="back-link">← Volver a campos</a>
+
+{% endblock %}

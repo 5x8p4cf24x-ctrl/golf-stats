@@ -1,0 +1,53 @@
+{% extends "public_base.html" %}
+
+{% block title %}Jugadores · Golf Mode{% endblock %}
+
+{# Mantienes tu wrapper actual para no romper CSS #}
+{% block container_class %}gm-wrap players-page{% endblock %}
+
+{% block header %}
+  <header class="players-header">
+    <h1 class="players-title">Jugadores</h1>
+
+    <img src="/static/golfmode_logo.png" class="players-logo" alt="Golf Mode">
+
+    <p class="players-subtitle">
+      Selecciona un jugador para ver sus estadísticas completas.
+    </p>
+  </header>
+{% endblock %}
+
+{% block content %}
+  <section class="players-grid">
+    {% for p in players %}
+      <a href="/players/{{ p.id }}" class="player-card">
+        {% if p.photo_url %}
+          <div class="player-avatar">
+            <img src="/static/{{ p.photo_url }}" alt="{{ p.name }}">
+          </div>
+        {% else %}
+          <div class="player-avatar player-avatar--fallback">
+            <span>{{ p.name[0] }}</span>
+          </div>
+        {% endif %}
+
+        <div class="player-info">
+          <div class="player-name">{{ p.name }}</div>
+
+          {% if p.nickname %}
+            <div class="player-nick">“{{ p.nickname }}”</div>
+          {% endif %}
+
+          <div class="player-hcp">
+            HCP {{ "%.1f"|format(p.hcp_exact) }}
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </section>
+
+  <p class="players-back">
+    <a href="/public">← Volver a inicio</a>
+  </p>
+{% endblock %}
+

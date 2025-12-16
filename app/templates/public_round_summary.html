@@ -1,0 +1,428 @@
+{% extends "public_base.html" %}
+
+{% block title %}Vuelta — {{ course.name }}{% endblock %}
+{% block container_class %}gm-wrap round-public{% endblock %}
+
+{% block content %}
+
+  <!-- HEADER -->
+  <section class="card round-header-card">
+    <div class="round-header-main">
+      <h1>Vuelta — {{ course.name }}</h1>
+      <p>
+        Fecha: {{ round.date }} · Tee: {{ round.tee }} · Tipo: {{ round.type }}
+      </p>
+
+      {% if winner_names and winner_names|length > 0 %}
+        <p class="round-winner-row">
+          <span class="badge win">
+            {% if winner_names|length == 1 %}
+              🏆 Ganador
+            {% else %}
+              🤝 Empate en primera posición
+            {% endif %}
+          </span>
+          <span class="round-winner-names">
+            {{ winner_names|join(", ") }}
+          </span>
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- logo arriba derecha -->
+    <img src="/static/golfmode_logo.png" alt="Golf Mode" class="round-header-logo">
+  </section>
+
+  <!-- RESUMEN DE JUGADORES -->
+  <section class="card">
+    <h2>Resumen de jugadores</h2>
+
+    {% if results|length == 0 %}
+      <p>No hay datos todavía.</p>
+    {% else %}
+      <table class="summary-table">
+        <thead>
+          <tr class="summary-header-row">
+            <th class="summary-metric-col">Jugador</th>
+            <th>Hcp</th>
+            <th>G.Br</th>
+            <th>G.Net</th>
+            <th>Pts HCP</th>
+            <th>Pts Scr</th>
+            <th>Putts</th>
+            <th>Putt/H</th>
+            <th>Lvl Jug.</th>
+            <th>FIR</th>
+            <th>GIR</th>
+            <th>% Golpes</th>
+          </tr>
+        </thead>
+
+        <tbody>
+        {% for s in results %}
+
+          {# total hoyos jugados para la barra de % golpes #}
+          {% set total_shots =
+             (s.hio or 0) +
+             (s.albatros or 0) +
+             (s.eagles or 0) +
+             (s.birdies or 0) +
+             (s.pars or 0) +
+             (s.bogeys or 0) +
+             (s.dbl or 0) +
+             (s.overdbl or 0)
+          %}
+
+          <tr>
+            <td class="summary-metric-col">{{ s.player.name }}</td>
+            <td>{{ s.course_handicap }}</td>
+            <td>{{ s.gross_total or "-" }}</td>
+            <td>{{ s.net_total or "-" }}</td>
+            <td>{{ s.points or "-" }}</td>
+            <td>{{ s.scratch_points or "-" }}</td>
+            <td>{{ s.putts or "-" }}</td>
+            <td>
+              {% if s.putts_per_hole is not none %}
+                {{ "%.2f"|format(s.putts_per_hole) }}
+              {% else %}-{% endif %}
+            </td>
+            <td>
+              {% if s.level_hcp is not none %}
+                {{ "%.1f"|format(s.level_hcp) }}
+              {% else %}-{% endif %}
+            </td>
+
+            {# FIR: barra ancha #}
+            <td class="summary-firgir-cell">
+              {% if s.fir_pct is not none %}
+                {% set firp = "%.0f"|format(s.fir_pct) %}
+                <div class="summary-bar">
+                  <div class="summary-bar-fill" style="width: {{ firp }}%;"></div>
+                </div>
+                <span class="summary-bar-label">{{ firp }}%</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+
+            {# GIR: barra ancha #}
+            <td class="summary-firgir-cell">
+              {% if s.gir_pct is not none %}
+                {% set girp = "%.0f"|format(s.gir_pct) %}
+                <div class="summary-bar">
+                  <div class="summary-bar-fill gir" style="width: {{ girp }}%;"></div>
+                </div>
+                <span class="summary-bar-label">{{ girp }}%</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+
+            {# % Golpes barra apilada #}
+            <td class="summary-shots-cell">
+              {% if total_shots > 0 %}
+                <div class="shots-bar">
+
+                  {% if s.hio %}
+                    {% set pct = (s.hio * 100.0 / total_shots) %}
+                    <div class="shots-seg hio"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="HIO: {{ s.hio }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                  {% if s.albatros %}
+                    {% set pct = (s.albatros * 100.0 / total_shots) %}
+                    <div class="shots-seg alb"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="Albatros: {{ s.albatros }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                  {% if s.eagles %}
+                    {% set pct = (s.eagles * 100.0 / total_shots) %}
+                    <div class="shots-seg eag"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="Eagle: {{ s.eagles }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                  {% if s.birdies %}
+                    {% set pct = (s.birdies * 100.0 / total_shots) %}
+                    <div class="shots-seg bird"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="Birdie: {{ s.birdies }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                  {% if s.pars %}
+                    {% set pct = (s.pars * 100.0 / total_shots) %}
+                    <div class="shots-seg par"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="Par: {{ s.pars }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                  {% if s.bogeys %}
+                    {% set pct = (s.bogeys * 100.0 / total_shots) %}
+                    <div class="shots-seg bogey"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="Bogey: {{ s.bogeys }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                  {% if s.dbl %}
+                    {% set pct = (s.dbl * 100.0 / total_shots) %}
+                    <div class="shots-seg dbl"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="Doble bogey: {{ s.dbl }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                  {% if s.overdbl %}
+                    {% set pct = (s.overdbl * 100.0 / total_shots) %}
+                    <div class="shots-seg over"
+                         style="width: {{ '%.2f'|format(pct) }}%;"
+                         title="&gt; Doble bogey: {{ s.overdbl }} ({{ '%.1f'|format(pct) }}%)">
+                      <span>{{ '%.0f'|format(pct) }}%</span>
+                    </div>
+                  {% endif %}
+
+                </div>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+  <!-- DETALLE POR JUGADOR (TARJETA HORIZONTAL) -->
+  <section class="card">
+    <h2>Detalle por jugador</h2>
+
+    {% if players_in_round|length == 0 %}
+      <p>No hay jugadores en esta vuelta.</p>
+    {% else %}
+
+      <form method="get" action="">
+        {% if league_id %}
+          <input type="hidden" name="league_id" value="{{ league_id }}">
+        {% endif %}
+
+        <label>Jugador:</label>
+        <select name="player_id" onchange="this.form.submit()">
+          {% for p in summary_by_player.values() %}
+            <option value="{{ p.player.id }}"
+                    {% if p.player.id == selected_player_id %}selected{% endif %}>
+              {{ p.player.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+
+      {% if selected_rows %}
+
+        <div class="scorecard-container">
+
+          <table class="scorecard-table">
+            <thead>
+              <tr class="scorecard-header-row">
+                <th class="metric-cell">Hoyos</th>
+                {% for h in selected_rows %}
+                  <th>{{ h.number }}</th>
+                {% endfor %}
+                <th class="metric-total">Tot</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr class="row-meters">
+                <th class="metric-cell">Metros</th>
+                {% for h in selected_rows %}
+                  <td>{{ h.meters or "-" }}</td>
+                {% endfor %}
+                <td class="total-cell">-</td>
+              </tr>
+
+              <tr>
+                <th class="metric-cell">HCP hoyo</th>
+                {% for h in selected_rows %}
+                  <td>{{ h.stroke_index }}</td>
+                {% endfor %}
+                <td class="total-cell">-</td>
+              </tr>
+
+              <tr>
+                <th class="metric-cell">Par</th>
+                {% for h in selected_rows %}
+                  <td>{{ h.par }}</td>
+                {% endfor %}
+                <td class="total-cell">-</td>
+              </tr>
+
+              <tr class="gap-row">
+                <td colspan="{{ selected_rows|length + 2 }}"></td>
+              </tr>
+
+              <tr>
+                <th class="metric-cell">Bruto</th>
+                {% for h in selected_rows %}
+                  {% if h.gross is none or h.par is none %}
+                    <td>-</td>
+                  {% else %}
+                    {% set diff = h.gross - h.par %}
+                    <td class="
+                      {% if h.gross == 1 %}cell-hio
+                      {% elif diff <= -3 %}cell-albatros
+                      {% elif diff == -2 %}cell-eagle
+                      {% elif diff == -1 %}cell-birdie
+                      {% elif diff == 0 %}cell-par
+                      {% elif diff == 1 %}cell-bogey
+                      {% elif diff == 2 %}cell-dblbogey
+                      {% elif diff >= 3 %}cell-overdbl
+                      {% endif %}
+                    ">
+                      {{ h.gross }}
+                    </td>
+                  {% endif %}
+                {% endfor %}
+                <td class="total-cell">{{ selected_totals.gross or "-" }}</td>
+              </tr>
+
+              <tr>
+                <th class="metric-cell">Neto</th>
+                {% for h in selected_rows %}
+                  <td>{{ h.net or "-" }}</td>
+                {% endfor %}
+                <td class="total-cell">{{ selected_totals.net or "-" }}</td>
+              </tr>
+
+              <tr class="row-stableford">
+                <th class="metric-cell metric-stableford">Pts Stableford</th>
+                {% for h in selected_rows %}
+                  <td>{{ h.pts or "-" }}</td>
+                {% endfor %}
+                <td class="total-stableford">
+                  {{ selected_totals.points or "-" }}
+                </td>
+              </tr>
+
+              <tr>
+                <th class="metric-cell">Putts</th>
+                {% for h in selected_rows %}
+                  <td>{{ h.putts or "-" }}</td>
+                {% endfor %}
+                <td class="total-cell">{{ selected_totals.putts or "-" }}</td>
+              </tr>
+
+              <tr>
+                <th class="metric-cell">FIR</th>
+                {% for h in selected_rows %}
+                  <td>
+                    {% if h.fir is none %}
+                      -
+                    {% elif h.fir %}
+                      <span class="icon-good">●</span>
+                    {% else %}
+                      <span class="icon-bad">●</span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td class="total-cell">
+                  {% if selected_totals.fir_possible %}
+                    {{ selected_totals.fir }}/{{ selected_totals.fir_possible }}
+                  {% else %}-{% endif %}
+                </td>
+              </tr>
+
+              <tr>
+                <th class="metric-cell">GIR</th>
+                {% for h in selected_rows %}
+                  <td>
+                    {% if h.gir is none %}
+                      -
+                    {% elif h.gir %}
+                      <span class="icon-good">●</span>
+                    {% else %}
+                      <span class="icon-bad">●</span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td class="total-cell">
+                  {% if selected_totals.gir_possible %}
+                    {{ selected_totals.gir }}/{{ selected_totals.gir_possible }}
+                  {% else %}-{% endif %}
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+
+          {% set avg_par3 = selected_totals.get('avg_par3') %}
+          {% set avg_par4 = selected_totals.get('avg_par4') %}
+          {% set avg_par5 = selected_totals.get('avg_par5') %}
+          {% set putts_hole = selected_totals.get('putts_per_hole') %}
+
+          <table class="scorecard-table scorecard-otros">
+            <tbody>
+              <tr class="row-otros">
+                <th class="metric-cell otros-cell">Otros</th>
+
+                <td>
+                  Media Par 3:
+                  {% if avg_par3 is not none %}
+                    <span class="otros-value">{{ "%.2f"|format(avg_par3) }}</span>
+                  {% else %}-{% endif %}
+                </td>
+
+                <td>
+                  Media Par 4:
+                  {% if avg_par4 is not none %}
+                    <span class="otros-value">{{ "%.2f"|format(avg_par4) }}</span>
+                  {% else %}-{% endif %}
+                </td>
+
+                <td>
+                  Media Par 5:
+                  {% if avg_par5 is not none %}
+                    <span class="otros-value">{{ "%.2f"|format(avg_par5) }}</span>
+                  {% else %}-{% endif %}
+                </td>
+
+                <td>
+                  Putts/Hoyo:
+                  {% if putts_hole is not none %}
+                    <span class="otros-value">{{ "%.2f"|format(putts_hole) }}</span>
+                  {% else %}-{% endif %}
+                </td>
+
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+
+      {% else %}
+        <p style="margin-top:12px;">No hay tarjeta para este jugador.</p>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  {% if league_id %}
+    <p><a href="/public/leagues/{{ league_id }}">&larr; Volver a la liga</a></p>
+  {% else %}
+    <p><a href="/public/rounds">&larr; Volver al listado de vueltas</a></p>
+  {% endif %}
+
+{% endblock %}

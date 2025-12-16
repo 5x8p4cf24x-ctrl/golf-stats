@@ -1,0 +1,96 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Ligas{% endblock %}
+{% block header_title %}Ligas{% endblock %}
+{% block header_subtitle %}Crear ligas, ver estado y finalizarlas.{% endblock %}
+
+{% block content %}
+
+<!-- NUEVA LIGA -->
+<section class="card" style="margin-bottom:16px;">
+  <h2 style="margin-bottom:10px;">Nueva liga</h2>
+
+  <form method="post"
+        action="/admin/leagues/new"
+        enctype="multipart/form-data"
+        style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+
+    <input name="name" placeholder="Liga 2025" required>
+
+    <input type="file" name="logo" accept="image/*">
+
+    <button class="btn-primary" type="submit">Crear</button>
+
+    <a class="link-gm" href="/admin" style="margin-left:auto;">← Volver al panel admin</a>
+  </form>
+</section>
+
+<!-- LIGAS EXISTENTES -->
+<section class="card">
+  <h2 style="margin-bottom:10px;">Ligas existentes</h2>
+
+  {% if leagues|length == 0 %}
+    <p>No hay ligas todavía.</p>
+  {% else %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th class="text-left">Nombre</th>
+          <th class="text-left">Logo</th>
+          <th class="text-left">Estado</th>
+          <th class="text-left">Rondas</th>
+          <th class="text-left">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for l in leagues %}
+        <tr>
+          <td class="text-left"><strong>{{ l.name }}</strong></td>
+
+          <td class="text-left">
+            {% if l.logo_url %}
+              <img src="/static/{{ l.logo_url }}"
+                   alt="Logo {{ l.name }}"
+                   style="width:40px; height:40px; object-fit:cover; border-radius:8px;">
+            {% else %}
+              <span style="color:#9ca3af;">-</span>
+            {% endif %}
+          </td>
+
+          <td class="text-left">
+            {% if l.is_closed %}
+              <span class="badge loss">Cerrada</span>
+            {% else %}
+              <span class="badge win">En vigor</span>
+            {% endif %}
+          </td>
+
+          <td class="text-left">{{ l.rounds|length }}</td>
+
+          <td class="text-left" style="white-space:nowrap;">
+            <!-- Si quieres mantener el link público, aquí es el sitio -->
+            <a class="link-gm" href="/public/leagues/{{ l.id }}">Ver público</a>
+
+            {% if not l.is_closed %}
+              <span style="color:#cbd5e1;"> | </span>
+              <form method="post"
+                    action="/admin/leagues/{{ l.id }}/close"
+                    style="display:inline;"
+                    onsubmit="return confirm('¿Finalizar esta liga?');">
+                <button type="submit"
+                        style="border:none; background:none; color:#14532d; cursor:pointer; padding:0; font-weight:800;">
+                  Finalizar liga
+                </button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+{% endblock %}
+

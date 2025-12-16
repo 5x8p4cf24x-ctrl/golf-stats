@@ -1,0 +1,81 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Panel admin · Golf Mode{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h2 style="margin-bottom:8px;">Panel administrador</h2>
+  <p style="margin:0; color:#4b5563; font-size:0.9rem;">
+    Gestiona jugadores, campos, rondas, ligas y logros.
+  </p>
+</section>
+
+<section class="admin-grid">
+
+  <div class="admin-card">
+    <h3>Jugadores</h3>
+    <p class="admin-card-text">Alta y edición de jugadores.</p>
+    <a class="btn-primary" href="/admin/players">Ir a jugadores</a>
+  </div>
+
+  <div class="admin-card">
+    <h3>Campos</h3>
+    <p class="admin-card-text">Gestión de campos y hoyos.</p>
+    <a class="btn-primary" href="/admin/courses">Ir a campos</a>
+  </div>
+
+  <div class="admin-card">
+    <h3>Rondas</h3>
+    <p class="admin-card-text">Listado y edición de rondas.</p>
+    <a class="btn-primary" href="/admin/rounds">Ir a rondas</a>
+  </div>
+
+  <div class="admin-card">
+    <h3>Nueva partida</h3>
+    <p class="admin-card-text">Crear una ronda nueva.</p>
+    <a class="btn-primary" href="/admin/rounds/new">Crear partida</a>
+  </div>
+
+  <div class="admin-card">
+    <h3>Ligas</h3>
+    <p class="admin-card-text">Gestión de ligas.</p>
+    <a class="btn-primary" href="/admin/leagues">Ir a ligas</a>
+  </div>
+
+  <div class="admin-card">
+    <h3>Catálogo de logros</h3>
+    <p class="admin-card-text">Crear y editar logros.</p>
+    <a class="btn-primary" href="/admin/achievements">Ir a logros</a>
+  </div>
+
+</section>
+
+<section class="admin-card" style="margin-top:24px;">
+  <h3>Logros por jugador</h3>
+
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th class="text-left">Jugador</th>
+        <th>HCP</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in players %}
+      <tr>
+        <td class="text-left">{{ p.name }}</td>
+        <td>{{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }}</td>
+        <td>
+          <a href="/admin/players/{{ p.id }}/achievements" class="link-gm">
+            Gestionar logros
+          </a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% endblock %}

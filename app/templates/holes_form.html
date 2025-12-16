@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Editar hoyos - {{ course.name }}</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Editar hoyos — {{ course.name }}</h1>
+    <p>Rellena los 18 hoyos (Par, HCP hoyo y metros amarillas).</p>
+
+    <section class="card">
+      <form method="post">
+        <table style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th>Hoyo</th>
+              <th>Par</th>
+              <th>HCP hoyo</th>
+              <th>Metros (Amarillas)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in range(1, 19) %}
+              {% set existing = holes_map.get(i) %}
+              <tr>
+                <td style="text-align:center;">{{ i }}</td>
+                <td>
+                  <input type="number" name="par_{{ i }}" min="3" max="5"
+                         value="{{ existing.par if existing else 4 }}" required>
+                </td>
+                <td>
+                  <input type="number" name="si_{{ i }}" min="1" max="18"
+                         value="{{ existing.stroke_index if existing else i }}" required>
+                </td>
+                <td>
+                  <input type="number" name="m_{{ i }}" min="0"
+                         value="{{ existing.meters_yellow if existing else '' }}">
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <br/>
+        <button type="submit">Guardar hoyos</button>
+      </form>
+    </section>
+
+    <p><a href="/admin/courses">Volver a campos</a></p>
+  </main>
+</body>
+</html>

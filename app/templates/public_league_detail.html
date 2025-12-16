@@ -1,0 +1,476 @@
+{% extends "public_base.html" %}
+
+{# ===== Donut data disponible en TODOS los blocks (content + scripts) ===== #}
+{% set hio      = (player_detail.hio if player_detail and player_detail.hio is not none else 0) %}
+{% set albatros = (player_detail.albatros if player_detail and player_detail.albatros is not none else 0) %}
+{% set eagles   = (player_detail.eagles if player_detail and player_detail.eagles is not none else 0) %}
+{% set birdies  = (player_detail.birdies if player_detail and player_detail.birdies is not none else 0) %}
+{% set pars     = (player_detail.pars if player_detail and player_detail.pars is not none else 0) %}
+{% set bogeys   = (player_detail.bogeys if player_detail and player_detail.bogeys is not none else 0) %}
+{% set dbl      = (player_detail.dbl if player_detail and player_detail.dbl is not none else 0) %}
+{% set overdbl  = (player_detail.overdbl if player_detail and player_detail.overdbl is not none else 0) %}
+
+{% set total_shots = hio + albatros + eagles + birdies + pars + bogeys + dbl + overdbl %}
+
+
+{% block title %}{{ league.name }} · Golf Mode{% endblock %}
+{% block container_class %}gm-wrap league-detail-page{% endblock %}
+
+{% block header %}
+  <!-- HEADER IGUAL A LIGAS -->
+  <header class="public-header">
+    <div>
+      <h1>{{ league.name }}</h1>
+      <p class="public-subtitle">
+        Estado:
+        {% if league.is_closed %}
+          Cerrada (clasificación definitiva)
+        {% else %}
+          Abierta (clasificaciones provisionales)
+        {% endif %}
+      </p>
+    </div>
+    <img src="/static/golfmode_logo.png" alt="Golf Mode" class="public-header-logo">
+  </header>
+{% endblock %}
+
+{% block content %}
+
+  <!-- CLASIFICACIÓN LIGA -->
+  <section class="card">
+    <h2>Clasificación liga</h2>
+
+    {% if standings.players_table|length == 0 %}
+      <p>No hay datos todavía en esta liga.</p>
+    {% else %}
+      <div class="summary-table-wrapper">
+        <table class="summary-table summary-league-table">
+          <thead>
+            <tr class="summary-header-row">
+              <th class="summary-metric-col col-player">Jugadores</th>
+              <th class="col-played">P.Jugados</th>
+              <th class="col-wins">P.Ganados</th>
+              <th class="col-ties">P.Empate</th>
+              <th class="col-gross">G.Brutos</th>
+              <th class="col-net">G.Netos</th>
+              <th class="col-stb">Ptos Stb.</th>
+              <th class="col-scr">Ptos Scr.</th>
+              <th class="col-avg">Med Golpes</th>
+              <th class="col-hcp">HCP Medio</th>
+              <th class="col-best">Mej. Vuelta</th>
+              <th class="col-leaguepoints">Ptos Liga</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for row in standings.players_table|sort(attribute='f1_points', reverse=True) %}
+            <tr>
+              <td class="summary-metric-col">{{ row.player.name }}</td>
+              <td>{{ row.rounds }}</td>
+              <td>{{ row.wins }}</td>
+              <td>{{ row.ties }}</td>
+              <td>{{ row.gross_total }}</td>
+
+              <td class="summary-kpi summary-league-highlight">{{ row.net_total }}</td>
+
+              <td>{{ row.stableford_total }}</td>
+
+              <td class="summary-kpi summary-league-highlight">{{ row.scratch_total }}</td>
+
+              <td>
+                {% if row.avg_gross %}{{ "%.1f"|format(row.avg_gross) }}{% else %}-{% endif %}
+              </td>
+              <td>
+                {% if row.level_hcp %}{{ "%.2f"|format(row.level_hcp) }}{% else %}-{% endif %}
+              </td>
+              <td>{{ row.best_gross or "-" }}</td>
+
+              <td class="summary-kpi summary-league-highlight">{{ "%.1f"|format(row.f1_points) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- DETALLE POR JUGADOR EN LA LIGA -->
+  <section class="card">
+    <h2>Detalle por jugador</h2>
+
+    {% if players_in_league|length == 0 %}
+      <p>No hay jugadores con vueltas en esta liga.</p>
+    {% else %}
+      <form method="get" action="" class="league-player-select">
+        <label>Jugador:</label>
+        <select name="player_id" onchange="this.form.submit()">
+          {% for p in players_in_league %}
+            <option value="{{ p.id }}" {% if p.id == selected_player_id %}selected{% endif %}>
+              {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+
+     
+
+        <div class="league-player-detail-grid">
+
+          <!-- COLUMNA 1 -->
+          <div class="league-player-panel">
+            <div class="league-player-photo">
+              {% if player_detail.player.photo_url %}
+                <img src="/static/{{ player_detail.player.photo_url }}" alt="{{ player_detail.player.name }}">
+              {% else %}
+                <div class="league-player-avatar-fallback">
+                  {{ player_detail.player.name[:2] | upper }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="league-player-name">{{ player_detail.player.name }}</div>
+            <div class="league-player-meta">
+              Partidos jugados: <strong>{{ player_detail.rounds }}</strong><br>
+              Victorias: <strong>{{ player_detail.wins }}</strong> ·
+              Empates: <strong>{{ player_detail.ties }}</strong>
+            </div>
+          </div>
+
+          <!-- COLUMNA 2 -->
+          <div class="league-block league-block--holes">
+            <h3>Golpes por hoyos</h3>
+
+            <table class="league-mini-table league-mini-table-shots">
+              <tbody>
+                <tr><th>HIO</th><td class="league-mini-value cell-hio">{{ hio }}</td></tr>
+                <tr><th>Albatros</th><td class="league-mini-value cell-albatros">{{ albatros }}</td></tr>
+                <tr><th>Eagle</th><td class="league-mini-value cell-eagle">{{ eagles }}</td></tr>
+                <tr><th>Birdie</th><td class="league-mini-value cell-birdie">{{ birdies }}</td></tr>
+                <tr><th>Par</th><td class="league-mini-value cell-par">{{ pars }}</td></tr>
+                <tr><th>Bogey</th><td class="league-mini-value cell-bogey">{{ bogeys }}</td></tr>
+                <tr><th>Doble bogey</th><td class="league-mini-value cell-dblbogey">{{ dbl }}</td></tr>
+                <tr><th>&gt; Doble bogey</th><td class="league-mini-value cell-overdbl">{{ overdbl }}</td></tr>
+
+                <tr class="row-separator"><td colspan="2"></td></tr>
+
+                <tr>
+                  <th>Puntos scratch</th>
+                  <td class="league-mini-value cell-scratch">{{ player_detail.scratch_points_total }}</td>
+                </tr>
+
+                <tr class="league-mini-total">
+                  <th>Hoyos jugados</th>
+                  <td class="league-mini-value">{{ total_shots }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- COLUMNA 3 -->
+          <div class="league-block league-block-chart">
+            <h3>Distribución porcentual</h3>
+
+            {% if total_shots > 0 %}
+              <div class="league-chart-wrapper">
+                <canvas id="leagueShotsChart"></canvas>
+              </div>
+            {% else %}
+              <p class="league-chart-empty">No hay suficientes hoyos para mostrar la distribución.</p>
+            {% endif %}
+
+            <div class="league-firgir-horizontal">
+              <div class="league-firgir-row">
+                <span class="league-firgir-label">FIR</span>
+                <div class="league-firgir-bar">
+                  {% if player_detail.fir_pct is not none %}
+                    <div class="league-firgir-fill fir" style="width: {{ '%.0f'|format(player_detail.fir_pct) }}%"></div>
+                  {% endif %}
+                </div>
+                <span class="league-firgir-value">
+                  {% if player_detail.fir_pct is not none %}{{ '%.0f'|format(player_detail.fir_pct) }}%{% else %}-{% endif %}
+                </span>
+              </div>
+
+              <div class="league-firgir-row">
+                <span class="league-firgir-label">GIR</span>
+                <div class="league-firgir-bar">
+                  {% if player_detail.gir_pct is not none %}
+                    <div class="league-firgir-fill gir" style="width: {{ '%.0f'|format(player_detail.gir_pct) }}%"></div>
+                  {% endif %}
+                </div>
+                <span class="league-firgir-value">
+                  {% if player_detail.gir_pct is not none %}{{ '%.0f'|format(player_detail.gir_pct) }}%{% else %}-{% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLUMNA 4 -->
+          <div class="league-block league-block--stats">
+            <h3>Estadísticas de golpes</h3>
+
+            <table class="league-mini-table-stats">
+              <tbody>
+                <tr><th>Med Par 3</th><td class="stats-value">{{ player_detail.avg_par3 is not none and ("%.2f"|format(player_detail.avg_par3)) or "-" }}</td></tr>
+                <tr><th>Med Par 4</th><td class="stats-value">{{ player_detail.avg_par4 is not none and ("%.2f"|format(player_detail.avg_par4)) or "-" }}</td></tr>
+                <tr><th>Med Par 5</th><td class="stats-value">{{ player_detail.avg_par5 is not none and ("%.2f"|format(player_detail.avg_par5)) or "-" }}</td></tr>
+                <tr><th>Med Golpes</th><td class="stats-value">{{ player_detail.avg_gross is not none and ("%.1f"|format(player_detail.avg_gross)) or "-" }}</td></tr>
+                <tr><th>Med G.Netos</th><td class="stats-value">{{ player_detail.avg_net is not none and ("%.1f"|format(player_detail.avg_net)) or "-" }}</td></tr>
+                <tr><th>Putts totales</th><td class="stats-value">{{ player_detail.total_putts or 0 }}</td></tr>
+                <tr><th>Putts/hoyo</th><td class="stats-value">{{ player_detail.putts_per_hole is not none and ("%.2f"|format(player_detail.putts_per_hole)) or "-" }}</td></tr>
+                <tr><th>Mejor vuelta</th><td class="stats-value">{{ player_detail.best_gross or "-" }}</td></tr>
+
+                <tr class="stats-row-separator"><td colspan="2"></td></tr>
+
+                <tr><th>HCP Medio</th><td class="stats-value stats-hcp-avg">{{ player_detail.level_hcp_avg is not none and ("%.1f"|format(player_detail.level_hcp_avg)) or "-" }}</td></tr>
+                <tr class="stats-hcp-current"><th>HCP actual</th><td class="stats-value">{{ player_detail.player.hcp_exact }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <h3 class="league-history-title">Vueltas jugador</h3>
+        {% if player_history|length == 0 %}
+          <p>No hay vueltas para este jugador en esta liga.</p>
+        {% else %}
+          <table class="league-history-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Campo</th>
+                <th>Hcp Jug.</th>
+                <th>Lvl Jug.</th>
+                <th>Golpes Br</th>
+                <th>Golpes Net</th>
+                <th>Pts HCP</th>
+                <th>Pts Scr</th>
+                <th>Putts</th>
+                <th>Resultado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in player_history %}
+              <tr>
+                <td>{{ h.date }}</td>
+                <td>{{ h.course }}</td>
+                <td>{{ h.course_hcp if h.course_hcp is not none else "-" }}</td>
+                <td>{% if h.level_hcp is not none %}{{ "%.1f"|format(h.level_hcp) }}{% else %}-{% endif %}</td>
+                <td>{{ h.gross }}</td>
+                <td>{{ h.net }}</td>
+                <td>{{ h.points }}</td>
+                <td>{{ h.scratch_points }}</td>
+                <td>{{ h.putts }}</td>
+                <td>
+                  {% if h.result == 'win' %}
+                    <span class="league-result-badge win">Win</span>
+                  {% elif h.result == 'tie' %}
+                    <span class="league-result-badge tie">Tie</span>
+                  {% elif h.result == 'loss' %}
+                    <span class="league-result-badge loss">Loss</span>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="league-history-link">
+                  <a href="/public/rounds/{{ h.round_id }}?league_id={{ league.id }}&player_id={{ selected_player_id }}">Ver vuelta</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+    {% endif %}
+  </section>
+
+  <!-- CAMPEONES DE LA LIGA -->
+  <section class="card league-champions-section">
+    <h2>Campeones de la liga</h2>
+
+    {% set champs_main = [] %}
+    {% if standings.main %}
+      {% set best_points = standings.main[0].points %}
+      {% set champs_main = standings.main | selectattr('points', 'equalto', best_points) | list %}
+    {% endif %}
+
+    {% set champs_net = [] %}
+    {% if standings.net %}
+      {% set best_avg_net = standings.net[0].avg_net %}
+      {% set champs_net = standings.net | selectattr('avg_net', 'equalto', best_avg_net) | list %}
+    {% endif %}
+
+    {% set champs_scr = [] %}
+    {% if standings.scratch %}
+      {% set best_scratch = standings.scratch[0].total_scratch %}
+      {% set champs_scr = standings.scratch | selectattr('total_scratch', 'equalto', best_scratch) | list %}
+    {% endif %}
+
+    {% if (not champs_main) and (not champs_net) and (not champs_scr) %}
+      <p>Todavía no hay suficientes vueltas para determinar campeones.</p>
+    {% else %}
+      <div class="league-champions-grid">
+
+        {% if champs_main %}
+        <article class="league-mini-card">
+          <div class="league-mini-left">
+            <div class="league-mini-title">LÍDER LIGA</div>
+            <div class="league-mini-description">Jugador con más puntos en la liga.</div>
+            <div class="league-mini-winners">
+              {% for row in champs_main %}<div class="winner-name">{{ row.player.name }}</div>{% endfor %}
+            </div>
+            <div class="league-mini-meta-pill">
+              Puntos: {{ "%.1f"|format(champs_main[0].points) }} · Vueltas: {{ champs_main[0].rounds }}
+            </div>
+          </div>
+          <div class="league-mini-right">
+            <img src="{{ url_for('static', path='img/TLigaT.png') }}">
+          </div>
+        </article>
+        {% endif %}
+
+        {% if champs_net %}
+        <article class="league-mini-card">
+          <div class="league-mini-left">
+            <div class="league-mini-title">LÍDER GOLPES</div>
+            <div class="league-mini-description">Jugador con menos golpes netos.</div>
+            <div class="league-mini-winners">
+              {% for row in champs_net %}<div class="winner-name">{{ row.player.name }}</div>{% endfor %}
+            </div>
+            <div class="league-mini-meta-pill">
+              Media netos: {{ "%.2f"|format(champs_net[0].avg_net) }} · Vueltas: {{ champs_net[0].rounds }}
+            </div>
+          </div>
+          <div class="league-mini-right">
+            <img src="{{ url_for('static', path='img/TGolpesT.png') }}">
+          </div>
+        </article>
+        {% endif %}
+
+        {% if champs_scr %}
+        <article class="league-mini-card">
+          <div class="league-mini-left">
+            <div class="league-mini-title">LÍDER PUNTOS</div>
+            <div class="league-mini-description">Jugador con más puntos scratch.</div>
+            <div class="league-mini-winners">
+              {% for row in champs_scr %}<div class="winner-name">{{ row.player.name }}</div>{% endfor %}
+            </div>
+            <div class="league-mini-meta-pill">
+              Pts scratch: {{ champs_scr[0].total_scratch }} · Vueltas: {{ champs_scr[0].rounds }}
+            </div>
+          </div>
+          <div class="league-mini-right">
+            <img src="{{ url_for('static', path='img/TPuntosT.png') }}">
+          </div>
+        </article>
+        {% endif %}
+
+      </div>
+    {% endif %}
+  </section>
+
+  <p class="public-back">
+    <a href="/public/leagues">← Volver al listado de ligas</a>
+  </p>
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <script>
+  (function () {
+    const canvas = document.getElementById('leagueShotsChart');
+    if (!canvas) return;
+
+    if (typeof Chart === "undefined") {
+      console.warn("Chart.js no cargado");
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    const values = [
+      {{ hio }},
+      {{ albatros }},
+      {{ eagles }},
+      {{ birdies }},
+      {{ pars }},
+      {{ bogeys }},
+      {{ dbl }},
+      {{ overdbl }}
+    ];
+
+    console.log("DONUT values:", values);
+
+    // Si todos son 0 → no dibujar
+    if (values.every(v => Number(v) === 0)) return;
+
+    const labels = [
+      'HIO', 'Albatros', 'Eagle', 'Birdie',
+      'Par', 'Bogey', 'Doble bogey', '> Doble bogey'
+    ];
+
+    if (typeof ChartDataLabels !== "undefined") {
+      Chart.register(ChartDataLabels);
+    }
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: [
+            '#ffc000',
+            '#ffe5b4',
+            '#fff7cc',
+            '#ffe4d6',
+            '#e2f0d9',
+            '#d9e1f2',
+            '#f2f2f2',
+            '#e0e0e0'
+          ],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: '50%',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed || 0;
+                const total = values.reduce((a, b) => a + b, 0) || 1;
+                const pct = (value * 100 / total).toFixed(1);
+                return `${label}: ${value} hoyos (${pct}%)`;
+              }
+            }
+          },
+          datalabels: (typeof ChartDataLabels === "undefined") ? false : {
+            color: "#111827",
+            font: { size: 10, weight: "500" },
+            formatter: function(value, ctx) {
+              const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+              if (!total) return "";
+              const pct = value * 100 / total;
+              if (pct < 3) return "";
+              return pct.toFixed(1) + "%";
+            },
+            anchor: "end",
+            align: "start",
+            offset: 4,
+            clamp: true
+          }
+        }
+      }
+    });
+  })();
+  </script>
+
+{% endblock %}

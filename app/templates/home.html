@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }}</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>{{ app_name }}</h1>
+    <p>Servidor funcionando ✅</p>
+
+    <!-- PRÓXIMOS MÓDULOS -->
+    <section class="card">
+      <h2>Próximos módulos</h2>
+      <ul>
+        <li>Jugadores</li>
+        <li>Campos</li>
+        <li>Nueva vuelta (Stableford)</li>
+        <li>Rankings</li>
+      </ul>
+    </section>
+
+    <!-- ÁREA DE ADMINISTRACIÓN -->
+    <section class="card">
+      <h2>Administración</h2>
+      <p><a href="/admin/leagues" style="font-size:1.1rem;">⚙️ Gestionar ligas</a></p>
+      <p><a href="/admin/players" style="font-size:1.1rem;">⚙️ Gestionar jugadores</a></p>
+      <p><a href="/admin/courses" style="font-size:1.1rem;">⚙️ Gestionar campos</a></p>
+      <p><a href="/admin/rounds" style="font-size:1.1rem;">📋 Gestionar vueltas</a></p>
+      <p><a href="/admin/rounds/new" style="font-size:1.1rem;">➕ Crear nueva vuelta</a></p>
+    </section>
+
+    <!-- ACCESO PÚBLICO -->
+    <section class="card">
+      <h2>Acceso público</h2>
+      <p>Consulta las vueltas y clasificaciones para compartir con tus amigos.</p>
+      <p><a href="/public/players" style="font-size:1.1rem;">➡️ Ver jugadores (público)</a></p>
+      <p><a href="/public/courses" style="font-size:1.1rem;">➡️ Ver campos (público)</a></p>
+      <p><a href="/public/rounds" style="font-size:1.1rem;">➡️ Ver vueltas (público)</a></p>
+      <p><a href="/public/rankings" style="font-size:1.1rem;">➡️ Ver rankings (público)</a></p>
+      <p><a href="/public/leagues" style="font-size:1.1rem;">➡️ Ver ligas (público)</a></p>
+    </section>
+
+  </main>
+</body>
+</html>

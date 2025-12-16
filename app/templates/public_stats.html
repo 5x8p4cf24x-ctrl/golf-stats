@@ -1,0 +1,227 @@
+{% extends "public_base.html" %}
+
+{% block title %}Estadísticas{% endblock %}
+{% block container_class %}container--wide{% endblock %}
+
+{% block header %}
+  <!-- HEADER (mismo estilo que el resto) -->
+  <header class="rounds-header">
+    <h1 class="rounds-title">Estadísticas</h1>
+    <img src="/static/golfmode_logo.png" class="rounds-logo" alt="Golf Mode">
+    <p class="rounds-subtitle">
+      Resumen global + visor de vueltas (tipo Excel) con filtros.
+    </p>
+  </header>
+
+  <!-- Volver FUERA del header (como querías) -->
+  <div class="stats-back-wrap">
+    <a class="stats-back" href="/public">← Volver</a>
+  </div>
+{% endblock %}
+
+{% block content %}
+
+{% macro rounds_table(rows, show_index=True) %}
+  <div class="stats-table-wrap">
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th class="c-n sticky">Nº</th>
+          <th class="c-date sticky2">Fecha</th>
+          <th class="c-course sticky3">Campo</th>
+          <th class="c-player sticky4">Jugador</th>
+          <th class="c-hcp num">HCP</th>
+          <th class="c-lvl num">Lvl&nbsp;J.</th>
+
+          {% for i in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18) %}
+            <th class="c-hole num">{{ i }}</th>
+          {% endfor %}
+
+          <th class="c-tot num">Tot</th>
+          <th class="c-pts num">Ptos</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for r in rows %}
+          <tr class="{% if rows|length == 1 %}best-row{% endif %}">
+            <td class="c-n sticky">{{ loop.index if show_index else "" }}</td>
+            <td class="c-date sticky2">{{ r["date"].strftime("%d/%m/%Y") if r["date"] else "-" }}</td>
+
+            <td class="c-course sticky3" title="{{ r['course_name'] }}">{{ r["course_name"] }}</td>
+
+            <td class="c-player sticky4" title="{{ r['player_name'] }}">
+              {% if r["player_id"] %}
+                <a class="stats-player-link" href="/players/{{ r['player_id'] }}">{{ r["player_name"] }}</a>
+              {% else %}
+                {{ r["player_name"] }}
+              {% endif %}
+            </td>
+
+            <td class="c-hcp num">{{ r["hcp"] if r["hcp"] is not none else "-" }}</td>
+            <td class="c-lvl num">{{ r["play_level"] if r["play_level"] is not none else "-" }}</td>
+
+            {% for i in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18) %}
+              {% set s = r["h" ~ i] %}
+              {% set p = hole_par_by_course.get(r["course_id"], {}).get(i) %}
+              {% set cls = "" %}
+
+              {% if s is not none and p is not none %}
+                {% if s == 1 %}
+                  {% set cls = "hio" %}
+                {% elif p - s >= 3 %}
+                  {% set cls = "alb" %}
+                {% elif p - s == 2 %}
+                  {% set cls = "eag" %}
+                {% elif p - s == 1 %}
+                  {% set cls = "bird" %}
+                {% elif s == p %}
+                  {% set cls = "par" %}
+                {% elif s - p == 1 %}
+                  {% set cls = "bogey" %}
+                {% elif s - p == 2 %}
+                  {% set cls = "dbl" %}
+                {% else %}
+                  {% set cls = "over" %}
+                {% endif %}
+              {% endif %}
+
+              <td class="c-hole {{ cls }}">{{ s if s is not none else "-" }}</td>
+            {% endfor %}
+
+            <td class="c-tot num">{{ r["total"] if r["total"] is not none else "-" }}</td>
+            <td class="c-pts num">{{ r["points"] if r["points"] is not none else "-" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endmacro %}
+
+  <!-- BLOQUE 1: FILTROS -->
+  <section class="card">
+    <form class="stats-filters" method="get" action="/public/stats">
+      <div class="stats-filter">
+        <label for="player_id">Jugador</label>
+        <select id="player_id" name="player_id">
+          <option value="">Todos</option>
+          {% for p in players %}
+            <option value="{{ p.id }}" {% if player_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="stats-filter">
+        <label for="course_id">Campo</label>
+        <select id="course_id" name="course_id">
+          <option value="">Todos</option>
+          {% for c in courses %}
+            <option value="{{ c.id }}" {% if course_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="stats-filter">
+        <label for="year">Año</label>
+        <select id="year" name="year">
+          <option value="">Todos</option>
+          {% for y in years %}
+            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button class="stats-apply" type="submit">Aplicar</button>
+    </form>
+  </section>
+
+  <!-- BLOQUE 2: KPIs -->
+  <section class="card">
+    <div class="stats-section-head">
+      <h2 class="stats-h2">Resumen</h2>
+      <span class="stats-chip">{{ stats["rounds_count"] }} vueltas</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Vueltas</div>
+        <div class="stat-value">{{ stats["rounds_count"] }}</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">HCP medio</div>
+        <div class="stat-value">
+          {{ "%.1f"|format(stats["avg_hcp"]) if stats["avg_hcp"] is not none else "-" }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Score medio (Gross)</div>
+        <div class="stat-value">
+          {{ "%.1f"|format(stats["avg_gross"]) if stats["avg_gross"] is not none else "-" }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Score medio (Neto)</div>
+        <div class="stat-value">
+          {{ "%.1f"|format(stats["avg_net"]) if stats["avg_net"] is not none else "-" }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">FIR</div>
+        <div class="stat-value">
+          {{ "%.0f"|format(stats["fir_pct"]) ~ "%" if stats["fir_pct"] is not none else "-" }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">GIR</div>
+        <div class="stat-value">
+          {{ "%.0f"|format(stats["gir_pct"]) ~ "%" if stats["gir_pct"] is not none else "-" }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Med Ptos Stb.</div>
+        <div class="stat-value">
+          {{ "%.1f"|format(stats["avg_stb"]) if stats["avg_stb"] is not none else "-" }}
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Birdies</div>
+        <div class="stat-value">{{ stats["birdies"] }}</div>
+      </div>
+    </div>
+  </section>
+
+  {% if best_round %}
+    <section class="card" style="margin-top:12px;">
+      <div class="stats-section-head">
+        <h2 class="stats-h2">Mejor vuelta</h2>
+        <div class="stats-chip">
+          {{ best_round["date"].strftime("%d/%m/%Y") if best_round["date"] else "" }}
+          · {{ best_round["course_name"] }}
+          · {{ best_round["player_name"] }}
+          · {{ best_round["points"] if best_round["points"] is not none else "-" }} ptos
+          · Tot {{ best_round["total"] if best_round["total"] is not none else "-" }}
+        </div>
+      </div>
+
+      {{ rounds_table([best_round], show_index=False) }}
+    </section>
+  {% endif %}
+
+  <!-- BLOQUE 3: TABLA VUELTAS -->
+  <section class="card">
+    <div class="stats-section-head">
+      <h2 class="stats-h2">Vueltas</h2>
+      <span class="stats-chip">{{ rounds|length }} filas</span>
+    </div>
+
+    {{ rounds_table(rounds, show_index=True) }}
+  </section>
+
+{% endblock %}

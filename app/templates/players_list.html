@@ -1,0 +1,63 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Jugadores{% endblock %}
+{% block header_title %}Jugadores{% endblock %}
+{% block header_subtitle %}Alta, edición y estado de jugadores.{% endblock %}
+
+{% block content %}
+
+<div style="margin: 10px 0 14px 0;">
+  <a class="btn-primary" href="/admin/players/new">+ Nuevo jugador</a>
+</div>
+
+<section class="card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th class="text-left">Foto</th>
+        <th class="text-left">Nombre</th>
+        <th class="text-left">Apodo</th>
+        <th class="text-left">Licencia</th>
+        <th class="text-left">HCP</th>
+        <th class="text-left">Activo</th>
+        <th class="text-left">Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for p in players %}
+      <tr>
+        <td>
+          {% if p.photo_url %}
+            <img src="/static/{{ p.photo_url }}" alt="Foto"
+                 style="width:40px; height:40px; object-fit:cover; border-radius:50%;">
+          {% else %}
+            <span style="color:#aaa;">-</span>
+          {% endif %}
+        </td>
+
+        <!-- OJO: el link de nombre iba al público (/players/{id}). En admin mejor NO salir -->
+        <td class="text-left"><strong>{{ p.name }}</strong></td>
+
+        <td class="text-left">{{ p.nickname or "" }}</td>
+        <td class="text-left">{{ p.license_number or "-" }}</td>
+        <td class="text-left">{{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }}</td>
+        <td class="text-left">{{ "Sí" if p.active else "No" }}</td>
+
+        <td class="text-left">
+          <a class="link-gm" href="/admin/players/{{ p.id }}/edit">Editar</a>
+          <span style="color:#cbd5e1;"> | </span>
+          <a class="link-gm" href="/admin/players/{{ p.id }}/delete"
+             onclick="return confirm('¿Eliminar jugador?')">Borrar</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<div style="margin-top:14px;">
+  <a class="link-gm" href="/admin">← Volver al panel admin</a>
+</div>
+
+{% endblock %}

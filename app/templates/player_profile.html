@@ -1,0 +1,397 @@
+{% extends "public_base.html" %}
+
+{% block title %}Perfil — {{ player.name }}{% endblock %}
+{% block container_class %}gm-wrap{% endblock %}
+
+{% block content %}
+
+  <!-- HEADER -->
+  <section class="card player-header">
+    <div class="player-header-main">
+      {% if player.photo_url %}
+        <img src="/static/{{ player.photo_url }}"
+             alt="Foto {{ player.name }}"
+             class="player-header-avatar">
+      {% endif %}
+
+      <div>
+        <h1 class="player-header-name">
+          {{ player.name }}
+          {% if player.nickname %}
+            <span class="player-nick-badge">{{ player.nickname }}</span>
+          {% endif %}
+        </h1>
+
+        <p class="player-header-meta">
+          HCP exacto actual: <strong>{{ "%.1f"|format(player.hcp_exact) }}</strong>
+          · Partidas jugadas: <strong>{{ rounds_played }}</strong>
+          {% if player.license_number %}
+            · Licencia: <strong>{{ player.license_number }}</strong>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="player-header-right">
+      <div class="badge win">Victorias: {{ wins }}</div>
+      <div class="badge tie">Empates: {{ ties }}</div>
+    </div>
+  </section>
+
+  <!-- Filtro de Año -->
+  <div class="player-filters-row">
+    <div class="player-year-filter">
+      <label for="yearSelect">Año</label>
+      <select id="yearSelect">
+        <option value="all">Todos</option>
+        {% for y in years_available %}
+          <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- KPI GRID -->
+  <section class="kpi-grid player-kpis">
+
+    <div class="kpi">
+      <div class="label">HCP medio de juego</div>
+      <div class="value">
+        {% if avg_play_hcp is not none %}{{ "%.1f"|format(avg_play_hcp) }}{% else %}-{% endif %}
+      </div>
+      <div class="sub">Media de HCP de juego</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Media golpes brutos</div>
+      <div class="value">{% if avg_gross is not none %}{{ "%.1f"|format(avg_gross) }}{% else %}-{% endif %}</div>
+      <div class="sub">Promedio por vuelta</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Media golpes netos</div>
+      <div class="value">{% if avg_net is not none %}{{ "%.1f"|format(avg_net) }}{% else %}-{% endif %}</div>
+      <div class="sub">Promedio por vuelta</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Media Ptos Stableford</div>
+      <div class="value">{% if avg_pts_hcp is not none %}{{ "%.1f"|format(avg_pts_hcp) }}{% else %}-{% endif %}</div>
+      <div class="sub">Puntos netos</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Media Ptos Scratch</div>
+      <div class="value">{% if avg_pts_scratch is not none %}{{ "%.1f"|format(avg_pts_scratch) }}{% else %}-{% endif %}</div>
+      <div class="sub">Puntos brutos</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Media putts totales</div>
+      <div class="value">{% if avg_putts is not none %}{{ "%.1f"|format(avg_putts) }}{% else %}-{% endif %}</div>
+      <div class="sub">Por vuelta</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Putts por hoyo</div>
+      <div class="value">{% if putts_per_hole is not none %}{{ "%.2f"|format(putts_per_hole) }}{% else %}-{% endif %}</div>
+      <div class="sub">Media global</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">FIR %</div>
+      <div class="value">{% if fir_pct is not none %}{{ "%.0f"|format(fir_pct) }}%{% else %}-{% endif %}</div>
+      <div class="sub">Calles en regulación</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">GIR %</div>
+      <div class="value">{% if gir_pct is not none %}{{ "%.0f"|format(gir_pct) }}%{% else %}-{% endif %}</div>
+      <div class="sub">Greenes en regulación</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Mejor vuelta</div>
+      <div class="value">{% if best_round_gross is not none %}{{ best_round_gross }}{% else %}-{% endif %}</div>
+      <div class="sub">Golpes brutos</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Nº Birdies</div>
+      <div class="value">{{ total_birdies }}</div>
+      <div class="sub">En todas las vueltas</div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Nº Eagles</div>
+      <div class="value">{% if total_eagles is not none %}{{ total_eagles }}{% else %}-{% endif %}</div>
+      <div class="sub">En todas las vueltas</div>
+    </div>
+
+  </section>
+
+  <!-- BLOQUE 3: ESTADÍSTICAS ESTILO LIGA -->
+  <section class="card">
+    <div class="player-league-grid">
+
+      <div class="player-league-block player-league-block--trend">
+        <h2>Evolución últimas vueltas</h2>
+
+        {% if last10_gross is defined and last10_gross|length >= 1 %}
+          <div class="player-trend-wrapper">
+            <canvas id="grossTrendChart"></canvas>
+          </div>
+        {% else %}
+          <p class="player-note">No hay suficientes vueltas…</p>
+        {% endif %}
+      </div>
+
+      <div class="player-league-block player-league-block--parstats">
+        <h2>Medias por par</h2>
+
+        <div class="par-kpis">
+          <div class="par-kpi">
+            <div class="par-kpi-label">Par 3</div>
+            <div class="par-kpi-value">{{ "%.2f"|format(par_stats.avg_par3) if par_stats.avg_par3 is not none else "-" }}</div>
+          </div>
+          <div class="par-kpi">
+            <div class="par-kpi-label">Par 4</div>
+            <div class="par-kpi-value">{{ "%.2f"|format(par_stats.avg_par4) if par_stats.avg_par4 is not none else "-" }}</div>
+          </div>
+          <div class="par-kpi">
+            <div class="par-kpi-label">Par 5</div>
+            <div class="par-kpi-value">{{ "%.2f"|format(par_stats.avg_par5) if par_stats.avg_par5 is not none else "-" }}</div>
+          </div>
+        </div>
+
+        <div class="par-big-donuts">
+          <div class="big-donut">
+            <div class="big-donut-ring fir" style="--target: {{ '%.0f'|format(fir_pct) if fir_pct is not none else 0 }};">
+              <div class="big-donut-center">
+                <div class="big-donut-label">FIR</div>
+                <div class="big-donut-value">{% if fir_pct is not none %}{{ '%.0f'|format(fir_pct) }}%{% else %}-{% endif %}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="big-donut">
+            <div class="big-donut-ring gir" style="--target: {{ '%.0f'|format(gir_pct) if gir_pct is not none else 0 }};">
+              <div class="big-donut-center">
+                <div class="big-donut-label">GIR</div>
+                <div class="big-donut-value">{% if gir_pct is not none %}{{ '%.0f'|format(gir_pct) }}%{% else %}-{% endif %}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="player-league-block player-league-block--donut">
+        <h2>Distribución porcentual</h2>
+
+        {% if stats_results is defined %}
+          <div class="player-donut-split">
+            <div class="player-donut-wrapper">
+              <canvas id="playerShotsChart"></canvas>
+            </div>
+            <div id="playerShotsLegend" class="player-donut-legend"></div>
+          </div>
+        {% else %}
+          <p class="player-note">Aún no hay datos suficientes para mostrar la distribución.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </section>
+
+  <!-- LOGROS -->
+  <section class="card player-achievements-card">
+    <h2>Logros</h2>
+
+    {% if achievements and achievements|length > 0 %}
+      <div class="player-achievements-grid">
+        {% for ach in achievements %}
+          <div class="player-achievement-card {% if ach.unlocked %}unlocked{% else %}locked{% endif %}">
+            <div class="player-achievement-icon">
+              {% if ach.icon %}
+                <img src="/static/{{ ach.icon }}" alt="{{ ach.name }}">
+              {% else %}
+                <span>🏆</span>
+              {% endif %}
+            </div>
+            <div class="player-achievement-name">{{ ach.name }}</div>
+            {% if ach.description %}
+              <div class="player-achievement-desc">{{ ach.description }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="font-size:0.85rem; color:#6b7280;">Todavía no hay logros configurados.</p>
+    {% endif %}
+  </section>
+
+  <p style="margin-top:14px;">
+    <a href="/public/players" style="color:#14532d; font-weight:600;">← Volver a jugadores</a>
+  </p>
+
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.getElementById("yearSelect").addEventListener("change", function () {
+      const v = this.value;
+      const base = "/players/{{ player.id }}";
+      if (v === "all") window.location.href = base;
+      else window.location.href = base + "?year=" + encodeURIComponent(v);
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (typeof Chart === "undefined") return;
+
+    if (typeof ChartDataLabels !== "undefined") {
+      Chart.register(ChartDataLabels);
+    }
+
+    {% if stats_results is defined %}
+    (function () {
+      const canvas = document.getElementById("playerShotsChart");
+      if (!canvas) return;
+
+      const labels = ["HIO","Albatros","Eagle","Birdie","Par","Bogey","Doble bogey","> Doble bogey"];
+      const values = [
+        {{ stats_results.hio or 0 }},
+        {{ stats_results.albatros or 0 }},
+        {{ stats_results.eagles or 0 }},
+        {{ stats_results.birdies or 0 }},
+        {{ stats_results.pars or 0 }},
+        {{ stats_results.bogeys or 0 }},
+        {{ stats_results.dbl or 0 }},
+        {{ stats_results.overdbl or 0 }}
+      ];
+      if (values.every(v => v === 0)) return;
+
+      const colors = ['#ffc000','#ffe5b4','#fff7cc','#ffe4d6','#e2f0d9','#d9e1f2','#f2f2f2','#e0e0e0'];
+      const labelMap = { "Doble bogey": "Db.Bogey", "> Doble bogey": ">Db.Bogey" };
+
+      const legendEl = document.getElementById("playerShotsLegend");
+      if (legendEl) {
+        legendEl.innerHTML = labels.map((name, i) => {
+          const v = values[i] || 0;
+          const displayName = labelMap[name] || name;
+          return `
+            <div class="player-donut-legend-item">
+              <span class="player-donut-legend-swatch" style="background:${colors[i]}"></span>
+              <span class="player-donut-legend-name">${displayName}</span>
+              <span class="player-donut-legend-val">${v}</span>
+            </div>
+          `;
+        }).join("");
+      }
+
+      new Chart(canvas.getContext("2d"), {
+        type: "doughnut",
+        data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
+        options: {
+          cutout: "50%",
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 900, easing: "easeOutCubic", animateRotate: true, animateScale: true },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  const total = ctx.dataset.data.reduce((a,b)=>a+b,0) || 1;
+                  const pct = (ctx.parsed * 100 / total).toFixed(1);
+                  return `${ctx.label}: ${ctx.parsed} hoyos (${pct}%)`;
+                }
+              }
+            },
+            datalabels: typeof ChartDataLabels === "undefined" ? undefined : {
+              color: "#111827",
+              font: { size: 10, weight: "500" },
+              formatter: function (value, ctx) {
+                const total = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+                if (!total) return "";
+                const pct = value * 100 / total;
+                if (pct < 3) return "";
+                return pct.toFixed(1) + "%";
+              },
+              anchor: "end",
+              align: "start",
+              offset: 4,
+              clamp: true
+            }
+          }
+        }
+      });
+    })();
+    {% endif %}
+
+    {% if last10_gross is defined and last10_gross|length >= 1 %}
+    (function () {
+      const canvas = document.getElementById("grossTrendChart");
+      if (!canvas || typeof Chart === "undefined") return;
+
+      const dates = [{% for r in last10_gross %}"{{ r.date }}"{% if not loop.last %},{% endif %}{% endfor %}];
+      const courses = [{% for r in last10_gross %}"{{ r.course|default('')|replace('"','') }}"{% if not loop.last %},{% endif %}{% endfor %}];
+      const values = [{% for r in last10_gross %}{{ r.gross }}{% if not loop.last %},{% endif %}{% endfor %}];
+      const labels = values.map((_, i) => (i + 1).toString());
+
+      const bestValue = Math.min(...values);
+      const bgColors = values.map(v => v === bestValue ? "rgba(34, 197, 94, 0.55)" : "rgba(20, 83, 45, 0.25)");
+
+      const minVal = Math.min(...values);
+      const maxVal = Math.max(...values);
+      const pad = 2;
+
+      let yMin = 80, yMax = 120;
+      if (minVal < yMin) yMin = Math.floor((minVal - pad) / 5) * 5;
+      if (maxVal > yMax) yMax = Math.ceil((maxVal + pad) / 5) * 5;
+      if (yMax - yMin < 20) yMax = yMin + 20;
+
+      new Chart(canvas.getContext("2d"), {
+        type: "bar",
+        data: { labels, datasets: [{ data: values, borderRadius: 10, barThickness: 18, maxBarThickness: 22, backgroundColor: bgColors, borderWidth: 0 }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: { top: 20, bottom: 10 } },
+          animation: { duration: 600, easing: "easeOutQuart" },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: (items) => {
+                  const i = items[0].dataIndex;
+                  const c = courses[i] ? ` · ${courses[i]}` : "";
+                  return `${dates[i]}${c}`;
+                },
+                label: (ctx) => `Gross: ${ctx.parsed.y}`
+              }
+            },
+            datalabels: {
+              anchor: "end",
+              align: "end",
+              offset: 4,
+              color: "#14532d",
+              font: { size: 11, weight: "600" },
+              formatter: (v) => v
+            }
+          },
+          scales: {
+            x: { display: false, grid: { display: false } },
+            y: { min: yMin, max: yMax, grid: { display: false }, ticks: { stepSize: 5, autoSkip: false, precision: 0 } }
+          }
+        }
+      });
+    })();
+    {% endif %}
+  });
+  </script>
+{% endblock %}

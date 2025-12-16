@@ -1,0 +1,109 @@
+{% extends "public_base.html" %}
+
+{% block title %}Rondas · Golf Mode{% endblock %}
+
+{# Mantienes tu wrapper actual para no romper CSS #}
+{% block container_class %}gm-wrap rounds-page{% endblock %}
+
+{% block header %}
+  <!-- HEADER -->
+  <header class="rounds-header">
+    <h1 class="rounds-title">Rondas</h1>
+    <img src="/static/golfmode_logo.png" class="rounds-logo" alt="Golf Mode">
+
+    <p class="rounds-subtitle">
+      Lista de rondas jugadas. Filtra por campo, jugador o fecha para ver el historial.
+    </p>
+  </header>
+{% endblock %}
+
+{% block content %}
+
+  <!-- FILTROS -->
+  <section class="rounds-filters">
+    <form method="get" class="rounds-filters-form">
+
+      <!-- Campo -->
+      <label>Campo:</label>
+      <select name="course_id">
+        <option value="">Todos</option>
+        {% for c in courses %}
+          <option value="{{ c.id }}" {% if selected_course == c.id %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <!-- Jugador -->
+      <label>Jugador:</label>
+      <select name="player_id">
+        <option value="">Todos</option>
+        {% for p in players %}
+          <option value="{{ p.id }}" {% if selected_player == p.id %}selected{% endif %}>
+            {{ p.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <!-- Año -->
+      <label>Año:</label>
+      <input type="number" name="year" value="{{ selected_year or '' }}" placeholder="2025">
+
+      <!-- Mes -->
+      <label>Mes:</label>
+      <select name="month">
+        <option value="">Todos</option>
+        {% for m in range(1,13) %}
+          <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+
+      <button type="submit">Aplicar</button>
+
+      {% if selected_course or selected_player or selected_year or selected_month %}
+        <a href="/public/rounds" class="rounds-clear-filter">Limpiar filtro</a>
+      {% endif %}
+    </form>
+  </section>
+
+  <!-- LISTA DE RONDAS -->
+  <section class="rounds-list">
+    {% for r in rounds %}
+      <a href="/public/rounds/{{ r.id }}" class="round-item">
+
+        <div class="round-course-avatar">
+          {% if r.course.logo_url %}
+            <img src="/static/{{ r.course.logo_url }}">
+          {% else %}
+            <span>{{ r.course.name[0] }}</span>
+          {% endif %}
+        </div>
+
+        <div class="round-info">
+          <div class="round-info-top">
+            <span class="round-date">{{ r.date }}</span>
+          </div>
+
+          <div class="round-field">{{ r.course.name }}</div>
+
+          <div class="round-players">
+            {% for rp in r.round_players %}
+              {{ rp.player.name }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- CHIP DERECHA -->
+        <div class="round-type-chip {{ r.type }}">
+          {{ r.type }}
+        </div>
+
+      </a>
+    {% endfor %}
+  </section>
+
+  <p class="rounds-back">
+    <a href="/public">← Volver al inicio</a>
+  </p>
+
+{% endblock %}

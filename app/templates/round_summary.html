@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Resumen vuelta</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+<main class="container">
+<h1>Resumen vuelta — {{ course.name }}</h1>
+<p>Fecha: {{ round.date }} | Tee: {{ round.tee }} | Tipo: {{ round.type }}</p>
+
+
+{% if winner_names and winner_names|length > 0 %}
+  <section class="card">
+    {% if winner_names|length == 1 %}
+      <h2>🏆 Ganador</h2>
+    {% else %}
+      <h2>🤝 Empate en primera posición</h2>
+    {% endif %}
+
+    <p>{{ winner_names | join(", ") }}</p>
+  </section>
+{% endif %}
+
+
+  <section class="card">
+    <h2>Estadísticas completas</h2>
+
+    <table style="width:100%; text-align:center; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;">Jugador</th>
+          <th>CH</th>
+          <th>Gross</th>
+          <th>Neto</th>
+          <th>Pts HCP</th>
+          <th>Pts Scr</th>
+          <th>Putts</th>
+          <th>Putt/Hoyo</th>
+          <th>Nivel juego (HCP)</th>
+          <th>FIR</th>
+          <th>GIR</th>
+          <th>HIO</th>
+          <th>Alb.</th>
+          <th>Eag.</th>
+          <th>Bird</th>
+          <th>Par</th>
+          <th>Bogey</th>
+          <th>Dbl</th>
+          <th>+Dbl</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in results %}
+        <tr>
+          <td style="text-align:left;">
+            <a href="/players/{{ s.player.id }}">{{ s.player.name }}</a>
+          </td>
+
+          <td>{{ s.course_handicap }}</td>
+          <td>{{ s.gross_total or "-" }}</td>
+          <td>{{ s.net_total or "-" }}</td>
+          <td>{{ s.points or "-" }}</td>
+          <td>{{ s.scratch_points or "-" }}</td>
+          <td>{{ s.putts or "-" }}</td>
+
+          <td>{{ "%.2f"|format(s.putts_per_hole) if s.putts_per_hole else "-" }}</td>
+          <td>{{ "%.1f"|format(s.level_hcp) if s.level_hcp else "-" }}</td>
+
+          <td>
+            {{ s.fir }} / {{ s.fir_possible }}
+            <br>({{ "%.0f"|format(s.fir_pct) if s.fir_pct else "-" }}%)
+          </td>
+          <td>
+            {{ s.gir }} / {{ s.gir_possible }}
+            <br>({{ "%.0f"|format(s.gir_pct) if s.gir_pct else "-" }}%)
+          </td>
+
+          <td>{{ s.hio }}</td>
+          <td>{{ s.albatros }}</td>
+          <td>{{ s.eagles }}</td>
+          <td>{{ s.birdies }}</td>
+          <td>{{ s.pars }}</td>
+          <td>{{ s.bogeys }}</td>
+          <td>{{ s.dbl }}</td>
+          <td>{{ s.overdbl }}</td>
+          <td>
+            <a href="/admin/rounds/{{ round.id }}/player/{{ s.rp_id }}/card">
+              Editar tarjeta
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <p><a href="/admin/rounds/new">+ Nueva vuelta</a></p>
+  <p><a href="/admin/rounds">Volver a gestionar vueltas</a></p>
+
+</main>
+</body>
+</html>

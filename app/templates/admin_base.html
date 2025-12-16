@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Admin · Golf Mode{% endblock %}</title>
+
+  <!-- Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/styles.css" />
+  {% block head_extra %}{% endblock %}
+</head>
+
+<body class="gm-body">
+<main class="gm-wrap {% block container_class %}{% endblock %}">
+
+  <!-- HEADER ADMIN -->
+  <header class="admin-header">
+    <div>
+      <h1 class="admin-title">{% block header_title %}Panel administrador{% endblock %}</h1>
+      <p class="admin-sub">{% block header_subtitle %}{% endblock %}</p>
+    </div>
+    <img src="/static/golfmode_logo.png" class="admin-logo" alt="Golf Mode">
+  </header>
+  {% set p = request.url.path %}
+
+  <!-- NAV ADMIN -->
+  <nav class="admin-nav card">
+    <a href="/admin" class="admin-nav-item {{ 'is-active' if p == '/admin' else '' }}">
+      Dashboard
+    </a>
+
+    <a href="/admin/players" class="admin-nav-item {{ 'is-active' if p.startswith('/admin/players') else '' }}">
+      Jugadores
+    </a>
+
+    <a href="/admin/courses" class="admin-nav-item {{ 'is-active' if p.startswith('/admin/courses') else '' }}">
+      Campos
+    </a>
+
+    <a href="/admin/rounds" class="admin-nav-item {{ 'is-active' if p.startswith('/admin/rounds') else '' }}">
+      Rondas
+    </a>
+
+    <a href="/admin/leagues" class="admin-nav-item {{ 'is-active' if p.startswith('/admin/leagues') else '' }}">
+      Ligas
+    </a>
+    <a href="/admin/rounds/new" class="admin-nav-item admin-nav-item--primary {{ 'is-active' if p == '/admin/rounds/new' else '' }}">
+      + Nueva partida
+    </a>
+
+    <a href="/admin/achievements" class="admin-nav-item {{ 'is-active' if p.startswith('/admin/achievements') else '' }}">
+      Logros
+    </a>
+
+    <a href="/" class="admin-nav-item admin-nav-item--ghost admin-nav-item--push-right">Admin antiguo →</a>
+    <a href="/public" class="admin-nav-item admin-nav-item--ghost">Ver público →</a>
+  </nav>
+
+
+
+
+  {% block content %}{% endblock %}
+
+  
+</main>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

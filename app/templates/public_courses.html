@@ -1,0 +1,85 @@
+{% extends "public_base.html" %}
+
+{% block title %}Campos · Golf Mode{% endblock %}
+
+{# Mantienes tu wrapper actual para no romper CSS #}
+{% block container_class %}gm-wrap courses-page{% endblock %}
+
+{% block header %}
+  <!-- HEADER CAMPOS: título + logo derecha -->
+  <header class="courses-header">
+    <h1 class="courses-title">Campos</h1>
+
+    <img src="/static/golfmode_logo.png" class="courses-logo" alt="Golf Mode">
+
+    <p class="courses-subtitle">
+      Listado de campos disponibles. Haz clic para ver el detalle hoyo a hoyo.
+    </p>
+  </header>
+{% endblock %}
+
+{% block content %}
+
+  <!-- FILTRO POR CIUDAD -->
+  <section class="courses-filters">
+    <form method="get" class="courses-filters-form">
+      <label for="city">Filtrar por ciudad:</label>
+
+      <select name="city" id="city">
+        <option value="">Todas</option>
+        {% for c in cities %}
+          <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+
+      <button type="submit">Aplicar</button>
+
+      {% if selected_city %}
+        <a href="/public/courses" class="courses-clear-filter">Limpiar filtro</a>
+      {% endif %}
+    </form>
+  </section>
+
+  <!-- GRID DE CAMPOS -->
+  <section class="courses-grid">
+    {% for c in courses %}
+      <a href="/public/courses/{{ c.id }}" class="course-card">
+
+        {% if c.logo_url %}
+          <div class="course-logo-box">
+            <img src="/static/{{ c.logo_url }}" alt="Logo {{ c.name }}">
+          </div>
+        {% else %}
+          <div class="course-logo-box course-logo-box--fallback">
+            <span>{{ c.name[0] }}</span>
+          </div>
+        {% endif %}
+
+        <div class="course-info">
+          <div class="course-name">{{ c.name }}</div>
+
+          <div class="course-meta">
+            {{ c.city or "Ciudad desconocida" }}
+          </div>
+
+          <div class="course-meta">
+            Par {{ c.par_total }}
+            {% if c.meters_total %}
+              · {{ c.meters_total }} m
+            {% endif %}
+          </div>
+
+          <div class="course-link">
+            Ver detalle →
+          </div>
+        </div>
+
+      </a>
+    {% endfor %}
+  </section>
+
+  <p class="courses-back">
+    <a href="/public">← Volver al inicio</a>
+  </p>
+
+{% endblock %}

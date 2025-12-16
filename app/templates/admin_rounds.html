@@ -1,0 +1,71 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Rondas{% endblock %}
+{% block header_title %}Rondas{% endblock %}
+{% block header_subtitle %}Listado, resumen y borrado de vueltas.{% endblock %}
+
+{% block content %}
+
+<div style="margin: 10px 0 14px 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+  <a class="btn-primary" href="/admin/rounds/new">+ Nueva vuelta</a>
+  <a class="link-gm" href="/admin">← Volver al panel admin</a>
+</div>
+
+<section class="card">
+  {% if rounds|length == 0 %}
+    <p>No hay vueltas registradas todavía.</p>
+  {% else %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th class="text-left">Fecha</th>
+          <th class="text-left">Campo</th>
+          <th class="text-left">Tipo</th>
+          <th class="text-left">Liga</th>
+          <th class="text-left">Jugadores</th>
+          <th class="text-left">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for r in rounds %}
+        <tr>
+          <td class="text-left">{{ r.date }}</td>
+          <td class="text-left">{{ r.course.name }}</td>
+
+          <td class="text-left">
+            {% if r.type == "liga" %}Liga{% else %}Amistosa{% endif %}
+          </td>
+
+          <td class="text-left">
+            {% if r.league %}{{ r.league.name }}{% else %}-{% endif %}
+          </td>
+
+          <td class="text-left">
+            {% for rp in r.round_players %}
+              {{ rp.player.name }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+
+          <td class="text-left" style="white-space:nowrap;">
+            <a class="link-gm" href="/admin/rounds/{{ r.id }}/summary">Resumen</a>
+            <span style="color:#cbd5e1;"> | </span>
+
+            <form action="/admin/rounds/{{ r.id }}/delete"
+                  method="post"
+                  style="display:inline;"
+                  onsubmit="return confirm('¿Eliminar esta vuelta?');">
+              <button type="submit"
+                      style="border:none; background:none; color:#ef4444; cursor:pointer; padding:0; font-weight:700;">
+                Borrar
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+{% endblock %}

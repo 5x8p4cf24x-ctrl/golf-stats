@@ -1,0 +1,76 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Campos{% endblock %}
+{% block header_title %}Campos{% endblock %}
+{% block header_subtitle %}Gestión de campos, hoyos y datos de juego.{% endblock %}
+
+{% block content %}
+
+<div style="margin: 10px 0 14px 0;">
+  <a class="btn-primary" href="/admin/courses/new">+ Nuevo campo</a>
+</div>
+
+<!-- FILTRO POR CIUDAD -->
+<section class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <label for="city" style="font-weight:700;">Filtrar por ciudad:</label>
+
+    <select name="city" id="city">
+      <option value="">Todas</option>
+      {% for c in cities %}
+        <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+
+    <button class="btn-primary" type="submit">Aplicar</button>
+
+    {% if selected_city %}
+      <a class="link-gm" href="/admin/courses" style="margin-left:8px;">Limpiar filtro</a>
+    {% endif %}
+  </form>
+</section>
+
+<!-- LISTA DE CAMPOS -->
+<section class="card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th class="text-left">Nombre</th>
+        <th class="text-left">Ciudad</th>
+        <th style="text-align:right;">Par</th>
+        <th style="text-align:right;">Metros</th>
+        <th style="text-align:right;">Slope</th>
+        <th style="text-align:right;">Rating</th>
+        <th class="text-left">Acciones</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for c in courses %}
+      <tr>
+        <td class="text-left"><strong>{{ c.name }}</strong></td>
+        <td class="text-left">{{ c.city or "" }}</td>
+        <td style="text-align:right;">{{ c.par_total }}</td>
+        <td style="text-align:right;">{{ c.meters_total or "-" }}</td>
+        <td style="text-align:right;">{{ c.slope_yellow }}</td>
+        <td style="text-align:right;">{{ "%.1f"|format(c.rating_yellow) }}</td>
+
+        <td class="text-left" style="white-space:nowrap;">
+          <a class="link-gm" href="/admin/courses/{{ c.id }}/holes">Hoyo a hoyo</a>
+          <span style="color:#cbd5e1;"> | </span>
+          <a class="link-gm" href="/admin/courses/{{ c.id }}/edit">Editar</a>
+          <span style="color:#cbd5e1;"> | </span>
+          <a class="link-gm" href="/admin/courses/{{ c.id }}/delete"
+             onclick="return confirm('¿Eliminar campo?')">Borrar</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<div style="margin-top:14px;">
+  <a class="link-gm" href="/admin">← Volver al panel admin</a>
+</div>
+
+{% endblock %}

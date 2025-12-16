@@ -1,0 +1,89 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Logros{% endblock %}
+{% block header_title %}Logros{% endblock %}
+{% block header_subtitle %}Crear, editar y eliminar logros del sistema.{% endblock %}
+
+{% block content %}
+
+<!-- CREAR NUEVO LOGRO -->
+<section class="card" style="margin-bottom:16px;">
+  <h2 style="margin-bottom:10px;">Nuevo logro</h2>
+
+  <form method="post"
+        action="/admin/achievements/new"
+        style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+
+    <input name="name" placeholder="Nombre del logro" required>
+    <input name="description" placeholder="Descripción">
+    <input name="icon" placeholder="iconos/logro1.png">
+
+    <button class="btn-primary" type="submit">Crear</button>
+
+    <a class="link-gm" href="/admin" style="margin-left:auto;">
+      ← Volver al panel admin
+    </a>
+  </form>
+</section>
+
+<!-- LISTADO DE LOGROS -->
+<section class="card">
+  <h2 style="margin-bottom:10px;">Logros existentes</h2>
+
+  {% if achievements|length == 0 %}
+    <p>No hay logros todavía.</p>
+  {% else %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th class="text-left">Nombre</th>
+          <th class="text-left">Descripción</th>
+          <th class="text-left">Icono</th>
+          <th class="text-left">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for a in achievements %}
+        <tr>
+          <!-- FORM EDIT -->
+          <form method="post" action="/admin/achievements/{{ a.id }}/edit">
+            <td class="text-left">
+              <input name="name" value="{{ a.name }}">
+            </td>
+
+            <td class="text-left">
+              <input name="description" value="{{ a.description }}">
+            </td>
+
+            <td class="text-left">
+              <input name="icon" value="{{ a.icon }}">
+            </td>
+
+            <td class="text-left" style="white-space:nowrap;">
+              <button type="submit"
+                      class="btn-primary"
+                      style="padding:6px 10px;">
+                Guardar
+              </button>
+          </form>
+
+          <!-- FORM DELETE -->
+          <form method="post"
+                action="/admin/achievements/{{ a.id }}/delete"
+                style="display:inline;"
+                onsubmit="return confirm('¿Eliminar este logro?');">
+            <button type="submit"
+                    style="border:none; background:none; color:#dc2626; font-weight:800; cursor:pointer; margin-left:8px;">
+              Eliminar
+            </button>
+          </form>
+            </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+{% endblock %}

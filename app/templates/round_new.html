@@ -1,0 +1,109 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Nueva vuelta{% endblock %}
+{% block header_title %}Nueva vuelta{% endblock %}
+{% block header_subtitle %}Crea una vuelta amistosa o de liga y añade jugadores.{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <form method="post">
+
+    <!-- FECHA -->
+    <label style="font-weight:700;">Fecha</label><br/>
+    <input type="date" name="date" required><br/><br/>
+
+    <!-- CAMPO -->
+    <label style="font-weight:700;">Campo</label><br/>
+    <select name="course_id" required>
+      {% for c in courses %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+      {% endfor %}
+    </select><br/><br/>
+
+    <!-- TEE -->
+    <label style="font-weight:700;">Tee</label><br/>
+    <select name="tee">
+      <option value="yellow">Amarillas</option>
+      <option value="white">Blancas</option>
+      <option value="red">Rojas</option>
+    </select><br/><br/>
+
+    <!-- TIPO DE PARTIDO -->
+    <label style="font-weight:700;">Tipo de partido</label><br/>
+    <select name="match_type">
+      <option value="">Partido amistoso</option>
+      {% for l in leagues %}
+        <option value="{{ l.id }}">Liga: {{ l.name }}</option>
+      {% endfor %}
+    </select>
+    <br/><br/>
+
+    <!-- JUGADORES -->
+    <label style="font-weight:700;">Jugadores</label><br/>
+    <p style="font-size:0.9rem; color:#6b7280; margin-top:6px;">
+      Añade todos los jugadores que participan en esta vuelta.
+    </p>
+
+    <table class="admin-table" style="margin-top:8px;">
+      <thead>
+        <tr>
+          <th class="text-left">Jugador</th>
+          <th style="width:80px;"></th>
+        </tr>
+      </thead>
+
+      <tbody id="players-tbody">
+        <tr>
+          <td class="text-left">
+            <select name="player_ids" required>
+              <option value="">- Selecciona jugador -</option>
+              {% for p in players %}
+                <option value="{{ p.id }}">{{ p.name }} ({{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }})</option>
+              {% endfor %}
+            </select>
+          </td>
+
+          <td style="text-align:right;">
+            <button type="button" onclick="removeRow(this)" title="Eliminar fila">🗑</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button type="button" onclick="addPlayerRow()" style="margin-top:10px;">
+      + Añadir jugador
+    </button>
+
+    <br/><br/>
+
+    <button class="btn-primary" type="submit">Crear vuelta</button>
+    <a class="link-gm" href="/admin/rounds" style="margin-left:12px;">← Volver a rondas</a>
+
+  </form>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function addPlayerRow() {
+    const tbody = document.getElementById('players-tbody');
+    const firstRow = tbody.querySelector('tr');
+
+    const newRow = firstRow.cloneNode(true);
+
+    const select = newRow.querySelector('select[name="player_ids"]');
+    if (select) select.value = "";
+
+    tbody.appendChild(newRow);
+  }
+
+  function removeRow(button) {
+    const tbody = document.getElementById('players-tbody');
+    if (tbody.rows.length <= 1) return; // siempre dejamos una fila
+    const row = button.closest('tr');
+    tbody.removeChild(row);
+  }
+</script>
+{% endblock %}

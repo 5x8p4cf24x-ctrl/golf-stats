@@ -1,0 +1,142 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Tarjeta — {{ player.name }}{% endblock %}
+{% block header_title %}Tarjeta — {{ player.name }}{% endblock %}
+{% block header_subtitle %}
+  Campo: {{ course.name }} · Fecha: {{ round.date }} · Tee: {{ round.tee }}
+{% endblock %}
+
+{% block content %}
+
+<form id="score_form" method="post" action="/admin/rounds/{{ round.id }}/player/{{ rp.id }}/card">
+
+  <div class="admin-toolbar">
+    <div class="admin-toolbar-left">
+      <button class="btn-primary" type="submit">Guardar tarjeta</button>
+      <a class="btn-secondary" href="/admin/rounds/{{ round.id }}/summary">← Volver al resumen</a>
+    </div>
+  </div>
+
+  <!-- BLOQUE HCP -->
+  <section class="card" style="margin-bottom:16px;">
+    <h2>Handicap de la vuelta</h2>
+
+    <p style="margin:4px 0; color:var(--muted);">
+      HCP exacto del jugador:
+      <strong style="color:var(--text);">{{ "%.1f"|format(rp.hcp_exact_day) }}</strong>
+    </p>
+
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
+      <label for="course_handicap" style="font-weight:800; color:var(--text);">
+        HCP de juego (editable)
+      </label>
+
+      <input id="course_handicap"
+             type="number"
+             name="course_handicap"
+             value="{{ rp.course_handicap }}"
+             style="width:90px; text-align:center;">
+
+      <span style="color:var(--muted);">Golpes de juego</span>
+    </div>
+  </section>
+
+  <!-- TARJETA HORIZONTAL -->
+  <section class="card">
+    <h2>Hoyo a hoyo</h2>
+
+    <div style="overflow:auto; padding-bottom:6px;">
+      <table class="score-matrix">
+        <tbody>
+
+          <!-- 1) Hoyos -->
+          <tr class="score-row score-row--head">
+            <th class="score-label">Hoyo</th>
+            {% for h in holes %}
+              <th class="score-cell">{{ h.number }}</th>
+            {% endfor %}
+          </tr>
+
+          <!-- 2) Par -->
+          <tr>
+            <th class="score-label">Par</th>
+            {% for h in holes %}
+              <td class="score-cell">{{ h.par }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- 3) HCP hoyo -->
+          <tr>
+            <th class="score-label">HCP</th>
+            {% for h in holes %}
+              <td class="score-cell">{{ h.stroke_index }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- Separación -->
+          <tr class="score-sep"><td colspan="{{ holes|length + 1 }}"></td></tr>
+
+          <!-- 4) Golpes -->
+          <tr>
+            <th class="score-label">Golpes</th>
+            {% for h in holes %}
+              {% set hs = existing.get(h.number) %}
+              <td class="score-cell">
+                <input class="score-input"
+                       type="number"
+                       min="1"
+                       name="g_{{ h.number }}"
+                       value="{{ hs.gross_strokes if hs else '' }}"
+                       required>
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- 5) Putts -->
+          <tr>
+            <th class="score-label">Putts</th>
+            {% for h in holes %}
+              {% set hs = existing.get(h.number) %}
+              <td class="score-cell">
+                <input class="score-input"
+                       type="number"
+                       min="0"
+                       name="p_{{ h.number }}"
+                       value="{{ hs.putts if hs and hs.putts is not none else '' }}">
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- 6) FIR (solo Par 4/5) -->
+          <tr>
+            <th class="score-label">FIR</th>
+            {% for h in holes %}
+              {% set hs = existing.get(h.number) %}
+              <td class="score-cell" style="text-align:center;">
+                {% if h.par <= 3 %}
+                  <span style="color:#94a3b8;">-</span>
+                {% else %}
+                  <input type="checkbox"
+                         name="fir_{{ h.number }}"
+                         {% if hs and hs.fir %}checked{% endif %}>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:14px;">
+      <button class="btn-primary" type="submit">Guardar tarjeta</button>
+      <a class="btn-secondary" href="/admin/rounds/{{ round.id }}/summary" style="margin-left:10px;">
+        ← Volver al resumen
+      </a>
+    </div>
+
+  </section>
+
+</form>
+
+{% endblock %}
