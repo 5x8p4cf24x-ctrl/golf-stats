@@ -24,16 +24,17 @@ from fastapi.responses import PlainTextResponse
 Base.metadata.create_all(bind=engine)
 
 def ensure_league_logo_column():
-    # Añade la columna logo_url si no existe (SQLite)
-    with engine.begin() as conn:
-        try:
-            conn.execute(text("ALTER TABLE leagues ADD COLUMN logo_url VARCHAR"))
-        except OperationalError as e:
-            # Si ya existe, ignoramos el error
-            if "duplicate column name: logo_url" in str(e):
-                pass
-            else:
-                raise
+    # Añade la columna logo_url si no existe (solo SQLite)
+    if engine.dialect.name == "sqlite":
+        with engine.connect() as conn:
+            try:
+                conn.execute(text("ALTER TABLE leagues ADD COLUMN logo_url VARCHAR"))
+            except Exception as e:
+                # SQLite lanza esto si ya existe
+                if "duplicate column name: logo_url" in str(e):
+                    pass
+                else:
+                    raise
 
 ensure_league_logo_column()
 
