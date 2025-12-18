@@ -4,42 +4,76 @@
   <meta charset="utf-8" />
   <title>Editar hoyos - {{ course.name }}</title>
   <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    .holes-grid { width:100%; border-collapse: collapse; }
+    .holes-grid th, .holes-grid td { border: 1px solid rgba(0,0,0,.12); padding: 8px; text-align: center; }
+    .holes-grid thead th:first-child,
+    .holes-grid tbody th { text-align: left; width: 110px; }
+    .holes-grid input.cell {
+      width: 54px;
+      padding: 8px 6px;
+      text-align: center;
+      border: 1px solid rgba(0,0,0,.18);
+      border-radius: 8px;
+    }
+    .holes-grid .hole-num { font-weight: 600; opacity: .9; }
+    .hint { font-size: 13px; opacity: .8; margin-top: 6px; }
+  </style>
 </head>
 <body>
   <main class="container">
     <h1>Editar hoyos — {{ course.name }}</h1>
     <p>Rellena los 18 hoyos (Par, HCP hoyo y metros amarillas).</p>
+    <p class="hint">Tip: puedes copiar 18 celdas desde Excel y pegarlas en la casilla del hoyo 1 de la fila correspondiente (Par / HCP / Metros).</p>
 
     <section class="card">
       <form method="post">
-        <table style="width:100%; border-collapse: collapse;">
+        <table class="holes-grid">
           <thead>
             <tr>
-              <th>Hoyo</th>
-              <th>Par</th>
-              <th>HCP hoyo</th>
-              <th>Metros (Amarillas)</th>
+              <th></th>
+              {% for i in range(1, 19) %}
+                <th class="hole-num">{{ i }}</th>
+              {% endfor %}
             </tr>
           </thead>
+
           <tbody>
-            {% for i in range(1, 19) %}
-              {% set existing = holes_map.get(i) %}
-              <tr>
-                <td style="text-align:center;">{{ i }}</td>
+            <!-- PAR -->
+            <tr>
+              <th>Par</th>
+              {% for i in range(1, 19) %}
+                {% set existing = holes_map.get(i) %}
                 <td>
-                  <input type="number" name="par_{{ i }}" min="3" max="5"
+                  <input class="cell" type="number" name="par_{{ i }}" min="3" max="5"
                          value="{{ existing.par if existing else 4 }}" required>
                 </td>
+              {% endfor %}
+            </tr>
+
+            <!-- HCP (stroke index) -->
+            <tr>
+              <th>HCP hoyo</th>
+              {% for i in range(1, 19) %}
+                {% set existing = holes_map.get(i) %}
                 <td>
-                  <input type="number" name="si_{{ i }}" min="1" max="18"
+                  <input class="cell" type="number" name="si_{{ i }}" min="1" max="18"
                          value="{{ existing.stroke_index if existing else i }}" required>
                 </td>
+              {% endfor %}
+            </tr>
+
+            <!-- METROS -->
+            <tr>
+              <th>Metros (Amarillas)</th>
+              {% for i in range(1, 19) %}
+                {% set existing = holes_map.get(i) %}
                 <td>
-                  <input type="number" name="m_{{ i }}" min="0"
+                  <input class="cell" type="number" name="m_{{ i }}" min="0"
                          value="{{ existing.meters_yellow if existing else '' }}">
                 </td>
-              </tr>
-            {% endfor %}
+              {% endfor %}
+            </tr>
           </tbody>
         </table>
 
@@ -50,5 +84,39 @@
 
     <p><a href="/admin/courses">Volver a campos</a></p>
   </main>
+
+  <script>
+    function parseClipboard(text) {
+      // Excel → TSV (tabuladores) y saltos de línea
+      return text.trim().split(/\r?\n/).map(r => r.split('\t'));
+    }
+
+    document.addEventListener('paste', (e) => {
+      const active = document.activeElement;
+      if (!active || !active.classList.contains('cell')) return;
+
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      if (!text) return;
+
+      const grid = parseClipboard(text);
+      if (!grid.length) return;
+
+      e.preventDefault();
+
+      // Solo rellenamos dentro de la misma fila (Par o HCP o Metros)
+      const row = active.closest('tr');
+      const cells = Array.from(row.querySelectorAll('input.cell'));
+      const startIndex = cells.indexOf(active);
+      if (startIndex < 0) return;
+
+      // Soporta 1x18 (fila) o 18x1 (columna)
+      const values = grid.flat().map(v => v.trim()).filter(v => v !== "");
+      for (let i = 0; i < values.length; i++) {
+        const target = cells[startIndex + i];
+        if (!target) break;
+        target.value = values[i];
+      }
+    });
+  </script>
 </body>
 </html>
