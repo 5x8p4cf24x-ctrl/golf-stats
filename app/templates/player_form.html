@@ -24,7 +24,7 @@
         <!-- 📸 nueva sección: foto -->
        <label>Foto (opcional)</label><br/>
         {% if player and player.photo_url %}
-          <img src="/static/{{ player.photo_url }}"
+          <img src="/uploads/{{ player.photo_url }}"
                alt="Foto jugador"
                style="width:80px; height:80px; object-fit:cover; border-radius:50%; display:block; margin-bottom:8px;">
         {% endif %}
