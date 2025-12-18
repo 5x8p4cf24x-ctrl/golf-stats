@@ -43,12 +43,16 @@ app = FastAPI(title="Golf Stats")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
-UPLOAD_PLAYERS_DIR = Path("app/static/uploads/players")
+UPLOAD_BASE_DIR = Path(os.getenv("UPLOAD_BASE_DIR", "app/static/uploads"))
+UPLOAD_PLAYERS_DIR = UPLOAD_BASE_DIR / "players"
+UPLOAD_COURSES_DIR = UPLOAD_BASE_DIR / "courses"
+UPLOAD_LEAGUES_DIR = UPLOAD_BASE_DIR / "leagues"
+
 UPLOAD_PLAYERS_DIR.mkdir(parents=True, exist_ok=True)
-UPLOAD_COURSES_DIR = Path("app/static/uploads/courses")
 UPLOAD_COURSES_DIR.mkdir(parents=True, exist_ok=True)
-UPLOAD_LEAGUES_DIR = Path("app/static/uploads/leagues")
 UPLOAD_LEAGUES_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
 
 ADMIN_KEY = os.getenv("ADMIN_KEY", "")  # en local puedes dejarlo vacío si quieres
 
@@ -181,7 +185,8 @@ async def player_new(
         # 🔹 Lo que se guarda en BBDD es relativo a /static
         #     -> static/uploads/players/filename
         #     -> photo_url = "uploads/players/filename"
-        photo_url = f"uploads/players/{filename}"
+        photo_url = f"players/{filename}"
+
 
     data = schemas.PlayerCreate(
         name=name,
@@ -229,8 +234,8 @@ async def player_edit(
     if photo and photo.filename:
         # 1) borrar foto previa si había
         if existing.photo_url:
-            old_filename = Path(existing.photo_url).name
-            old_path = UPLOAD_PLAYERS_DIR / old_filename
+            old_rel = Path(existing.photo_url)          # ej: players/xxxx.png
+            old_path = UPLOAD_BASE_DIR / old_rel        # /var/data/uploads/players/xxxx.png
             if old_path.exists():
                 try:
                     old_path.unlink()
@@ -242,7 +247,8 @@ async def player_edit(
         dest_path = UPLOAD_PLAYERS_DIR / filename
         with open(dest_path, "wb") as f:
             f.write(await photo.read())
-        photo_url = f"uploads/players/{filename}"
+        photo_url = f"players/{filename}"
+
 
     data = schemas.PlayerUpdate(
         name=name,
@@ -264,8 +270,9 @@ def player_delete(player_id: int, db: Session = Depends(get_db)):
 
     # 2) Borrar foto del disco si existe
     if player and player.photo_url:
-        filename = Path(player.photo_url).name
-        photo_path = UPLOAD_PLAYERS_DIR / filename
+        rel = Path(player.photo_url)
+        photo_path = UPLOAD_BASE_DIR / rel
+
         if photo_path.exists():
             try:
                 photo_path.unlink()
@@ -429,7 +436,7 @@ async def course_new(
         dest_path = UPLOAD_COURSES_DIR / filename
         with open(dest_path, "wb") as f:
             f.write(await logo.read())
-        logo_url = f"uploads/courses/{filename}"
+        logo_url = f"courses/{filename}"
 
     data = schemas.CourseCreate(
         name=name,
@@ -477,7 +484,7 @@ async def course_edit(
         dest_path = UPLOAD_COURSES_DIR / filename
         with open(dest_path, "wb") as f:
             f.write(await logo.read())
-        logo_url = f"uploads/courses/{filename}"
+        logo_url = f"courses/{filename}"
 
     data = schemas.CourseUpdate(
         name=name,
@@ -871,7 +878,7 @@ async def admin_leagues_new(
             f.write(await logo.read())
 
         # lo guardamos en BBDD como ruta relativa a /static
-        logo_url = f"uploads/leagues/{filename}"
+        logo_url = f"leagues/{filename}"
 
     crud.create_league(db, name=name, logo_url=logo_url)
     return RedirectResponse("/admin/leagues", status_code=303)

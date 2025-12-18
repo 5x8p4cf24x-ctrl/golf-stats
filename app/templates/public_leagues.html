@@ -36,7 +36,7 @@
 
             <div class="public-league-logo">
               {% if l.logo_url %}
-                <img src="/static/{{ l.logo_url }}" alt="{{ l.name }}" class="public-league-logo-img">
+                <img src="/uploads/{{ l.logo_url }}" alt="{{ l.name }}" class="public-league-logo-img">
               {% else %}
                 {{ l.name[0] }}
               {% endif %}

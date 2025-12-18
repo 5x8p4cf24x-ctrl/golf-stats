@@ -120,7 +120,7 @@
           <div class="league-player-panel">
             <div class="league-player-photo">
               {% if player_detail.player.photo_url %}
-                <img src="/static/{{ player_detail.player.photo_url }}" alt="{{ player_detail.player.name }}">
+                <img src="/uploads/{{ player_detail.player.photo_url }}" alt="{{ player_detail.player.name }}">
               {% else %}
                 <div class="league-player-avatar-fallback">
                   {{ player_detail.player.name[:2] | upper }}

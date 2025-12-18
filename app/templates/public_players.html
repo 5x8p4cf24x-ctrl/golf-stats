@@ -23,7 +23,7 @@
       <a href="/players/{{ p.id }}" class="player-card">
         {% if p.photo_url %}
           <div class="player-avatar">
-            <img src="/static/{{ p.photo_url }}" alt="{{ p.name }}">
+            <img src="/uploads/{{ p.photo_url }}" alt="{{ p.name }}">
           </div>
         {% else %}
           <div class="player-avatar player-avatar--fallback">

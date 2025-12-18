@@ -35,7 +35,7 @@
         
         <label>Logo del campo (opcional)</label><br/>
         {% if course and course.logo_url %}
-          <img src="/static/{{ course.logo_url }}"
+          <img src="/uploads/{{ course.logo_url }}"
             alt="Logo {{ course.name }}"
             style="width:80px; height:80px; object-fit:contain; background:#0f172a; border-radius:8px; padding:4px; display:block; margin-bottom:8px;">
         {% endif %}
