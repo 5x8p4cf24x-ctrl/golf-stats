@@ -10,8 +10,8 @@
     .holes-grid thead th:first-child,
     .holes-grid tbody th { text-align: left; width: 110px; }
     .holes-grid input.cell {
-      width: 54px;
-      padding: 8px 6px;
+      width: 42px;
+      padding: 6px 4px;
       text-align: center;
       border: 1px solid rgba(0,0,0,.18);
       border-radius: 8px;
@@ -28,55 +28,56 @@
 
     <section class="card">
       <form method="post">
-        <table class="holes-grid">
-          <thead>
-            <tr>
-              <th></th>
-              {% for i in range(1, 19) %}
-                <th class="hole-num">{{ i }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
+        <div class="table-scroll">
+          <table class="holes-grid">
+            <thead>
+              <tr>
+                <th></th>
+                {% for i in range(1, 19) %}
+                  <th class="hole-num">{{ i }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
 
-          <tbody>
-            <!-- PAR -->
-            <tr>
-              <th>Par</th>
-              {% for i in range(1, 19) %}
-                {% set existing = holes_map.get(i) %}
-                <td>
-                  <input class="cell" type="number" name="par_{{ i }}" min="3" max="5"
-                         value="{{ existing.par if existing else 4 }}" required>
-                </td>
-              {% endfor %}
-            </tr>
+            <tbody>
+              <!-- PAR -->
+              <tr>
+                <th>Par</th>
+                {% for i in range(1, 19) %}
+                  {% set existing = holes_map.get(i) %}
+                  <td>
+                    <input class="cell" type="number" name="par_{{ i }}" min="3" max="5"
+                          value="{{ existing.par if existing else 4 }}" required>
+                  </td>
+                {% endfor %}
+              </tr>
 
-            <!-- HCP (stroke index) -->
-            <tr>
-              <th>HCP hoyo</th>
-              {% for i in range(1, 19) %}
-                {% set existing = holes_map.get(i) %}
-                <td>
-                  <input class="cell" type="number" name="si_{{ i }}" min="1" max="18"
-                         value="{{ existing.stroke_index if existing else i }}" required>
-                </td>
-              {% endfor %}
-            </tr>
+              <!-- HCP (stroke index) -->
+              <tr>
+                <th>HCP hoyo</th>
+                {% for i in range(1, 19) %}
+                  {% set existing = holes_map.get(i) %}
+                  <td>
+                    <input class="cell" type="number" name="si_{{ i }}" min="1" max="18"
+                          value="{{ existing.stroke_index if existing else i }}" required>
+                  </td>
+                {% endfor %}
+              </tr>
 
-            <!-- METROS -->
-            <tr>
-              <th>Metros (Amarillas)</th>
-              {% for i in range(1, 19) %}
-                {% set existing = holes_map.get(i) %}
-                <td>
-                  <input class="cell" type="number" name="m_{{ i }}" min="0"
-                         value="{{ existing.meters_yellow if existing else '' }}">
-                </td>
-              {% endfor %}
-            </tr>
-          </tbody>
-        </table>
-
+              <!-- METROS -->
+              <tr>
+                <th>Metros (Amarillas)</th>
+                {% for i in range(1, 19) %}
+                  {% set existing = holes_map.get(i) %}
+                  <td>
+                    <input class="cell" type="number" name="m_{{ i }}" min="0"
+                          value="{{ existing.meters_yellow if existing else '' }}">
+                  </td>
+                {% endfor %}
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <br/>
         <button type="submit">Guardar hoyos</button>
       </form>

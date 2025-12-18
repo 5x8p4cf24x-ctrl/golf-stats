@@ -466,6 +466,27 @@ input[readonly], textarea[readonly]{
   padding: 8px 10px;           /* etiqueta izquierda más compacta */
 }
 
+/* ===============================
+   HOYOS – TABLA EDICIÓN
+   =============================== */
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .holes-grid {
+  min-width: 1200px;   /* clave: evita que se comprima */
+}
+
+.table-scroll .holes-grid th,
+.table-scroll .holes-grid td {
+  white-space: nowrap;
+}
+
+
 
 /* ============================================================================= */
 /* ============================= PUBLIC LANDING ================================ */
