@@ -44,6 +44,9 @@
   <!-- TARJETA HORIZONTAL -->
   <section class="card">
     <h2>Hoyo a hoyo</h2>
+    <p class="hint" style="margin:6px 0 10px; color:var(--muted); font-size:13px;">
+      Tip: puedes copiar 18 celdas desde Excel (fila o columna) y pegarlas empezando en el hoyo 1 de la fila correspondiente (Golpes / Putts / FIR).
+    </p>
 
     <div style="overflow:auto; padding-bottom:6px;">
       <table class="score-matrix">
@@ -82,7 +85,7 @@
             {% for h in holes %}
               {% set hs = existing.get(h.number) %}
               <td class="score-cell">
-                <input class="score-input"
+                <input class="score-input score-input--g"
                        type="number"
                        min="1"
                        name="g_{{ h.number }}"
@@ -98,7 +101,7 @@
             {% for h in holes %}
               {% set hs = existing.get(h.number) %}
               <td class="score-cell">
-                <input class="score-input"
+                <input class="score-input score-input--p"
                        type="number"
                        min="0"
                        name="p_{{ h.number }}"
@@ -116,7 +119,8 @@
                 {% if h.par <= 3 %}
                   <span style="color:#94a3b8;">-</span>
                 {% else %}
-                  <input type="checkbox"
+                  <input class="score-check score-check--fir"
+                         type="checkbox"
                          name="fir_{{ h.number }}"
                          {% if hs and hs.fir %}checked{% endif %}>
                 {% endif %}
@@ -138,5 +142,80 @@
   </section>
 
 </form>
+
+<script>
+  function parseClipboard(text) {
+    // Excel suele venir como TSV (tabs) con saltos de línea
+    return text
+      .trim()
+      .split(/\r?\n/)
+      .map(r => r.split('\t').map(c => c.trim()));
+  }
+
+  function flattenGrid(grid) {
+    // Convierte 1x18 o 18x1 en una lista lineal
+    const flat = [];
+    for (const row of grid) for (const cell of row) flat.push(cell);
+    return flat.filter(v => v !== "");
+  }
+
+  function toBool(v) {
+    const s = String(v).trim().toLowerCase();
+    return ["1","true","t","x","si","sí","s","y","yes","ok"].includes(s);
+  }
+
+  document.addEventListener("paste", (e) => {
+    const active = document.activeElement;
+    if (!active) return;
+
+    const isScoreInput = active.classList.contains("score-input");
+    const isFirCheck  = active.classList.contains("score-check--fir");
+    if (!isScoreInput && !isFirCheck) return;
+
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    if (!text) return;
+
+    const grid = parseClipboard(text);
+    const values = flattenGrid(grid);
+    if (!values.length) return;
+
+    e.preventDefault();
+
+    const row = active.closest("tr");
+    if (!row) return;
+
+    // Caso A: pegado en un input numérico (Golpes o Putts)
+    if (isScoreInput) {
+      const cells = Array.from(row.querySelectorAll("input.score-input"));
+      const startIndex = cells.indexOf(active);
+      if (startIndex < 0) return;
+
+      for (let i = 0; i < values.length; i++) {
+        const target = cells[startIndex + i];
+        if (!target) break;
+        target.value = values[i];
+        target.dispatchEvent(new Event("input", { bubbles: true }));
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      return;
+    }
+
+    // Caso B: pegado en FIR (checkboxes)
+    if (isFirCheck) {
+      const checks = Array.from(row.querySelectorAll("input.score-check--fir"));
+      const startIndex = checks.indexOf(active);
+      if (startIndex < 0) return;
+
+      for (let i = 0; i < values.length; i++) {
+        const target = checks[startIndex + i];
+        if (!target) break;
+
+        // Permite: 1/0, X/blank, TRUE/FALSE, SI/NO, etc.
+        target.checked = toBool(values[i]);
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+  });
+</script>
 
 {% endblock %}

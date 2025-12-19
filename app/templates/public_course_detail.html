@@ -1,37 +1,48 @@
 {% extends "public_base.html" %}
 
 {% block title %}{{ course.name }} · Campo{% endblock %}
-{% block container_class %}container{% endblock %}
+{% block container_class %}container course-detail-page{% endblock %}
+
 
 {% block content %}
 
   <!-- CABECERA CAMPO -->
   <section class="card course-head">
-    {% if course.logo_url %}
-      <img
-        src="/uploads/{{ course.logo_url }}"
-        alt="Logo {{ course.name }}"
-        class="course-head-logo"
-      >
-    {% endif %}
+    <div class="course-head-left">
+      {% if course.logo_url %}
+        <img
+          src="/uploads/{{ course.logo_url }}"
+          alt="Logo {{ course.name }}"
+          class="course-head-logo"
+        >
+      {% endif %}
 
-    <div class="course-head-info">
-      <h1 class="course-head-title">{{ course.name }}</h1>
+      <div class="course-head-info">
+        <h1 class="course-head-title">{{ course.name }}</h1>
 
-      <p class="course-head-city">
-        {{ course.city or "Ciudad desconocida" }}
-      </p>
+        <p class="course-head-city">
+          {{ course.city or "Ciudad desconocida" }}
+        </p>
 
-      <p class="course-head-meta">
-        Par total: <strong>{{ course.par_total }}</strong>
-        {% if course.meters_total %}
-          · Metros: <strong>{{ course.meters_total }} m</strong>
-        {% endif %}
-        · Slope: <strong>{{ course.slope_yellow }}</strong>
-        · Rating: <strong>{{ "%.1f"|format(course.rating_yellow) }}</strong>
-      </p>
+        <p class="course-head-meta">
+          Par total: <strong>{{ course.par_total }}</strong>
+          {% if course.meters_total %}
+            · Metros: <strong>{{ course.meters_total }} m</strong>
+          {% endif %}
+          · Slope: <strong>{{ course.slope_yellow }}</strong>
+          · Rating: <strong>{{ "%.1f"|format(course.rating_yellow) }}</strong>
+        </p>
+      </div>
     </div>
+
+    <!-- LOGO GOLFMODE -->
+    <img
+      src="/static/golfmode_logo.png"
+      alt="Golf Mode"
+      class="course-head-gm-logo"
+    >
   </section>
+
 
   <!-- TABLA HOYO A HOYO -->
   <section class="card">

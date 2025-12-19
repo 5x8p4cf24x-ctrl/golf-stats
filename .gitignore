@@ -20,3 +20,9 @@ Thumbs.db
 
 backups/
 golf_stats.db
+
+# Scripts locales
+run_local.ps1
+
+# Uploads (user content)
+app/static/uploads/

@@ -1656,130 +1656,155 @@ input[readonly], textarea[readonly]{
 }
 
 
-/*============================================================================================================================================================*/
+/* ===============================
+   PUBLIC COURSE DETAIL (GolfMode)
+   scope: .course-detail-page
+   =============================== */
 
-.scorecard-wrap{
-  overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
+.course-detail-page .course-head{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  padding: 14px 16px;            /* más compacto */
 }
 
+.course-detail-page .course-head-logo{
+  width:110px;
+  height:110px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:12px;
+  padding:6px;
+  border: 1px solid var(--border);
+}
 
-table.scorecard{
+.course-detail-page .course-head-title{
+  margin:0 0 4px 0;
+  font-size: 1.35rem;            /* ⬅ baja el tamaño */
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--gm-green);
+}
+
+.course-detail-page .course-head-city{
+  margin:0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.course-detail-page .course-head-meta{
+  margin:4px 0 0 0;
+  font-size:0.9rem;              /* ⬅ más fino */
+  color: var(--muted);
+}
+
+.course-detail-page .card h2{
+  font-size: 1.05rem;
+  margin: 0 0 10px 0;
+  color: var(--text);
+}
+
+/* Tabla “hoyo a hoyo” */
+.course-detail-page .scorecard-wrap{
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.course-detail-page table.scorecard{
   width: 100%;
-  min-width: 900px;
+  min-width: 980px;              /* evita que se comprima raro */
   border-collapse: separate;
   border-spacing: 0;
-  background: #ffffff;
+  background: var(--panel);
   font-variant-numeric: tabular-nums;
 }
 
-table.scorecard th,
-table.scorecard td{
-  padding: 8px 10px;
-  border-right: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+/* Celdas más densas */
+.course-detail-page table.scorecard th,
+.course-detail-page table.scorecard td{
+  padding: 7px 8px;              /* ⬅ menos alto */
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   text-align: center;
   white-space: nowrap;
 
-  font-size: 0.85rem;      /* ⬅ más fino */
-  font-weight: 500;        /* ⬅ antes 700 */
-  color: #0f172a;
+  font-size: 0.82rem;            /* ⬅ más compacto */
+  font-weight: 600;
+  color: var(--text);
 }
 
-table.scorecard th.rowhdr{
+.course-detail-page table.scorecard th.rowhdr{
   text-align: left;
-  background: #f3f4f6;
-  color: #111827;
-  font-weight: 600;        /* ⬅ más elegante */
-  min-width: 120px;
+  background: var(--panel-2);
+  font-weight: 800;
+  min-width: 108px;
 
   position: sticky;
   left: 0;
   z-index: 2;
 }
 
-table.scorecard th.colhdr,
-table.scorecard th.totalhdr{
-  background: #f3f4f6;
-  color: #111827;
-  font-weight: 600;
+.course-detail-page table.scorecard th.colhdr,
+.course-detail-page table.scorecard th.totalhdr{
+  background: var(--panel-2);
+  font-weight: 800;
 }
 
-table.scorecard td.totalcell{
+.course-detail-page table.scorecard td.totalcell{
   background: #f9fafb;
-  font-weight: 600;
+  font-weight: 800;
 }
 
-table.scorecard th:last-child,
-table.scorecard td:last-child{
-  border-right: none !important;
+/* Metros: dorado suave GolfMode */
+.course-detail-page table.scorecard tr.row-meters td{
+  background: rgba(212, 175, 55, 0.18);
+  color: #92400e;
+  font-weight: 800;
 }
 
-table.scorecard tr:last-child th,
-table.scorecard tr:last-child td{
-  border-bottom: none !important;
-}
-/* SOLO celdas de hoyos en la fila Metros */
-.scorecard tr.row-meters td{
-  background: #fff7cc;          /* amarillo suave */
-  color: #92400e;               /* texto ámbar oscuro */
-  font-weight: 600;
-}
-
-/* Pero NO pintar la columna Total */
-.scorecard tr.row-meters td.totalcell{
+/* No pintar la celda total de Metros */
+.course-detail-page table.scorecard tr.row-meters td.totalcell{
   background: #f9fafb;
-  color: #0f172a;
-  font-weight: 600;
+  color: var(--text);
+  font-weight: 800;
 }
 
-.back-link{
+/* Link volver */
+.course-detail-page .back-link{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin: 32px auto 0 auto;
-  margin-bottom: 12px;
-
+  margin: 18px 0 0 0;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 800;
   color: var(--gm-green);
   text-decoration: none;
 }
+.course-detail-page .back-link:hover{ text-decoration: underline; }
 
-.back-link:hover{
-  text-decoration: underline;
+/* Logo GolfMode en cabecera de campo */
+.course-detail-page .course-head{
+  justify-content: space-between;
 }
 
-/* Course detail header */
-.course-head{
-  display:flex;
-  gap:16px;
-  align-items:center;
+.course-detail-page .course-head-left{
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-.course-head-logo{
-  width:72px;
-  height:72px;
-  object-fit:contain;
-  background:#ffffff;
-  border-radius:12px;
-  padding:6px;
+.course-detail-page .course-head-gm-logo{
+  height: 110px;
+  width: auto;
+  opacity: 0.85;
 }
 
-.course-head-title{
-  margin:0 0 4px 0;
-}
-
-.course-head-city{
-  margin:0;
-  opacity:.8;
-}
-
-.course-head-meta{
-  margin:4px 0 0 0;
-  font-size:0.95rem;
+@media (max-width: 640px){
+  .course-detail-page .course-head-gm-logo{
+    display:none;
+  }
 }
 
 
