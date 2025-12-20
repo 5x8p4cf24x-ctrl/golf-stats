@@ -6,15 +6,18 @@
 {% block container_class %}gm-wrap rounds-page{% endblock %}
 
 {% block header %}
-  <!-- HEADER -->
-  <header class="rounds-header">
-    <h1 class="rounds-title">Rondas</h1>
-    <img src="/static/golfmode_logo.png" class="rounds-logo" alt="Golf Mode">
+  <header class="public-header">
+    <h1 class="public-title">Rondas</h1>
+    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
 
-    <p class="rounds-subtitle">
+    <p class="public-subtitle">
       Lista de rondas jugadas. Filtra por campo, jugador o fecha para ver el historial.
     </p>
   </header>
+
+  <div class="public-back-wrap">
+    <a class="public-back" href="/public">← Volver</a>
+  </div>
 {% endblock %}
 
 {% block content %}
@@ -102,8 +105,5 @@
     {% endfor %}
   </section>
 
-  <p class="rounds-back">
-    <a href="/public">← Volver al inicio</a>
-  </p>
-
+  
 {% endblock %}

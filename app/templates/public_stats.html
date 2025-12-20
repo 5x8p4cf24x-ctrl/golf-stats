@@ -4,20 +4,19 @@
 {% block container_class %}container--wide{% endblock %}
 
 {% block header %}
-  <!-- HEADER (mismo estilo que el resto) -->
-  <header class="rounds-header">
-    <h1 class="rounds-title">Estadísticas</h1>
-    <img src="/static/golfmode_logo.png" class="rounds-logo" alt="Golf Mode">
-    <p class="rounds-subtitle">
+  <header class="public-header">
+    <h1 class="public-title">Estadísticas</h1>
+    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
+    <p class="public-subtitle">
       Resumen global + visor de vueltas (tipo Excel) con filtros.
     </p>
   </header>
 
-  <!-- Volver FUERA del header (como querías) -->
-  <div class="stats-back-wrap">
-    <a class="stats-back" href="/public">← Volver</a>
+  <div class="public-back-wrap">
+    <a class="public-back" href="/public">← Volver</a>
   </div>
 {% endblock %}
+
 
 {% block content %}
 

@@ -17,22 +17,26 @@
 {% block container_class %}gm-wrap league-detail-page{% endblock %}
 
 {% block header %}
-  <!-- HEADER IGUAL A LIGAS -->
   <header class="public-header">
-    <div>
-      <h1>{{ league.name }}</h1>
-      <p class="public-subtitle">
-        Estado:
-        {% if league.is_closed %}
-          Cerrada (clasificación definitiva)
-        {% else %}
-          Abierta (clasificaciones provisionales)
-        {% endif %}
-      </p>
-    </div>
-    <img src="/static/golfmode_logo.png" alt="Golf Mode" class="public-header-logo">
+    <h1 class="public-title">{{ league.name }}</h1>
+
+    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
+
+    <p class="public-subtitle">
+      Estado:
+      {% if league.is_closed %}
+        Cerrada (clasificación definitiva)
+      {% else %}
+        Abierta (clasificaciones provisionales)
+      {% endif %}
+    </p>
   </header>
+
+  <div class="public-back-wrap">
+    <a class="public-back" href="/public/leagues">← Volver</a>
+  </div>
 {% endblock %}
+
 
 {% block content %}
 
@@ -368,10 +372,6 @@
       </div>
     {% endif %}
   </section>
-
-  <p class="public-back">
-    <a href="/public/leagues">← Volver al listado de ligas</a>
-  </p>
 
 {% endblock %}
 

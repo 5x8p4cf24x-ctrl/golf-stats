@@ -644,33 +644,7 @@ input[readonly], textarea[readonly]{
   padding-top: 32px;
 }
 
-/* Header con título + logo alineado */
-.players-header {
-  position: relative;
-  max-width: 1200px;
-  margin: 0 auto 32px auto;  /* más separación respecto al grid */
-}
 
-.players-title {
-  margin: 0;
-  font-size: 2rem;      /* más grande */
-  font-weight: 700;
-  color: #14532d;
-}
-
-/* Logo arriba a la derecha */
-.players-logo {
-  position: absolute;
-  top: -10px;
-  right: 0;
-  height: 110px;          /* tamaño ajustable */
-}
-
-.players-subtitle {
-  margin: 6px 0 0 0;
-  font-size: 1rem;
-  color: #6b7280;
-}
 
 /* ===== GRID ===== */
 
@@ -1431,47 +1405,20 @@ input[readonly], textarea[readonly]{
   transition-delay: 1s;  /* ⬅️ delay del tooltip */
 }
 
+/* ============================================================================================
+   PÁGINA DE CAMPOS (GOLF MODE)
+   ============================================================================================ */
 
-/* ============================================================================================ */
-/* ============================= PÁGINA DE CAMPOS (GOLF MODE) ================================= */
-/* ============================================================================================ */
-
-
-.courses-page {
-  padding-top: 32px;
+.courses-page{
+  padding-top: 24px;
 }
 
-/* Header: título + logo derecha */
 
-.courses-header {
-  position: relative;
-  max-width: 1200px;
-  margin: 0 auto 80px auto;
-}
+/* ===============================
+   FILTROS
+   =============================== */
 
-.courses-title {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #14532d;
-}
-
-.courses-logo {
-  position: absolute;
-  top: -10px;
-  right: 0;
-  height: 110px;
-}
-
-.courses-subtitle {
-  margin: 6px 0 0 0;
-  font-size: 1rem;
-  color: #6b7280;
-}
-
-/* FILTROS */
-
-.courses-filters {
+.courses-filters{
   max-width: 1200px;
   margin: 0 auto 16px auto;
   background: #ffffff;
@@ -1481,7 +1428,7 @@ input[readonly], textarea[readonly]{
   box-shadow: 0 4px 10px rgba(0,0,0,0.04);
 }
 
-.courses-filters-form {
+.courses-filters-form{
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1489,20 +1436,32 @@ input[readonly], textarea[readonly]{
   font-size: 0.95rem;
 }
 
-.courses-filters-form label {
+.courses-filters-form label{
   font-weight: 600;
   color: #14532d;
 }
 
-.courses-filters-form select {
-  padding: 4px 8px;
-  border-radius: 6px;
+.courses-filters-form select{
+  background-color: #ffffff;
+  color: #000000;
   border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  border-radius: 6px;
   font-family: 'Montserrat', sans-serif;
   font-size: 0.95rem;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
-.courses-filters-form button {
+.courses-filters-form select option{
+  background-color: #ffffff;
+  color: #000000;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.courses-filters-form button{
   padding: 6px 12px;
   border-radius: 999px;
   border: none;
@@ -1514,59 +1473,35 @@ input[readonly], textarea[readonly]{
   cursor: pointer;
 }
 
-.courses-filters-form button:hover {
+.courses-filters-form button:hover{
   background: #15803d;
 }
 
-.courses-clear-filter {
+.courses-clear-filter{
   font-size: 0.9rem;
   color: #14532d;
   text-decoration: none;
 }
 
-.courses-clear-filter:hover {
+.courses-clear-filter:hover{
   text-decoration: underline;
 }
 
-/* Select blanco + texto negro */
-.courses-filters-form select {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 1px solid #d1d5db;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.95rem;
+/* ===============================
+   GRID DE CAMPOS
+   =============================== */
 
-  /* Quita estilos del navegador (Chrome/Edge) */
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
-
-/* Fondo y texto del desplegable */
-.courses-filters-form select option {
-  background-color: #ffffff;
-  color: #000000;
-  font-family: 'Montserrat', sans-serif;
-}
-
-
-/* GRID DE TARJETAS GRANDES (formato vertical, como players) */
-.courses-grid {
+.courses-grid{
   max-width: 1200px;
-  margin: 0 auto;
-  margin-top: 24px;
-
+  margin: 24px auto 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); /* 3 por fila en pantallas grandes */
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
   gap: 22px;
 }
 
-/* TARJETA DE CAMPO – IGUAL ESTILO QUE PLAYER CARD, PERO PARA CAMPOS */
-.course-card {
+.course-card{
   display: flex;
-  flex-direction: column;   /* vertical */
+  flex-direction: column;
   align-items: center;
   gap: 12px;
   padding: 20px;
@@ -1579,17 +1514,16 @@ input[readonly], textarea[readonly]{
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.course-card:hover {
+.course-card:hover{
   transform: translateY(-4px);
   box-shadow: 0 14px 26px rgba(0, 0, 0, 0.15);
   border-color: #22c55e;
 }
 
-/* LOGO DEL CAMPO – CUADRADO GRANDE */
-.course-logo-box {
+.course-logo-box{
   width: 130px;
   height: 130px;
-  border-radius: 20px;        /* cuadrado con esquinas redondeadas */
+  border-radius: 20px;
   background: #f9fafb;
   display: flex;
   align-items: center;
@@ -1599,26 +1533,24 @@ input[readonly], textarea[readonly]{
   border: 1px solid #14532d;
 }
 
-.course-logo-box img {
+.course-logo-box img{
   width: 100%;
   height: 100%;
-  object-fit: contain;        /* como ahora, sin recortar el logo */
+  object-fit: contain;
 }
 
-/* Fallback con inicial del campo */
-.course-logo-box--fallback {
+.course-logo-box--fallback{
   background: #ecfdf5;
 }
 
-.course-logo-box--fallback span {
+.course-logo-box--fallback span{
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 2rem;
   color: #15803d;
 }
 
-/* INFO DEL CAMPO, CENTRADA, COMO EN PLAYERS */
-.course-info {
+.course-info{
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1626,33 +1558,27 @@ input[readonly], textarea[readonly]{
   margin-top: 6px;
 }
 
-.course-name {
+.course-name{
   font-size: 1.2rem;
   font-weight: 700;
 }
 
-.course-meta {
+.course-meta{
   font-size: 0.95rem;
   color: #6b7280;
 }
 
-.course-link {
+.course-link{
   margin-top: 6px;
   font-size: 0.9rem;
   font-weight: 600;
   color: #15803d;
 }
 
-/* Responsive: en móvil se verán 1–2 por fila */
-@media (max-width: 640px) {
-  .course-card {
-    padding: 14px 16px;
-  }
-
-  .course-logo-box {
-    width: 110px;
-    height: 110px;
-  }
+@media (max-width: 640px){
+  .course-card{ padding: 14px 16px; }
+  .course-logo-box{ width: 110px; height: 110px; }
+  .courses-logo{ height: 52px; }
 }
 
 
@@ -1817,33 +1743,6 @@ input[readonly], textarea[readonly]{
   padding-top: 32px;
 }
 
-/* HEADER RONDAS */
-
-.rounds-header {
-  position: relative;
-  max-width: 1200px;
-  margin: 0 auto 80px auto;
-}
-
-.rounds-title {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #14532d;
-}
-
-.rounds-logo {
-  position: absolute;
-  top: -6px;
-  right: 0;
-  height: 110px;
-}
-
-.rounds-subtitle {
-  margin-top: 6px;
-  font-size: 1rem;
-  color: #6b7280;
-}
 
 /* FILTROS RONDAS */
 
@@ -3331,46 +3230,6 @@ input[readonly], textarea[readonly]{
 
 
 
-
-/* ================================================================================= */
-/* =========================== LIGAS HOME(PÚBLICO) ================================= */
-/* ================================================================================= */
-
-/* Header Ligas: H1 + descripción + logo derecha (igual que Rondas) */
-
-/* HEADER LIGAS - mismo layout que Rondas */
-
-.public-header {
-  position: relative;
-  max-width: 1200px;
-  margin: 0 auto 80px auto;   /* mismo margen inferior que rondas */
-}
-
-/* Título dentro de public-header (equivalente a .rounds-title) */
-.public-header h1 {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #14532d;
-}
-
-/* Subtítulo (equivalente a .rounds-subtitle) */
-.public-subtitle {
-  margin-top: 6px;
-  font-size: 1rem;
-  color: #6b7280;
-}
-
-/* Logo a la derecha, en absoluto (equivalente a .rounds-logo) */
-.public-header-logo {
-  position: absolute;
-  top: -6px;
-  right: 0;
-  height: 110px;
-}
-
-
-
 /* ================================================================================= */
 /* =========================== LIGAS HOME(PÚBLICO) ================================= */
 /* ================================================================================= */
@@ -3493,18 +3352,6 @@ input[readonly], textarea[readonly]{
 /* ==========================================================================
    PUBLIC RANKINGS
    ========================================================================== */
-
-.rankings-back-wrap{
-  max-width: 1200px;
-  margin: -60px auto 18px auto;
-}
-.rankings-back{
-  color: var(--gm-green);
-  font-weight: 600;
-  text-decoration: none;
-  font-size: .9rem;
-}
-.rankings-back:hover{ text-decoration: underline; }
 
 .rankings-grid{
   display: grid;
@@ -3648,56 +3495,10 @@ input[readonly], textarea[readonly]{
 }
 
 
+
 /* ==========================================================================
    PUBLIC STATS – Layout + KPIs + Table
    ========================================================================== */
-
-/* ==========================================================
-   HEADER ESTADÍSTICAS (mismo estilo que Rondas)
-   ========================================================== */
-
-.stats-header-main{
-  position: relative;
-  max-width: 1200px;
-  margin: 0 auto 80px auto;
-}
-
-.stats-title-main{
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #14532d;   /* verde Golf Mode */
-}
-
-.stats-logo{
-  position: absolute;
-  top: -6px;
-  right: 0;
-  height: 110px;
-}
-
-.stats-subtitle-main{
-  margin-top: 6px;
-  font-size: 1rem;
-  color: #6b7280;
-}
-
-/* Volver fuera del header */
-.stats-back-wrap{
-  max-width: 1200px;
-  margin: -60px auto 24px auto; /* lo sube visualmente pero fuera del header */
-}
-
-.stats-back{
-  color: #14532d;
-  font-weight: 600;
-  text-decoration: none;
-  font-size: .9rem;
-}
-
-.stats-back:hover{
-  text-decoration: underline;
-}
 
 
 
@@ -3962,3 +3763,59 @@ input[readonly], textarea[readonly]{
 .stats-table tr.best-row td{
   box-shadow: inset 0 0 0 2px rgba(34,197,94,0.18);
 }*/
+
+
+/* ==========================================================
+   PUBLIC HEADER (Golf Mode) — patrón único
+   ========================================================== */
+
+.public-header{
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 80px auto;
+}
+
+.public-title{
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #14532d;
+}
+
+.public-logo{
+  position: absolute;
+  top: -6px;
+  right: 0;
+  height: 110px;
+  width: auto;
+}
+
+.public-subtitle{
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* Volver fuera del header */
+.public-back-wrap{
+  max-width: 1200px;
+  margin: -40px auto 24px auto;
+}
+
+.public-back{
+  color: #14532d;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: .9rem;
+}
+
+.public-back:hover{
+  text-decoration: underline;
+}
+
+/* Móvil */
+@media (max-width: 640px){
+  .public-header{ margin-bottom: 56px; }
+  .public-logo{ height: 72px; top: -2px; }
+  .public-back-wrap{ margin: -40px auto 16px auto; }
+}

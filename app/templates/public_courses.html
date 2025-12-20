@@ -6,17 +6,20 @@
 {% block container_class %}gm-wrap courses-page{% endblock %}
 
 {% block header %}
-  <!-- HEADER CAMPOS: título + logo derecha -->
-  <header class="courses-header">
-    <h1 class="courses-title">Campos</h1>
-
-    <img src="/static/golfmode_logo.png" class="courses-logo" alt="Golf Mode">
-
-    <p class="courses-subtitle">
+  <header class="public-header">
+    <h1 class="public-title">Campos</h1>
+    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
+    <p class="public-subtitle">
       Listado de campos disponibles. Haz clic para ver el detalle hoyo a hoyo.
     </p>
   </header>
+
+  <div class="public-back-wrap">
+    <a class="public-back" href="/public">← Volver</a>
+  </div>
 {% endblock %}
+
+
 
 {% block content %}
 
@@ -78,8 +81,7 @@
     {% endfor %}
   </section>
 
-  <p class="courses-back">
-    <a href="/public">← Volver al inicio</a>
-  </p>
+  
+
 
 {% endblock %}

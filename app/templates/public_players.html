@@ -6,16 +6,21 @@
 {% block container_class %}gm-wrap players-page{% endblock %}
 
 {% block header %}
-  <header class="players-header">
-    <h1 class="players-title">Jugadores</h1>
+  <header class="public-header">
+    <h1 class="public-title">Jugadores</h1>
 
-    <img src="/static/golfmode_logo.png" class="players-logo" alt="Golf Mode">
+    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
 
-    <p class="players-subtitle">
+    <p class="public-subtitle">
       Selecciona un jugador para ver sus estadísticas completas.
     </p>
   </header>
+
+  <div class="public-back-wrap">
+    <a class="public-back" href="/public">← Volver</a>
+  </div>
 {% endblock %}
+
 
 {% block content %}
   <section class="players-grid">
@@ -46,8 +51,5 @@
     {% endfor %}
   </section>
 
-  <p class="players-back">
-    <a href="/public">← Volver a inicio</a>
-  </p>
 {% endblock %}
 

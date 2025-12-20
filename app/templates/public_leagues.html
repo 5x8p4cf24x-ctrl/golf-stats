@@ -5,17 +5,21 @@
 {% block container_class %}gm-wrap{% endblock %}
 
 {% block header %}
-  <!-- HEADER -->
   <header class="public-header">
-    <div>
-      <h1>Ligas</h1>
-      <p class="public-subtitle">
-        Aquí encontrarás todas las ligas disputadas con el grupo.
-      </p>
-    </div>
-    <img src="/static/golfmode_logo.png" alt="Golf Mode" class="public-header-logo">
+    <h1 class="public-title">Ligas</h1>
+
+    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
+
+    <p class="public-subtitle">
+      Aquí encontrarás todas las ligas disputadas con el grupo.
+    </p>
   </header>
+
+  <div class="public-back-wrap">
+    <a class="public-back" href="/public">← Volver</a>
+  </div>
 {% endblock %}
+
 
 {% block content %}
 
@@ -65,8 +69,6 @@
 
   {% endif %}
 
-  <p class="public-back">
-    <a href="/public">← Volver al inicio</a>
-  </p>
+  
 
 {% endblock %}
