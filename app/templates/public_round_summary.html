@@ -40,170 +40,172 @@
     {% if results|length == 0 %}
       <p>No hay datos todavía.</p>
     {% else %}
-      <table class="summary-table">
-        <thead>
-          <tr class="summary-header-row">
-            <th class="summary-metric-col">Jugador</th>
-            <th>Hcp</th>
-            <th>G.Br</th>
-            <th>G.Net</th>
-            <th>Pts HCP</th>
-            <th>Pts Scr</th>
-            <th>Putts</th>
-            <th>Putt/H</th>
-            <th>Lvl Jug.</th>
-            <th>FIR</th>
-            <th>GIR</th>
-            <th>% Golpes</th>
-          </tr>
-        </thead>
+      <div class="summary-table-wrapper summary-round-wrapper">
+        <table class="summary-table summary-round-table">
+          <thead>
+            <tr class="summary-header-row">
+              <th class="summary-metric-col">Jugador</th>
+              <th>Hcp</th>
+              <th>G.Br</th>
+              <th>G.Net</th>
+              <th>Pts HCP</th>
+              <th>Pts Scr</th>
+              <th>Putts</th>
+              <th>Putt/H</th>
+              <th>Lvl Jug.</th>
+              <th>FIR</th>
+              <th>GIR</th>
+              <th>% Golpes</th>
+            </tr>
+          </thead>
 
-        <tbody>
-        {% for s in results %}
+          <tbody>
+          {% for s in results %}
 
-          {# total hoyos jugados para la barra de % golpes #}
-          {% set total_shots =
-             (s.hio or 0) +
-             (s.albatros or 0) +
-             (s.eagles or 0) +
-             (s.birdies or 0) +
-             (s.pars or 0) +
-             (s.bogeys or 0) +
-             (s.dbl or 0) +
-             (s.overdbl or 0)
-          %}
+            {# total hoyos jugados para la barra de % golpes #}
+            {% set total_shots =
+              (s.hio or 0) +
+              (s.albatros or 0) +
+              (s.eagles or 0) +
+              (s.birdies or 0) +
+              (s.pars or 0) +
+              (s.bogeys or 0) +
+              (s.dbl or 0) +
+              (s.overdbl or 0)
+            %}
 
-          <tr>
-            <td class="summary-metric-col">{{ s.player.name }}</td>
-            <td>{{ s.course_handicap }}</td>
-            <td>{{ s.gross_total or "-" }}</td>
-            <td>{{ s.net_total or "-" }}</td>
-            <td>{{ s.points or "-" }}</td>
-            <td>{{ s.scratch_points or "-" }}</td>
-            <td>{{ s.putts or "-" }}</td>
-            <td>
-              {% if s.putts_per_hole is not none %}
-                {{ "%.2f"|format(s.putts_per_hole) }}
-              {% else %}-{% endif %}
-            </td>
-            <td>
-              {% if s.level_hcp is not none %}
-                {{ "%.1f"|format(s.level_hcp) }}
-              {% else %}-{% endif %}
-            </td>
+            <tr>
+              <td class="summary-metric-col">{{ s.player.name }}</td>
+              <td>{{ s.course_handicap }}</td>
+              <td>{{ s.gross_total or "-" }}</td>
+              <td>{{ s.net_total or "-" }}</td>
+              <td>{{ s.points or "-" }}</td>
+              <td>{{ s.scratch_points or "-" }}</td>
+              <td>{{ s.putts or "-" }}</td>
+              <td>
+                {% if s.putts_per_hole is not none %}
+                  {{ "%.2f"|format(s.putts_per_hole) }}
+                {% else %}-{% endif %}
+              </td>
+              <td>
+                {% if s.level_hcp is not none %}
+                  {{ "%.1f"|format(s.level_hcp) }}
+                {% else %}-{% endif %}
+              </td>
 
-            {# FIR: barra ancha #}
-            <td class="summary-firgir-cell">
-              {% if s.fir_pct is not none %}
-                {% set firp = "%.0f"|format(s.fir_pct) %}
-                <div class="summary-bar">
-                  <div class="summary-bar-fill" style="width: {{ firp }}%;"></div>
-                </div>
-                <span class="summary-bar-label">{{ firp }}%</span>
-              {% else %}
-                -
-              {% endif %}
-            </td>
+              {# FIR: barra ancha #}
+              <td class="summary-firgir-cell">
+                {% if s.fir_pct is not none %}
+                  {% set firp = "%.0f"|format(s.fir_pct) %}
+                  <div class="summary-bar">
+                    <div class="summary-bar-fill" style="width: {{ firp }}%;"></div>
+                  </div>
+                  <span class="summary-bar-label">{{ firp }}%</span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
 
-            {# GIR: barra ancha #}
-            <td class="summary-firgir-cell">
-              {% if s.gir_pct is not none %}
-                {% set girp = "%.0f"|format(s.gir_pct) %}
-                <div class="summary-bar">
-                  <div class="summary-bar-fill gir" style="width: {{ girp }}%;"></div>
-                </div>
-                <span class="summary-bar-label">{{ girp }}%</span>
-              {% else %}
-                -
-              {% endif %}
-            </td>
+              {# GIR: barra ancha #}
+              <td class="summary-firgir-cell">
+                {% if s.gir_pct is not none %}
+                  {% set girp = "%.0f"|format(s.gir_pct) %}
+                  <div class="summary-bar">
+                    <div class="summary-bar-fill gir" style="width: {{ girp }}%;"></div>
+                  </div>
+                  <span class="summary-bar-label">{{ girp }}%</span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
 
-            {# % Golpes barra apilada #}
-            <td class="summary-shots-cell">
-              {% if total_shots > 0 %}
-                <div class="shots-bar">
+              {# % Golpes barra apilada #}
+              <td class="summary-shots-cell">
+                {% if total_shots > 0 %}
+                  <div class="shots-bar">
 
-                  {% if s.hio %}
-                    {% set pct = (s.hio * 100.0 / total_shots) %}
-                    <div class="shots-seg hio"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="HIO: {{ s.hio }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.hio %}
+                      {% set pct = (s.hio * 100.0 / total_shots) %}
+                      <div class="shots-seg hio"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="HIO: {{ s.hio }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                  {% if s.albatros %}
-                    {% set pct = (s.albatros * 100.0 / total_shots) %}
-                    <div class="shots-seg alb"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="Albatros: {{ s.albatros }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.albatros %}
+                      {% set pct = (s.albatros * 100.0 / total_shots) %}
+                      <div class="shots-seg alb"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="Albatros: {{ s.albatros }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                  {% if s.eagles %}
-                    {% set pct = (s.eagles * 100.0 / total_shots) %}
-                    <div class="shots-seg eag"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="Eagle: {{ s.eagles }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.eagles %}
+                      {% set pct = (s.eagles * 100.0 / total_shots) %}
+                      <div class="shots-seg eag"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="Eagle: {{ s.eagles }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                  {% if s.birdies %}
-                    {% set pct = (s.birdies * 100.0 / total_shots) %}
-                    <div class="shots-seg bird"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="Birdie: {{ s.birdies }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.birdies %}
+                      {% set pct = (s.birdies * 100.0 / total_shots) %}
+                      <div class="shots-seg bird"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="Birdie: {{ s.birdies }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                  {% if s.pars %}
-                    {% set pct = (s.pars * 100.0 / total_shots) %}
-                    <div class="shots-seg par"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="Par: {{ s.pars }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.pars %}
+                      {% set pct = (s.pars * 100.0 / total_shots) %}
+                      <div class="shots-seg par"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="Par: {{ s.pars }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                  {% if s.bogeys %}
-                    {% set pct = (s.bogeys * 100.0 / total_shots) %}
-                    <div class="shots-seg bogey"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="Bogey: {{ s.bogeys }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.bogeys %}
+                      {% set pct = (s.bogeys * 100.0 / total_shots) %}
+                      <div class="shots-seg bogey"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="Bogey: {{ s.bogeys }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                  {% if s.dbl %}
-                    {% set pct = (s.dbl * 100.0 / total_shots) %}
-                    <div class="shots-seg dbl"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="Doble bogey: {{ s.dbl }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.dbl %}
+                      {% set pct = (s.dbl * 100.0 / total_shots) %}
+                      <div class="shots-seg dbl"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="Doble bogey: {{ s.dbl }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                  {% if s.overdbl %}
-                    {% set pct = (s.overdbl * 100.0 / total_shots) %}
-                    <div class="shots-seg over"
-                         style="width: {{ '%.2f'|format(pct) }}%;"
-                         title="&gt; Doble bogey: {{ s.overdbl }} ({{ '%.1f'|format(pct) }}%)">
-                      <span>{{ '%.0f'|format(pct) }}%</span>
-                    </div>
-                  {% endif %}
+                    {% if s.overdbl %}
+                      {% set pct = (s.overdbl * 100.0 / total_shots) %}
+                      <div class="shots-seg over"
+                          style="width: {{ '%.2f'|format(pct) }}%;"
+                          title="&gt; Doble bogey: {{ s.overdbl }} ({{ '%.1f'|format(pct) }}%)">
+                        <span>{{ '%.0f'|format(pct) }}%</span>
+                      </div>
+                    {% endif %}
 
-                </div>
-              {% else %}
-                -
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+                  </div>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% endif %}
   </section>
 

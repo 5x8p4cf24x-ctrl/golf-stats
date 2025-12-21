@@ -204,8 +204,8 @@
           {{ best_round["date"].strftime("%d/%m/%Y") if best_round["date"] else "" }}
           · {{ best_round["course_name"] }}
           · {{ best_round["player_name"] }}
+          · Tot {{ best_round["total"] if best_round["total"] is not none else "-" }} golpes
           · {{ best_round["points"] if best_round["points"] is not none else "-" }} ptos
-          · Tot {{ best_round["total"] if best_round["total"] is not none else "-" }}
         </div>
       </div>
 

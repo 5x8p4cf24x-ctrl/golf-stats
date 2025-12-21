@@ -238,52 +238,54 @@
         {% if player_history|length == 0 %}
           <p>No hay vueltas para este jugador en esta liga.</p>
         {% else %}
-          <table class="league-history-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Campo</th>
-                <th>Hcp Jug.</th>
-                <th>Lvl Jug.</th>
-                <th>Golpes Br</th>
-                <th>Golpes Net</th>
-                <th>Pts HCP</th>
-                <th>Pts Scr</th>
-                <th>Putts</th>
-                <th>Resultado</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for h in player_history %}
-              <tr>
-                <td>{{ h.date }}</td>
-                <td>{{ h.course }}</td>
-                <td>{{ h.course_hcp if h.course_hcp is not none else "-" }}</td>
-                <td>{% if h.level_hcp is not none %}{{ "%.1f"|format(h.level_hcp) }}{% else %}-{% endif %}</td>
-                <td>{{ h.gross }}</td>
-                <td>{{ h.net }}</td>
-                <td>{{ h.points }}</td>
-                <td>{{ h.scratch_points }}</td>
-                <td>{{ h.putts }}</td>
-                <td>
-                  {% if h.result == 'win' %}
-                    <span class="league-result-badge win">Win</span>
-                  {% elif h.result == 'tie' %}
-                    <span class="league-result-badge tie">Tie</span>
-                  {% elif h.result == 'loss' %}
-                    <span class="league-result-badge loss">Loss</span>
-                  {% else %}
-                    -
-                  {% endif %}
-                </td>
-                <td class="league-history-link">
-                  <a href="/public/rounds/{{ h.round_id }}?league_id={{ league.id }}&player_id={{ selected_player_id }}">Ver vuelta</a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+          <div class="league-history-wrap">
+            <table class="league-history-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Campo</th>
+                  <th>Hcp Jug.</th>
+                  <th>Lvl Jug.</th>
+                  <th>Golpes Br</th>
+                  <th>Golpes Net</th>
+                  <th>Pts HCP</th>
+                  <th>Pts Scr</th>
+                  <th>Putts</th>
+                  <th>Resultado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for h in player_history %}
+                <tr>
+                  <td>{{ h.date }}</td>
+                  <td>{{ h.course }}</td>
+                  <td>{{ h.course_hcp if h.course_hcp is not none else "-" }}</td>
+                  <td>{% if h.level_hcp is not none %}{{ "%.1f"|format(h.level_hcp) }}{% else %}-{% endif %}</td>
+                  <td>{{ h.gross }}</td>
+                  <td>{{ h.net }}</td>
+                  <td>{{ h.points }}</td>
+                  <td>{{ h.scratch_points }}</td>
+                  <td>{{ h.putts }}</td>
+                  <td>
+                    {% if h.result == 'win' %}
+                      <span class="league-result-badge win">Win</span>
+                    {% elif h.result == 'tie' %}
+                      <span class="league-result-badge tie">Tie</span>
+                    {% elif h.result == 'loss' %}
+                      <span class="league-result-badge loss">Loss</span>
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td class="league-history-link">
+                    <a href="/public/rounds/{{ h.round_id }}?league_id={{ league.id }}&player_id={{ selected_player_id }}">Ver vuelta</a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         {% endif %}
     {% endif %}
   </section>

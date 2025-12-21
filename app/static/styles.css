@@ -2529,6 +2529,42 @@ input[readonly], textarea[readonly]{
   background: #fffed6;
 }
 
+/* ==========================================================
+   PUBLIC ROUND SUMMARY — Resumen jugadores (móvil)
+   Solo afecta a la tabla summary-round-table
+   ========================================================== */
+
+.summary-round-wrapper{
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* La tabla debe desbordar para que haya scroll */
+.summary-round-wrapper .summary-round-table{
+  width: max-content !important;
+  min-width: 980px;
+}
+
+/* Evita que se rompan textos y mantiene columnas compactas */
+.summary-round-wrapper .summary-round-table th,
+.summary-round-wrapper .summary-round-table td{
+  white-space: nowrap;
+}
+
+/* Opcional: fija la primera columna (Jugador) en móvil */
+@media (max-width: 640px){
+  .summary-round-wrapper .summary-round-table th.summary-metric-col,
+  .summary-round-wrapper .summary-round-table td.summary-metric-col{
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #f3f4f6; /* coincide con tu estilo de métrica */
+  }
+}
+
 
 
 /* ---------------------------------------------------------
@@ -2602,6 +2638,46 @@ input[readonly], textarea[readonly]{
   font-weight: 500;       /* grosor */
   color: #111827;
 }
+
+/* -----------------------------------------------------------
+   LEAGUE DETAIL — FIX móvil tabla clasificación
+   (no rompe otras tablas)
+   ----------------------------------------------------------- */
+
+/* El wrapper debe permitir scroll horizontal */
+.summary-table-wrapper{
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Evita que la tabla se comprima: fuerza scroll */
+.summary-table-wrapper .summary-league-table{
+  min-width: 980px;        /* ajusta si quieres; clave: > ancho móvil */
+}
+
+/* Para que no haga saltos raros en móvil */
+.summary-table-wrapper .summary-league-table th,
+.summary-table-wrapper .summary-league-table td{
+  white-space: nowrap;
+}
+
+/* (Opcional pero muy útil) Fijar la columna de jugador */
+@media (max-width: 640px){
+  .summary-table-wrapper .summary-league-table th:nth-child(1),
+  .summary-table-wrapper .summary-league-table td:nth-child(1){
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #ffffff;
+  }
+
+  .summary-table-wrapper .summary-league-table thead th:nth-child(1){
+    z-index: 3;
+    background: #f3f4f6;   /* si tu header tiene ese fondo */
+  }
+}
+
 
 
 /* ---------------------------------------------------------
@@ -3115,6 +3191,39 @@ input[readonly], textarea[readonly]{
 .league-history-table tbody td:nth-child(2) {
   text-align: left !important;
 }
+
+/* ==========================================================
+   LEAGUE DETAIL — Tablas móviles con scroll horizontal
+   (solo afecta a esta página)
+   ========================================================== */
+
+/* 1) Wrapper: scroll horizontal sí o sí */
+section.card .league-history-wrap{
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 2) La tabla debe “crecer” para forzar overflow */
+section.card .league-history-wrap .league-history-table{
+  width: max-content !important;    /* ✅ clave */
+  min-width: 980px;                /* ✅ clave */
+}
+
+/* 3) Evitar saltos de línea */
+section.card .league-history-wrap .league-history-table th,
+section.card .league-history-wrap .league-history-table td{
+  white-space: nowrap;
+}
+
+/* 4) Si algún contenedor padre corta el overflow, neutralízalo solo aquí */
+section.card{
+  overflow: visible;               /* no rompe nada visual, pero evita cortes */
+}
+
+
 
 /* ---------------------------------------------------------
    Campeones Mini (tarjeta baja, horizontal + sombras)

@@ -2139,18 +2139,26 @@ def public_stats(
         "birdies": int(birdies_total),
     }
 
-    # ---- Mejor vuelta (por Puntos, desempate por Total menor) ----
+   # ---- Mejor vuelta (por Total golpes brutos, desempate por más puntos) ----
     best_round = None
     if rounds_rows:
         def best_key(rw: dict):
-            pts = rw.get("points")
             tot = rw.get("total")
-            return (
-                pts if pts is not None else -1,         # mayor mejor
-                -(tot if tot is not None else 10**9),   # menor mejor
-            )
-        best_round = max(rounds_rows, key=best_key)
+            pts = rw.get("points")
 
+            # total: cuanto más bajo mejor; si falta, lo mandamos al final
+            tot_sort = tot if tot is not None else 10**9
+
+            # points: cuanto más alto mejor (solo para desempatar)
+            pts_sort = -(pts if pts is not None else -1)
+
+            # date: más reciente mejor (opcional, tercer desempate)
+            dt = rw.get("date")
+            dt_sort = -(dt.toordinal() if dt is not None else 0)
+
+            return (tot_sort, pts_sort, dt_sort)
+
+    best_round = min(rounds_rows, key=best_key)
     return templates.TemplateResponse("public_stats.html", {
         "request": request,
         "players": players,
