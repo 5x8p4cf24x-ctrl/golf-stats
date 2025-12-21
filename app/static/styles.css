@@ -632,6 +632,94 @@ input[readonly], textarea[readonly]{
   }
 }
 
+/* ============================================================================== */
+/* ===================== GOLF MODE: MOBILE BOTTOM NAV =========================== */
+/* ============================================================================== */
+
+/* Por defecto (PC): oculto */
+.gm-bottom-nav {
+  display: none;
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+
+  /* 1) Oculta el menú horizontal superior SOLO en móvil */
+  .gm-menu-horizontal {
+    display: none !important;
+  }
+
+  /* 2) Reserva espacio abajo para que el nav no tape nada */
+  body.gm-body {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+
+  /* Si prefieres que SOLO el contenido tenga padding y no el body:
+     comenta el body arriba y usa esto:
+     .gm-wrap { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  */
+
+  /* 3) Barra inferior fija */
+  .gm-bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 72px;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    gap: 6px;
+
+    background: #ffffff;
+    border-top: 1px solid rgba(20, 83, 45, 0.18);
+    z-index: 9999;
+  }
+
+  /* 4) Botones grandes y cómodos */
+  .gm-nav-item {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+    border-radius: 14px;
+    padding: 8px 6px;
+
+    color: #14532d;
+    transition: transform 0.05s ease, background 0.15s ease;
+  }
+
+  .gm-nav-item:active {
+    transform: scale(0.98);
+  }
+
+  .gm-nav-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .gm-nav-label {
+    font-size: 11px;
+    line-height: 1.1;
+    margin-top: 5px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Activo */
+  .gm-nav-item.is-active {
+    background: rgba(20, 83, 45, 0.10);
+  }
+}
 
 
 
@@ -822,24 +910,20 @@ input[readonly], textarea[readonly]{
   gap: 18px;
 }
 
-/* Sirve tanto si es <div><img></div> como si es <img class="player-header-avatar"> */
+//* Avatar cuando ES un <img> (tu caso real) */
 .player-header-avatar {
   width: 100px;
   height: 100px;
+  aspect-ratio: 1 / 1;   /* asegura círculo perfecto */
   border-radius: 50%;
-  overflow: hidden;
   border: 2px solid #e5e7eb;
   background: #f9fafb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+  display: block;        /* no flex */
+  flex: 0 0 100px;       /* evita que flex lo estire */
+  object-fit: cover;     /* clave: sin deformar */
 }
 
-.player-header-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
 .player-header-avatar--fallback span {
   font-size: 1.6rem;
