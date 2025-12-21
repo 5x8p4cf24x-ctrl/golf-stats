@@ -47,7 +47,7 @@
     {% if standings.players_table|length == 0 %}
       <p>No hay datos todavía en esta liga.</p>
     {% else %}
-      <div class="summary-table-wrapper">
+      <div class="summary-table-wrapper summary-league-wrapper">
         <table class="summary-table summary-league-table">
           <thead>
             <tr class="summary-header-row">
@@ -85,7 +85,7 @@
                 {% if row.avg_gross %}{{ "%.1f"|format(row.avg_gross) }}{% else %}-{% endif %}
               </td>
               <td>
-                {% if row.level_hcp %}{{ "%.2f"|format(row.level_hcp) }}{% else %}-{% endif %}
+                {% if row.level_hcp %}{{ "%.1f"|format(row.level_hcp) }}{% else %}-{% endif %}
               </td>
               <td>{{ row.best_gross or "-" }}</td>
 

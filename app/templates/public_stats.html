@@ -58,7 +58,14 @@
             </td>
 
             <td class="c-hcp num">{{ r["hcp"] if r["hcp"] is not none else "-" }}</td>
-            <td class="c-lvl num">{{ r["play_level"] if r["play_level"] is not none else "-" }}</td>
+            <td class="c-lvl num">
+              {% if r["play_level"] is not none %}
+                {{ "%.1f"|format(r["play_level"]) }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+
 
             {% for i in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18) %}
               {% set s = r["h" ~ i] %}

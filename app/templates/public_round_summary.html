@@ -97,10 +97,10 @@
               <td class="summary-firgir-cell">
                 {% if s.fir_pct is not none %}
                   {% set firp = "%.0f"|format(s.fir_pct) %}
-                  <div class="summary-bar">
+                  <div class="summary-bar" data-pct="{{ firp }}%">
                     <div class="summary-bar-fill" style="width: {{ firp }}%;"></div>
                   </div>
-                  <span class="summary-bar-label">{{ firp }}%</span>
+
                 {% else %}
                   -
                 {% endif %}
@@ -110,10 +110,10 @@
               <td class="summary-firgir-cell">
                 {% if s.gir_pct is not none %}
                   {% set girp = "%.0f"|format(s.gir_pct) %}
-                  <div class="summary-bar">
+                  <div class="summary-bar" data-pct="{{ girp }}%">
                     <div class="summary-bar-fill gir" style="width: {{ girp }}%;"></div>
                   </div>
-                  <span class="summary-bar-label">{{ girp }}%</span>
+
                 {% else %}
                   -
                 {% endif %}

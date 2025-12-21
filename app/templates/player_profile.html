@@ -55,12 +55,11 @@
   <section class="kpi-grid player-kpis">
 
     <div class="kpi">
-      <div class="label">HCP medio de juego</div>
-      <div class="value">
-        {% if avg_play_hcp is not none %}{{ "%.1f"|format(avg_play_hcp) }}{% else %}-{% endif %}
-      </div>
-      <div class="sub">Media de HCP de juego</div>
+      <div class="label">Lvl medio de juego</div>
+      <div class="value">{% if avg_play_level is not none %}{{ "%.1f"|format(avg_play_level) }}{% else %}-{% endif %}</div>
+      <div class="sub">Media de nivel de juego real</div>
     </div>
+
 
     <div class="kpi">
       <div class="label">Media golpes brutos</div>

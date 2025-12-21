@@ -2251,29 +2251,24 @@ input[readonly], textarea[readonly]{
   margin-left: 4px;
 }
 
-
-
 /* ---------------------------------------------------------
    RESUMEN DE JUGADORES (tabla blanca profesional)
    --------------------------------------------------------- */
 
-/* Contenedor (si lo usas) */
-.summary-table-wrapper {
+/* Contenedor */
+.summary-table-wrapper{
   width: 100%;
   margin-top: 8px;
-  background: transparent;
-  border: none;
-  border-radius: 0;
   padding: 0;
 }
 
-/* Tabla principal */
-.summary-table {
+/* Tabla base */
+.summary-table{
   width: 100%;
-  table-layout: fixed;
-  border-collapse: separate;   /* respeta el radius */
+  border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.9rem;
+  table-layout: auto;           /* ⬅️ CLAVE: desktop fluido */
+  font-size: 0.8rem;
   color: #111827;
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -2282,115 +2277,86 @@ input[readonly], textarea[readonly]{
 }
 
 .summary-table th,
-.summary-table td {
+.summary-table td{
   padding: 6px 8px;
   border-bottom: 1px solid #e5e7eb;
   text-align: center;
   white-space: nowrap;
 }
 
-/* Colorear la columna Ptos HCP (solo datos) */
-.summary-table td:nth-child(5) {
-  background: #fffcd9;   /* amarillo muy suave */
-  font-weight: 600;
-}
-
 /* Cabecera */
-.summary-header-row {
+.summary-header-row{
   background: #f3f4f6;
-  color: #111827;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* Primera columna (Jugador) */
-.summary-metric-col {
+.summary-metric-col{
   background: #f3f4f6;
   font-weight: 600;
   text-align: left;
-  color: #111827;
 }
 
-/* Anchos por columna */
-.summary-table thead th {
-  color: #111827 !important;
-  background: #e5e7eb !important;
+/* Resaltado Pts HCP */
+.summary-table td:nth-child(5){
+  background: #fffcd9;
   font-weight: 600;
 }
 
-/* Jugador */
-.summary-table td:nth-child(1),
-.summary-table th:nth-child(1) { width: 100px; }
+/* Anchos de columnas (desktop) */
+.summary-table th:nth-child(1),
+.summary-table td:nth-child(1){ width: 140px; }
 
-/* Hcp */
-.summary-table td:nth-child(2),
-.summary-table th:nth-child(2) { width: 40px; }
+.summary-table th:nth-child(2),
+.summary-table td:nth-child(2){ width: 60px; }
 
-/* G.Bruto */
+.summary-table th:nth-child(3),
 .summary-table td:nth-child(3),
-.summary-table th:nth-child(3) { width: 50px; }
-
-/* G.Neto */
+.summary-table th:nth-child(4),
 .summary-table td:nth-child(4),
-.summary-table th:nth-child(4) { width: 50px; }
-
-/* Pts HCP */
+.summary-table th:nth-child(5),
 .summary-table td:nth-child(5),
-.summary-table th:nth-child(5) { width: 55px; }
-
-/* Pts Scr */
+.summary-table th:nth-child(6),
 .summary-table td:nth-child(6),
-.summary-table th:nth-child(6) { width: 55px; }
-
-/* Putts */
+.summary-table th:nth-child(7),
 .summary-table td:nth-child(7),
-.summary-table th:nth-child(7) { width: 50px; }
+.summary-table th:nth-child(8),
+.summary-table td:nth-child(8){ width: 60px; }
 
-/* Putt/H */
-.summary-table td:nth-child(8),
-.summary-table th:nth-child(8) { width: 55px; }
+.summary-table th:nth-child(9),
+.summary-table td:nth-child(9){ width: 80px; }
 
-/* Nivel juego */
-.summary-table td:nth-child(9),
-.summary-table th:nth-child(9) { width: 70px; }
-
-/* FIR */
+.summary-table th:nth-child(10),
 .summary-table td:nth-child(10),
-.summary-table th:nth-child(10) { width: 100px; }
+.summary-table th:nth-child(11),
+.summary-table td:nth-child(11){ width: 110px; }
 
-/* GIR */
-.summary-table td:nth-child(11),
-.summary-table th:nth-child(11) { width: 100px; }
+.summary-table th:nth-child(12),
+.summary-table td:nth-child(12){ width: 300px; }
 
-/* % Golpes */
-.summary-table td:nth-child(12),
-.summary-table th:nth-child(12) { width: 200px; }
-
-.summary-table thead tr:first-child th:first-child {
+/* Redondeos */
+.summary-table thead tr:first-child th:first-child{
   border-top-left-radius: 12px;
 }
-.summary-table thead tr:first-child th:last-child {
+.summary-table thead tr:first-child th:last-child{
   border-top-right-radius: 12px;
 }
-.summary-table tbody tr:last-child td:first-child {
+.summary-table tbody tr:last-child td:first-child{
   border-bottom-left-radius: 12px;
 }
-.summary-table tbody tr:last-child td:last-child {
+.summary-table tbody tr:last-child td:last-child{
   border-bottom-right-radius: 12px;
 }
 
+/* ---------------------------------------------------------
+   BARRAS FIR / GIR
+   --------------------------------------------------------- */
 
-
-/* FIR / GIR – barras de porcentaje anchas ---------------- */
-
-.summary-firgir-cell {
-  text-align: center;
-  white-space: nowrap;
-}
-
-.summary-bar {
+/* FIR/GIR: el % va dentro de la barra */
+.summary-bar{
   position: relative;
-  width: 70px;
-  height: 25px;
+  width: 85px;          /* ⬅️ antes 70px */
+  height: 22px;
   border-radius: 999px;
   background: #e5e7eb;
   overflow: hidden;
@@ -2398,174 +2364,132 @@ input[readonly], textarea[readonly]{
   vertical-align: middle;
 }
 
-.summary-bar-fill {
+.summary-bar-fill{
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #c3fad8, #6bf8a1);
 }
 
-.summary-bar-fill.gir {
+/* El texto externo ya no lo necesitamos en desktop */
+.summary-bar-label{
+  display: none;
+}
+
+/* Texto dentro de la barra */
+.summary-firgir-cell{
+  position: relative;
+}
+
+.summary-firgir-cell .summary-bar::after{
+  content: attr(data-pct);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #111827;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+/* Asegura que el fill se vea siempre */
+.summary-bar{
+  position: relative;
+  overflow: hidden;
+}
+
+/* El progreso */
+.summary-bar-fill{
+  position: relative;
+  z-index: 1;          /* debajo del texto */
+}
+
+/* Texto dentro, SIN blend raro */
+.summary-firgir-cell .summary-bar::after{
+  z-index: 2;
+  color: #111827;
+  mix-blend-mode: normal;  /* ⬅️ clave */
+}
+
+/* Colores del fill (si no los tenías definidos aquí, los forzamos) */
+.summary-bar-fill{
+  background: linear-gradient(90deg, #c3fad8, #6bf8a1);
+}
+.summary-bar-fill.gir{
   background: linear-gradient(90deg, #bfdbfe, #69acfd);
 }
 
-.summary-bar-label {
-  margin-left: 3px;
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #111827;
-}
 
+/* ---------------------------------------------------------
+   % GOLPES (barra apilada)
+   --------------------------------------------------------- */
 
-
-/* % GOLPES – barra apilada por tipo de resultado -------- */
-
-.summary-shots-cell {
+.summary-shots-cell{
   text-align: center;
-  white-space: nowrap;
 }
 
-.shots-bar {
+.shots-bar{
   display: flex;
-  width: 200px;
-  height: 25px;
+  width: 280px;
+  height: 22px;
   border-radius: 999px;
   overflow: hidden;
   background: #f3f4f6;
   margin: 0 auto;
 }
 
-/* cada segmento se pinta con width en línea (style="width: X%") */
-.shots-seg {
-  position: relative;
-  height: 100%;
-  font-size: 0.6rem;
-  color: #111827;
+.shots-seg{
   display: flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
-}
-
-.shots-seg span {
-  padding: 0 2px;
-}
-
-/* Colores por tipo de golpe */
-.shots-seg.hio  { background: #ffc000; }
-.shots-seg.alb  { background: #ffe5b4; }
-.shots-seg.eag  { background: #fff7cc; }
-.shots-seg.bird { background: #ffe4d6; }
-.shots-seg.par  { background: #e2f0d9; }
-.shots-seg.bogey{ background: #d9e1f2; }
-.shots-seg.dbl  { background: #f2f2f2; }
-.shots-seg.over { background: #e0e0e0; }
-
-
-/* ---------------------------------------------------------
-   AJUSTES FINOS DETALLE DE VUELTA (PÚBLICO)
-   --------------------------------------------------------- */
-
-/* Resumen de jugadores: texto un poco más pequeño y separado del título */
-.round-public .summary-table {
-  font-size: 0.8rem;
-  margin-top: 20px;
-}
-
-.round-public .summary-table th,
-.round-public .summary-table td {
-  padding: 4px 6px;
-}
-
-/* Espaciado entre h2 y contenido dentro de las cards */
-.round-public .card > h2 {
-  margin-bottom: 30px;
-}
-
-/* Filtro "Jugador" con fondo blanco y texto negro */
-.round-public .card form label {
-  color: #14532d;
-  font-weight: 600;
-  margin-right: 4px;
-}
-
-.round-public .card form select {
-  background: #ffffff;
+  font-size: 0.7rem;
   color: #111827;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.80rem;
-}
-.summary-table td.summary-metric-col,
-.summary-table th.summary-metric-col {
-  text-align: left !important;
 }
 
-
-
-
-/*==========================================================================================*/
-/*=================================== PUBLIC: LIGA DETAIL===================================*/
-/*==========================================================================================*/
-
+.shots-seg.hio   { background: #ffc000; }
+.shots-seg.alb   { background: #ffe5b4; }
+.shots-seg.eag   { background: #fff7cc; }
+.shots-seg.bird  { background: #ffe4d6; }
+.shots-seg.par   { background: #e2f0d9; }
+.shots-seg.bogey { background: #d9e1f2; }
+.shots-seg.dbl   { background: #f2f2f2; }
+.shots-seg.over  { background: #e0e0e0; }
 
 /* ---------------------------------------------------------
-   RESUMEN JUGADORES LIGA – resaltados amarillos
+   MÓVIL: scroll horizontal SOLO en round summary
    --------------------------------------------------------- */
-
-.summary-league-table .summary-league-highlight {
-  background: #ffffff;
-  font-weight: 500;
-}
-
-/* 6 = G. Netos, 8 = Ptos Scr., 12 = Ptos Liga */
-.summary-league-table td:nth-child(6),
-.summary-league-table th:nth-child(6),
-.summary-league-table td:nth-child(8),
-.summary-league-table th:nth-child(8),
-.summary-league-table td:nth-child(12),
-.summary-league-table th:nth-child(12) {
-  background: #fffed6;
-}
-
-/* ==========================================================
-   PUBLIC ROUND SUMMARY — Resumen jugadores (móvil)
-   Solo afecta a la tabla summary-round-table
-   ========================================================== */
 
 .summary-round-wrapper{
   width: 100%;
-  max-width: 100%;
-  overflow-x: auto !important;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
 }
 
-/* La tabla debe desbordar para que haya scroll */
-.summary-round-wrapper .summary-round-table{
-  width: max-content !important;
-  min-width: 980px;
-}
+/* Móvil */
+@media (max-width: 900px){
+  .summary-round-wrapper{
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-/* Evita que se rompan textos y mantiene columnas compactas */
-.summary-round-wrapper .summary-round-table th,
-.summary-round-wrapper .summary-round-table td{
-  white-space: nowrap;
-}
-
-/* Opcional: fija la primera columna (Jugador) en móvil */
-@media (max-width: 640px){
-  .summary-round-wrapper .summary-round-table th.summary-metric-col,
-  .summary-round-wrapper .summary-round-table td.summary-metric-col{
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: #f3f4f6; /* coincide con tu estilo de métrica */
+  .summary-round-wrapper .summary-round-table{
+    min-width: 980px;
+    table-layout: fixed;
   }
 }
 
+/* Fijar jugador solo en móvil pequeño */
+@media (max-width: 640px){
+  .summary-round-wrapper th.summary-metric-col,
+  .summary-round-wrapper td.summary-metric-col{
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #f3f4f6;
+  }
+}
 
+/*=============================================================================
+                            PUBLIC LEAGUE DETAIL                               
+  ============================================================================= */
 
 /* ---------------------------------------------------------
    CLASIFICACIÓN LIGA (tabla blanca profesional)
@@ -2639,42 +2563,60 @@ input[readonly], textarea[readonly]{
   color: #111827;
 }
 
+/* Highlight de liga (G.Netos, Ptos Scr, Ptos Liga) */
+.summary-league-table td.summary-league-highlight{
+  background: #fffed6 !important;
+  font-weight: 600;
+}
+
+
 /* -----------------------------------------------------------
-   LEAGUE DETAIL — FIX móvil tabla clasificación
-   (no rompe otras tablas)
+   LEAGUE DETAIL — Tabla clasificación
+   Desktop full width + móvil con scroll
    ----------------------------------------------------------- */
 
-/* El wrapper debe permitir scroll horizontal */
-.summary-table-wrapper{
+/* Desktop: SIN scroll y la tabla estira al 100% */
+.summary-table-wrapper.summary-league-wrapper{
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: visible;
 }
 
-/* Evita que la tabla se comprima: fuerza scroll */
-.summary-table-wrapper .summary-league-table{
-  min-width: 980px;        /* ajusta si quieres; clave: > ancho móvil */
+.summary-table-wrapper.summary-league-wrapper .summary-league-table{
+  width: 100%;
 }
 
-/* Para que no haga saltos raros en móvil */
-.summary-table-wrapper .summary-league-table th,
-.summary-table-wrapper .summary-league-table td{
-  white-space: nowrap;
+/* Móvil: scroll horizontal */
+@media (max-width: 900px){
+  .summary-table-wrapper.summary-league-wrapper{
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .summary-table-wrapper.summary-league-wrapper .summary-league-table{
+    width: max-content;   /* ✅ solo móvil */
+    min-width: 980px;     /* ✅ fuerza overflow */
+  }
+
+  .summary-table-wrapper.summary-league-wrapper .summary-league-table th,
+  .summary-table-wrapper.summary-league-wrapper .summary-league-table td{
+    white-space: nowrap;
+  }
 }
 
-/* (Opcional pero muy útil) Fijar la columna de jugador */
+/* Sticky primera columna solo en móvil (opcional) */
 @media (max-width: 640px){
-  .summary-table-wrapper .summary-league-table th:nth-child(1),
-  .summary-table-wrapper .summary-league-table td:nth-child(1){
+  .summary-table-wrapper.summary-league-wrapper .summary-league-table th:nth-child(1),
+  .summary-table-wrapper.summary-league-wrapper .summary-league-table td:nth-child(1){
     position: sticky;
     left: 0;
     z-index: 2;
     background: #ffffff;
   }
 
-  .summary-table-wrapper .summary-league-table thead th:nth-child(1){
+  .summary-table-wrapper.summary-league-wrapper .summary-league-table thead th:nth-child(1){
     z-index: 3;
-    background: #f3f4f6;   /* si tu header tiene ese fondo */
+    background: #f3f4f6;
   }
 }
 
@@ -3193,34 +3135,61 @@ input[readonly], textarea[readonly]{
 }
 
 /* ==========================================================
-   LEAGUE DETAIL — Tablas móviles con scroll horizontal
-   (solo afecta a esta página)
+   LEAGUE DETAIL — Historial (desktop full width + móvil scroll)
    ========================================================== */
 
-/* 1) Wrapper: scroll horizontal sí o sí */
-section.card .league-history-wrap{
+/* Desktop: tabla a 100% sin scroll */
+.league-history-wrap{
   width: 100%;
-  max-width: 100%;
-  overflow-x: auto !important;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: visible;
 }
 
-/* 2) La tabla debe “crecer” para forzar overflow */
-section.card .league-history-wrap .league-history-table{
-  width: max-content !important;    /* ✅ clave */
-  min-width: 980px;                /* ✅ clave */
+.league-history-wrap .league-history-table{
+  width: 100%;
 }
 
-/* 3) Evitar saltos de línea */
-section.card .league-history-wrap .league-history-table th,
-section.card .league-history-wrap .league-history-table td{
-  white-space: nowrap;
+/* Móvil: scroll horizontal */
+@media (max-width: 900px){
+  .league-history-wrap{
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .league-history-wrap .league-history-table{
+    width: max-content;   /* ✅ solo móvil */
+    min-width: 980px;     /* ajusta si quieres */
+  }
+
+  .league-history-wrap .league-history-table th,
+  .league-history-wrap .league-history-table td{
+    white-space: nowrap;
+  }
 }
 
-/* 4) Si algún contenedor padre corta el overflow, neutralízalo solo aquí */
-section.card{
-  overflow: visible;               /* no rompe nada visual, pero evita cortes */
+/* (Opcional) Sticky para Fecha+Campo en móvil */
+@media (max-width: 640px){
+  .league-history-wrap .league-history-table th:nth-child(1),
+  .league-history-wrap .league-history-table td:nth-child(1){
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #ffffff;
+  }
+
+  .league-history-wrap .league-history-table th:nth-child(2),
+  .league-history-wrap .league-history-table td:nth-child(2){
+    position: sticky;
+    left: 110px; /* ajusta si tu col 1 es más ancha */
+    z-index: 2;
+    background: #ffffff;
+  }
+
+  .league-history-wrap .league-history-table thead th:nth-child(1),
+  .league-history-wrap .league-history-table thead th:nth-child(2){
+    z-index: 3;
+    background: #f3f4f6;
+  }
 }
 
 
