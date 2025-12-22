@@ -966,16 +966,16 @@ input[readonly], textarea[readonly]{
 }
 
 .league-star{
-  color: #d4af37; /* dorado Golf Mode */
+  display: inline-block;     /* CLAVE para iOS */
   font-size: 18px;
   line-height: 1;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.15);
-}
 
-.league-star{
   background: linear-gradient(180deg, #f6e27a, #d4af37);
   -webkit-background-clip: text;
+  background-clip: text;
+
   -webkit-text-fill-color: transparent;
+  color: transparent;        /* fallback consistente */
 }
 
 
