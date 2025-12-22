@@ -1149,6 +1149,10 @@ def player_profile(
             "unlocked": a.id in owned_ids,   # 👈 TRUE si el jugador lo tiene
         })
 
+    # -------------------------
+    # TÍTULOS DE LIGA (⭐)
+    # -------------------------
+    titles_count = crud.get_player_league_titles_count(db, player_id)
 
 
     return templates.TemplateResponse(
@@ -1179,6 +1183,7 @@ def player_profile(
             "last10_gross": last10_gross,
             "year": year,
             "years_available": years_available,
+            "titles_count": titles_count,  # 👈 AÑADE ESTA LÍNEA
 
         },
     )

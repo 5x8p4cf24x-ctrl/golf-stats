@@ -958,6 +958,27 @@ input[readonly], textarea[readonly]{
   color: #6b7280;
 }
 
+.player-header-stars{
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.league-star{
+  color: #d4af37; /* dorado Golf Mode */
+  font-size: 18px;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+
+.league-star{
+  background: linear-gradient(180deg, #f6e27a, #d4af37);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+
 /* Contenedor de las badges de victorias/empates */
 .player-header-right,
 .player-header-badges {        /* alias por si el HTML tiene el nombre antiguo */
@@ -985,6 +1006,59 @@ input[readonly], textarea[readonly]{
   /* si el nombre ocupa mucho, le damos aire */
   .player-header-name {
     font-size: 1.2rem;
+  }
+}
+@media (max-width: 520px) {
+  /* Header pasa a columna para que no comprima el texto */
+  .player-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  /* Mantiene avatar + nombre en fila, pero con mejor aire */
+  .player-header-main {
+    gap: 12px;
+  }
+
+  /* Badges pasan abajo y en fila */
+  .player-header-right,
+  .player-header-badges {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  /* Estrellas: que no se peguen y respiren */
+  .player-header-stars {
+    margin-top: 6px;
+  }
+
+  /* META en “chips” (si aplicas el HTML con meta-item) */
+  .player-header-meta {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    line-height: 1.1;
+  }
+
+  .player-header-meta .meta-label {
+    display: none; /* fuera texto largo en móvil */
+  }
+
+  .player-header-meta .meta-sep {
+    display: none; /* fuera los puntos en móvil */
+  }
+
+  .player-header-meta .meta-item {
+    background: rgba(20, 83, 45, 0.06);
+    border: 1px solid rgba(20, 83, 45, 0.12);
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    color: #374151;
   }
 }
 

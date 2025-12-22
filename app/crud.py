@@ -590,6 +590,31 @@ def close_league(db: Session, league_id: int):
         db.refresh(league)
     return league
 
+def get_player_league_titles_count(db: Session, player_id: int) -> int:
+    """
+    Cuenta cuántas ligas cerradas ha ganado un jugador (campeón principal),
+    recalculando standings por liga (sin persistencia en BD).
+    """
+    leagues_closed = (
+        db.query(models.League)
+        .filter(models.League.is_closed == True)
+        .order_by(models.League.created_at.desc())
+        .all()
+    )
+
+    titles = 0
+
+    for league in leagues_closed:
+        rounds = get_rounds_by_league(db, league.id)
+        standings = compute_league_standings(db, league, rounds)
+
+        champions_main_ids = standings.get("champions", {}).get("main_players", [])
+        if player_id in champions_main_ids:
+            titles += 1
+
+    return titles
+
+
 # =======================================================================================
 # ====================================== ACHIEVEMENTS ==================================
 # =======================================================================================

@@ -22,13 +22,37 @@
           {% endif %}
         </h1>
 
+        {% if titles_count and titles_count > 0 %}
+          <div class="player-header-stars" title="{{ titles_count }} título(s) de liga">
+            {% for _ in range(titles_count) %}
+              <span class="league-star">★</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+
         <p class="player-header-meta">
-          HCP exacto actual: <strong>{{ "%.1f"|format(player.hcp_exact) }}</strong>
-          · Partidas jugadas: <strong>{{ rounds_played }}</strong>
+          <span class="meta-item">
+            <span class="meta-label">HCP exacto actual:</span>
+            <strong>{{ "%.1f"|format(player.hcp_exact) }}</strong>
+          </span>
+
+          <span class="meta-sep">·</span>
+
+          <span class="meta-item">
+            <span class="meta-label">Partidas jugadas:</span>
+            <strong>{{ rounds_played }}</strong>
+          </span>
+
           {% if player.license_number %}
-            · Licencia: <strong>{{ player.license_number }}</strong>
+            <span class="meta-sep">·</span>
+            <span class="meta-item">
+              <span class="meta-label">Licencia:</span>
+              <strong>{{ player.license_number }}</strong>
+            </span>
           {% endif %}
         </p>
+
       </div>
     </div>
 
