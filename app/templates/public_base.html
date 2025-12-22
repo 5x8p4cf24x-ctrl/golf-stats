@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <link rel="apple-touch-icon" sizes="180x180" href="https://www.golfmode.es/static/apple-touch-icon.png">
- 
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Golf Mode{% endblock %}</title>
@@ -15,11 +15,13 @@
   <link rel="stylesheet" href="/static/styles.css" />
   {% block head_extra %}{% endblock %}
 </head>
-<body>
+
+<body class="{% block body_class %}{% endblock %}">
   <main class="container {% block container_class %}{% endblock %}">
     {% block header %}{% endblock %}
     {% block content %}{% endblock %}
   </main>
+
   {% block scripts %}{% endblock %}
   {% block body_extra %}{% endblock %}
 </body>

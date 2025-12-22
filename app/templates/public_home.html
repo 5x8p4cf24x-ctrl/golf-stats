@@ -1,18 +1,14 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Golf Mode · Activa el modo golf</title>
+{% extends "public_base.html" %}
 
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
+{% block title %}Golf Mode · Activa el modo golf{% endblock %}
 
-<body class="gm-body">
-  <main class="gm-wrap">
+{# La clase gm-body va al <body>, no al container #}
+{% block body_class %}gm-body{% endblock %}
 
-    <!-- LOGO + MENÚ HORIZONTAL CENTRADOS (PC) -->
+{% block content %}
+  <div class="gm-wrap">
+
+    <!-- LOGO + MENÚ HORIZONTAL (PC) -->
     <header class="gm-header">
       <img src="/static/golfmode_logo.png" alt="Golf Mode" class="gm-logo">
 
@@ -26,13 +22,13 @@
       </nav>
     </header>
 
-    <!-- IMAGEN CENTRADA -->
+    <!-- HERO -->
     <section class="gm-hero">
       <div class="gm-hero-image"></div>
       <div class="gm-signature">By Sergi Moli</div>
     </section>
 
-  </main>
+  </div>
 
   <!-- Bottom Nav (solo móvil) -->
   <nav class="gm-bottom-nav" aria-label="Navegación principal (móvil)">
@@ -40,34 +36,30 @@
       <span class="gm-nav-icon" aria-hidden="true">👤</span>
       <span class="gm-nav-label">Jugadores</span>
     </a>
-
     <a href="/public/courses" class="gm-nav-item">
       <span class="gm-nav-icon" aria-hidden="true">⛳</span>
       <span class="gm-nav-label">Campos</span>
     </a>
-
     <a href="/public/rounds" class="gm-nav-item">
       <span class="gm-nav-icon" aria-hidden="true">📝</span>
       <span class="gm-nav-label">Rondas</span>
     </a>
-
     <a href="/public/leagues" class="gm-nav-item">
       <span class="gm-nav-icon" aria-hidden="true">🏆</span>
       <span class="gm-nav-label">Ligas</span>
     </a>
-
     <a href="/public/stats" class="gm-nav-item">
       <span class="gm-nav-icon" aria-hidden="true">📊</span>
       <span class="gm-nav-label">Stats</span>
     </a>
-
     <a href="/public/rankings" class="gm-nav-item">
       <span class="gm-nav-icon" aria-hidden="true">📈</span>
       <span class="gm-nav-label">Rankings</span>
     </a>
   </nav>
+{% endblock %}
 
-  <!-- Marca el item activo automáticamente -->
+{% block scripts %}
   <script>
     (function () {
       const path = window.location.pathname.replace(/\/$/, "");
@@ -79,5 +71,4 @@
       });
     })();
   </script>
-</body>
-</html>
+{% endblock %}
