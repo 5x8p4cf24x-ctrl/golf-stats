@@ -3610,6 +3610,25 @@ input[readonly], textarea[readonly]{
   }
 }
 
+@media (max-width: 768px) {
+
+  /* Asegura tamaño visual consistente */
+  .public-league-logo {
+    width: 72px;
+    height: 72px;
+    flex: 0 0 72px;
+  }
+
+  /* Logos en móvil: mejor completos que recortados */
+  .public-league-logo-img {
+    object-fit: contain;
+    padding: 6px;
+    background: #f0fdf4; /* mismo fondo del contenedor */
+    border-radius: 16px;
+  }
+}
+
+
 
 /* ==========================================================================
    PUBLIC RANKINGS
