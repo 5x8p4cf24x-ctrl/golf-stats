@@ -1922,21 +1922,21 @@ input[readonly], textarea[readonly]{
 /* ================================== PÁGINA PÚBLICA: RONDAS ===================================== */
 /* =============================================================================================== */
 
-
 .rounds-page {
   padding-top: 32px;
 }
 
-
-/* FILTROS RONDAS */
+/* =========================
+   FILTROS RONDAS
+   ========================= */
 
 .rounds-filters {
   max-width: 1200px;
-  margin: 0 auto 20px auto;
+  margin: 0 auto 32px auto;   /* más respiro con la lista */
+  padding: 14px 18px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 16px;
-  padding: 14px 18px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
@@ -1951,6 +1951,7 @@ input[readonly], textarea[readonly]{
 .rounds-filters-form label {
   font-weight: 600;
   color: #14532d;
+  white-space: nowrap;
 }
 
 /* inputs y selects blancos, texto negro */
@@ -1963,9 +1964,19 @@ input[readonly], textarea[readonly]{
   color: #000000;
   font-family: 'Montserrat', sans-serif;
   font-size: 0.95rem;
+
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+}
+
+/* Flecha custom SOLO para selects */
+.rounds-filters-form select {
+  padding-right: 36px; /* espacio para la flecha */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2314532d' viewBox='0 0 16 16'%3E%3Cpath d='M3.204 5.204a.5.5 0 0 1 .707 0L8 9.293l4.09-4.09a.5.5 0 1 1 .707.707l-4.444 4.444a.5.5 0 0 1-.707 0L3.204 5.91a.5.5 0 0 1 0-.707z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
 }
 
 .rounds-filters-form select option {
@@ -1974,7 +1985,7 @@ input[readonly], textarea[readonly]{
 }
 
 .rounds-filters-form button {
-  padding: 6px 14px;
+  padding: 8px 14px;
   border-radius: 999px;
   border: none;
   background: #14532d;
@@ -1999,7 +2010,47 @@ input[readonly], textarea[readonly]{
   text-decoration: underline;
 }
 
-/* LISTA DE RONDAS */
+/* Responsive (móvil): layout ordenado y con aire */
+@media (max-width: 768px) {
+
+  .rounds-filters {
+    padding: 14px 14px;
+  }
+
+  /* flecha */
+  .rounds-filters-form select {
+    padding-right: 40px;
+    background-position: right 14px center;
+  }
+
+  /* grid: label + campo alineados */
+  .rounds-filters-form {
+    display: grid;
+    grid-template-columns: 90px 1fr; /* ancho de labels */
+    gap: 10px 12px;
+    align-items: center;
+  }
+
+  .rounds-filters-form select,
+  .rounds-filters-form input[type="number"] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .rounds-filters-form button {
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: 10px 14px;
+  }
+
+  .rounds-clear-filter {
+    grid-column: 1 / -1;
+  }
+}
+
+/* =========================
+   LISTA DE RONDAS
+   ========================= */
 
 .rounds-list {
   max-width: 1200px;
@@ -2009,7 +2060,9 @@ input[readonly], textarea[readonly]{
   gap: 14px;
 }
 
-/* ITEM RONDA */
+/* =========================
+   ITEM RONDA
+   ========================= */
 
 .round-item {
   display: flex;
@@ -2031,8 +2084,7 @@ input[readonly], textarea[readonly]{
   border-color: #22c55e;
 }
 
-/* AVATAR CIRCULAR DEL CAMPO */
-
+/* AVATAR DEL CAMPO */
 .round-course-avatar {
   width: 68px;
   height: 68px;
@@ -2059,8 +2111,7 @@ input[readonly], textarea[readonly]{
   color: #15803d;
 }
 
-/* INFO DE LA RONDA */
-
+/* INFO */
 .round-info {
   flex: 1;
   display: flex;
@@ -2072,6 +2123,7 @@ input[readonly], textarea[readonly]{
 .round-info-top {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .round-date {
@@ -2095,37 +2147,6 @@ input[readonly], textarea[readonly]{
 .round-players {
   font-size: 0.8rem;
   color: #6b7280;
-}
-
-/* Etiqueta de tipo de ronda (Liga / Amistosa) */
-.round-type-tag {
-  min-width: 80px;
-  text-align: right;
-  font-weight: 600;
-  color: #15803d;
-  font-size: 1rem;
-  text-transform: capitalize;
-  display: flex;
-  align-items: center;   /* centra verticalmente */
-  justify-content: flex-end;
-}
-
-
-/* Enlace volver */
-
-.rounds-back {
-  max-width: 1200px;
-  margin: 32px auto 0 auto;
-  font-size: 0.95rem;
-}
-
-.rounds-back a {
-  color: #14532d;
-  text-decoration: none;
-}
-
-.rounds-back a:hover {
-  text-decoration: underline;
 }
 
 /* CHIP DE TIPO DE RONDA (LIGA / AMISTOSA) */
@@ -2153,6 +2174,22 @@ input[readonly], textarea[readonly]{
   background: #f1f5f9;
   color: #334155;
   border: 1px solid #cbd5e1;
+}
+
+/* Enlace volver */
+.rounds-back {
+  max-width: 1200px;
+  margin: 32px auto 0 auto;
+  font-size: 0.95rem;
+}
+
+.rounds-back a {
+  color: #14532d;
+  text-decoration: none;
+}
+
+.rounds-back a:hover {
+  text-decoration: underline;
 }
 
 /* ========== DETALLE PÚBLICO DE VUELTA (GOLF MODE) ========== */

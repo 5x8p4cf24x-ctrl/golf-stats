@@ -1317,7 +1317,6 @@ def public_rounds_list(
     course_id: str | None = None,
     player_id: str | None = None,
     year: str | None = None,
-    month: str | None = None
 ):
     courses = crud.get_courses(db)
     players = crud.get_players(db)
@@ -1326,7 +1325,16 @@ def public_rounds_list(
     course_id_int = int(course_id) if course_id and course_id.strip() != "" else None
     player_id_int = int(player_id) if player_id and player_id.strip() != "" else None
     year_int = int(year) if year and year.strip() != "" else None
-    month_int = int(month) if month and month.strip() != "" else None
+
+    # Años disponibles (sin filtros)
+    years_available = [
+        y for (y,) in (
+            db.query(models.Round.date)
+              .filter(models.Round.date.isnot(None))
+              .all()
+        )
+    ]
+    years_available = sorted({d.year for d in years_available}, reverse=True)
 
     q = db.query(models.Round)
 
@@ -1338,11 +1346,6 @@ def public_rounds_list(
             models.Round.date >= date(year_int, 1, 1),
             models.Round.date < date(year_int + 1, 1, 1)
         )
-
-    if month_int and year_int:
-        start = date(year_int, month_int, 1)
-        end = date(year_int + (month_int // 12), (month_int % 12) + 1, 1)
-        q = q.filter(models.Round.date >= start, models.Round.date < end)
 
     if player_id_int:
         q = q.join(models.RoundPlayer).filter(models.RoundPlayer.player_id == player_id_int)
@@ -1356,10 +1359,10 @@ def public_rounds_list(
             "rounds": rounds,
             "courses": courses,
             "players": players,
+            "years_available": years_available,
             "selected_course": course_id_int,
             "selected_player": player_id_int,
             "selected_year": year_int,
-            "selected_month": month_int
         }
     )
 
