@@ -3818,17 +3818,26 @@ input[readonly], textarea[readonly]{
    PUBLIC STATS – Layout + KPIs + Table
    ========================================================================== */
 
-
-
-/* ---------- Filtros ---------- */
+/* =========================
+   STATS: FILTROS (igual que RONDAS)
+   ========================= */
 
 .stats-filters{
+  max-width: 1200px;
+  margin: 0 auto 32px auto;
+  padding: 14px 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+
   display:flex;
-  gap:12px;
+  gap:12px 20px;
   align-items:end;
   flex-wrap:wrap;
 }
 
+/* Cada filtro: label + control */
 .stats-filter{
   display:flex;
   flex-direction:column;
@@ -3837,15 +3846,104 @@ input[readonly], textarea[readonly]{
 }
 
 .stats-filter label{
-  font-size:.78rem;
-  font-weight:500;
-  color:var(--muted);
+  font-weight: 600;
+  color: #14532d;
+  white-space: nowrap;
+  font-size: 0.95rem; /* igual que rondas */
 }
 
+/* Inputs/selects dentro de stats */
+.stats-filter select,
+.stats-filter input[type="number"],
+.stats-filter input[type="text"]{
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #000000;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Flecha custom SOLO para selects en stats */
+.stats-filter select{
+  padding-right: 36px;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2314532d' viewBox='0 0 16 16'%3E%3Cpath d='M3.204 5.204a.5.5 0 0 1 .707 0L8 9.293l4.09-4.09a.5.5 0 1 1 .707.707l-4.444 4.444a.5.5 0 0 1-.707 0L3.204 5.91a.5.5 0 0 1 0-.707z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+}
+
+.stats-filter select option{
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Botón aplicar: mismo look que rondas */
 .stats-apply{
-  padding:10px 14px;
-  border-radius:10px;
-  font-weight:700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background: #14532d;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stats-apply:hover{
+  background: #15803d;
+}
+
+/* Responsive móvil: ordenado como rondas */
+@media (max-width: 768px){
+
+  .stats-filters{
+    padding: 14px 14px;
+  }
+
+  /* Ajuste flecha en móvil */
+  .stats-filter select{
+    padding-right: 40px;
+    background-position: right 14px center;
+  }
+
+  /* Pasamos a grid (2 columnas): label/control */
+  .stats-filters{
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 10px 12px;
+    align-items: center;
+  }
+
+  /* Los bloques "stats-filter" se vuelven transparentes para grid */
+  .stats-filter{
+    display: contents; /* clave: label y select se colocan en la grid */
+    min-width: 0;
+  }
+
+  .stats-filter label{
+    margin: 0;
+  }
+
+  .stats-filter select,
+  .stats-filter input[type="number"],
+  .stats-filter input[type="text"]{
+    width: 100%;
+    min-width: 0;
+  }
+
+  .stats-apply{
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: 10px 14px;
+  }
 }
 
 /* ---------- Secciones ---------- */
