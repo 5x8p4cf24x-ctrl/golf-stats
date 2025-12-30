@@ -55,6 +55,9 @@ UPLOAD_COURSES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_LEAGUES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_NEWS_DIR.mkdir(parents=True, exist_ok=True)
 
+
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
+
 import shutil
 from pathlib import Path
 
@@ -69,11 +72,6 @@ for name in DEFAULT_NEWS_FILES:
     dst = UPLOAD_NEWS_DIR / name
     if src.exists() and not dst.exists():
         shutil.copyfile(src, dst)
-
-
-
-
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
 
 ADMIN_KEY = os.getenv("ADMIN_KEY", "")  # en local puedes dejarlo vacío si quieres
 
