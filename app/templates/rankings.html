@@ -19,62 +19,64 @@
     </p>
   </header>
 
-{% macro table_block(title, icon, subtitle, rows, key, fmt="%.1f") %}
-  <section class="card rankings-card">
-    <div class="rankings-card-head">
-      <div>
-        <div class="rankings-title-row">
+  {% macro table_block(title, subtitle, rows, key, fmt="%.1f") %}
+    <section class="card rankings-card">
+      <div class="rankings-card-head">
+        <div class="rankings-title-col">
           <h2 class="rankings-h2">{{ title }}</h2>
-          {% if icon %}<span class="rankings-icon">{{ icon }}</span>{% endif %}
+          {% if subtitle %}
+            <p class="rankings-sub">{{ subtitle }}</p>
+          {% endif %}
         </div>
-        {% if subtitle %}<p class="rankings-sub">{{ subtitle }}</p>{% endif %}
       </div>
-      <span class="rankings-chip">{{ rows|length }} jugadores</span>
-    </div>
 
-    <div class="rankings-table-wrap">
-      <table class="rankings-table">
-        <thead>
-          <tr>
-            <th class="c-rank">#</th>
-            <th>Jugador</th>
-            <th class="num">Valor</th>
-            <th class="num">Vtas</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in rows %}
-          <tr class="{% if loop.index == 1 %}top1{% elif loop.index == 2 %}top2{% elif loop.index == 3 %}top3{% endif %}">
-            <td class="c-rank">
-              {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
-            </td>
-            <td>
-              <a class="rankings-player-link" href="/players/{{ r.player.id }}">{{ r.player.name }}</a>
-            </td>
-            <td class="num">
-              {% if r[key] is none %}-{% else %}{{ fmt|format(r[key]) }}{% endif %}
-            </td>
-            <td class="num">{{ r.rounds_played }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
-{% endmacro %}
+      <div class="rankings-table-wrap">
+        <table class="rankings-table">
+          <thead>
+            <tr>
+              <th class="c-rank">#</th>
+              <th>Jugador</th>
+              <th class="num">Valor</th>
+              <th class="num">Vtas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr class="{% if loop.index == 1 %}top1{% elif loop.index == 2 %}top2{% elif loop.index == 3 %}top3{% endif %}">
+                <td class="c-rank">
+                  <span class="rank-pill">{{ loop.index }}</span>
+                </td>
+
+                <td>
+                  <a class="rankings-player-link" href="/players/{{ r.player.id }}">{{ r.player.name }}</a>
+                </td>
+
+                <td class="num">
+                  {% if r[key] is none %}-{% else %}{{ fmt|format(r[key]) }}{% endif %}
+                </td>
+
+                <td class="num">{{ r.rounds_played }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endmacro %}
 
   <section class="rankings-grid">
-    {{ table_block("Media puntos Stableford", "🏆", "HCP (más es mejor)", by_avg_pts, "avg_pts", "%.1f") }}
-    {{ table_block("Media puntos Scratch", "⭐", "Scratch (más es mejor)", by_avg_scr, "avg_scr", "%.1f") }}
+  {{ table_block("Media puntos Stableford", "HCP (más es mejor)", by_avg_pts, "avg_pts", "%.1f") }}
+  {{ table_block("Media puntos Scratch", "Scratch (más es mejor)", by_avg_scr, "avg_scr", "%.1f") }}
 
-    {{ table_block("Victorias", "🥇", "Desempate por empates", by_wins, "wins", "%d") }}
-    {{ table_block("Putts por hoyo", "🟣", "Menor es mejor", by_putts, "putts_per_hole", "%.2f") }}
+  {{ table_block("Victorias", "Primeras posiciones", by_wins, "wins", "%d") }}
+  {{ table_block("Putts por hoyo", "Menor es mejor", by_putts, "putts_per_hole", "%.2f") }}
 
-    {{ table_block("FIR %", "🎯", "Precisión desde tee", by_fir, "fir_pct", "%.0f%%") }}
-    {{ table_block("GIR %", "⛳", "Greens en regulación", by_gir, "gir_pct", "%.0f%%") }}
+  {{ table_block("FIR %", "Precisión desde tee", by_fir, "fir_pct", "%.0f%%") }}
+  {{ table_block("GIR %", "Greens en regulación", by_gir, "gir_pct", "%.0f%%") }}
 
-    {{ table_block("Birdies totales", "🐦", "Acumulado", by_birdies, "birdies", "%d") }}
-    {{ table_block("Eagles totales", "🦅", "Acumulado", by_eagles, "eagles", "%d") }}
-  </section>
+  {{ table_block("Birdies totales", "Acumulado", by_birdies, "birdies", "%d") }}
+  {{ table_block("Eagles totales", "Acumulado", by_eagles, "eagles", "%d") }}
+</section>
+
 
 {% endblock %}

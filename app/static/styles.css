@@ -4215,12 +4215,11 @@ main.gm-wrap.player-profile-page{
   }
 }
 
-
-
 /* ==========================================================================
-   PUBLIC RANKINGS
+   PUBLIC RANKINGS — UNIFICADO (sin iconos / sin chip jugadores)
    ========================================================================== */
 
+/* Grid de bloques */
 .rankings-grid{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4231,42 +4230,48 @@ main.gm-wrap.player-profile-page{
   .rankings-grid{ grid-template-columns: 1fr; }
 }
 
-.rankings-card{ padding: 14px; }
+/* Card */
+.rankings-card{
+  padding: 14px;
+}
 
+/* Header del bloque */
 .rankings-card-head{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
+/* Columna de título */
+.rankings-title-col{
+  min-width: 0;
+}
+
+/* Título: más fino y compacto (para que no parta tanto) */
 .rankings-h2{
   margin:0;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--gm-green);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #14532d;
+  line-height: 1.15;
 }
+
+/* Subtítulo */
 .rankings-sub{
   margin: 4px 0 0 0;
-  color: #6b7280;
-  font-size: .9rem;
+  font-size: .82rem;
+  font-weight: 500;
+  color:#6b7280;
 }
 
-.rankings-chip{
-  border: 1px solid var(--gm-green-soft);
-  background: #f0fdf4;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: .78rem;
-  color: var(--gm-green);
-  white-space: nowrap;
-}
+/* ===================== Tabla ===================== */
 
-/* tabla */
 .rankings-table-wrap{
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #fff;
@@ -4301,66 +4306,71 @@ main.gm-wrap.player-profile-page{
 }
 
 .rankings-table .num{ text-align: right; }
-.rankings-table .c-rank{ width: 44px; text-align: center; font-weight: 800; }
 
+/* Columna ranking */
+.rankings-table .c-rank{
+  width: 44px;
+  text-align: center;
+}
+
+/* Link jugador */
 .rankings-player-link{
   color: #14532d;
-  font-weight: 400;
+  font-weight: 600;            /* un pelín más premium/legible */
   text-decoration: none;
 }
 .rankings-player-link:hover{ text-decoration: underline; }
 
+/* Hover suave */
 .rankings-table tbody tr:hover td{
   background: rgba(34,197,94,0.06);
 }
 
+/* Quitar borde final */
 .rankings-table th:last-child,
 .rankings-table td:last-child{ border-right:none; }
 .rankings-table tr:last-child th,
 .rankings-table tr:last-child td{ border-bottom:none; }
 
-/* ===== TOP 3 refinado (GolfMode) ===== */
+/* ===================== PODIO SUTIL ===================== */
 
-/* Top 1: borde verde sutil 
-.rankings-table tbody tr.top1{
-  outline: 1px solid rgba(34,197,94,0.25);
-  outline-offset: -2px;
-  border-radius: 8px;
-}*/
-
-/* Iconos más protagonistas */
-.rankings-table tbody tr.top1 .c-rank,
-.rankings-table tbody tr.top2 .c-rank,
-.rankings-table tbody tr.top3 .c-rank{
-  font-size: 1rem;
-}
-
-/* Hover mantiene coherencia */
-.rankings-table tbody tr:hover td{
-  background: rgba(34,197,94,0.06);
-}
-
-
-.rankings-title-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.rankings-icon{
+.rank-pill{
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  min-width: 26px;
   height: 26px;
-  padding: 0 10px;
+  padding: 0 8px;
   border-radius: 999px;
-  border: 1px solid var(--gm-green-soft);
-  background: #f0fdf4;
-  color: var(--gm-green);
   font-weight: 800;
-  font-size: .88rem;
-  line-height: 1;
+  font-size: .82rem;
+  color:#14532d;
+  background: rgba(20,83,45,0.06);
+  border: 1px solid rgba(20,83,45,0.10);
 }
+
+/* top 3 muy sutil */
+.rankings-table tr.top1 .rank-pill{
+  background: rgba(212,175,55,0.16);
+  border-color: rgba(212,175,55,0.35);
+  color:#6b4e00;
+}
+.rankings-table tr.top2 .rank-pill{
+  background: rgba(17,24,39,0.08);
+  border-color: rgba(17,24,39,0.12);
+  color:#111827;
+}
+.rankings-table tr.top3 .rank-pill{
+  background: rgba(180,83,9,0.12);
+  border-color: rgba(180,83,9,0.22);
+  color:#7c2d12;
+}
+
+/* Micro-ajuste móvil: títulos aún más compactos */
+@media (max-width: 640px){
+  .rankings-h2{ font-size: 0.92rem; }
+}
+
 
 
 
