@@ -19,7 +19,7 @@ from app.models import Player, Course, Round, RoundPlayer, HoleScore, Hole
 import os
 from fastapi import HTTPException
 from fastapi.responses import PlainTextResponse
-
+import shutil
 
 Base.metadata.create_all(bind=engine)
 
@@ -58,9 +58,6 @@ UPLOAD_NEWS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
 
-import shutil
-from pathlib import Path
-
 STATIC_NEWS_DEFAULTS_DIR = Path(__file__).resolve().parent / "static" / "uploads" / "news"
 
 DEFAULT_NEWS_FILES = [
@@ -76,6 +73,25 @@ for name in DEFAULT_NEWS_FILES:
         shutil.copyfile(src, dst)
 
 
+# Alias: si ya existen archivos antiguos con prefijo (ej: *_default_league.jpg),
+# garantizamos que exista el nombre limpio default_*.jpg
+def ensure_alias(clean_name: str):
+    clean_path = UPLOAD_NEWS_DIR / clean_name
+    if clean_path.exists():
+        return
+
+    pattern = f"*_{clean_name}"
+    matches = sorted(UPLOAD_NEWS_DIR.glob(pattern))
+    if matches:
+        shutil.copyfile(matches[0], clean_path)
+
+ensure_alias("default_league.jpg")
+ensure_alias("default_achievement.jpg")
+ensure_alias("default_round.jpg")
+
+# ---------------------------
+# Admin auth
+# ---------------------------
 ADMIN_KEY = os.getenv("ADMIN_KEY", "")  # en local puedes dejarlo vacío si quieres
 
 def require_admin(request: Request):
@@ -91,8 +107,9 @@ def require_admin(request: Request):
     # 3) Si no coincide -> fuera
     raise HTTPException(status_code=401, detail="Admin auth required")
 
-from fastapi.responses import JSONResponse
-
+# ---------------------------
+# DEBUG temporal (bórralo cuando confirmes)
+# ---------------------------
 @app.get("/__debug/uploads/news")
 def debug_uploads_news():
     files = []

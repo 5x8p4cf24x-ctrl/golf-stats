@@ -856,11 +856,10 @@ DEFAULT_NEWS_IMAGES = {
     "league": "news/default_league.jpg",
     "achievement": "news/default_achievement.jpg",
     "round": "news/default_round.jpg",
-
-    # fallback para categorías sin imagen específica
     "record": "news/default_league.jpg",
     "general": "news/default_league.jpg",
 }
+
 
 
 def create_news(
