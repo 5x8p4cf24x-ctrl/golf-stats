@@ -855,9 +855,11 @@ def get_news_page(db: Session, skip: int = 0, limit: int = 30):
 DEFAULT_NEWS_IMAGES = {
     "league": "news/default_league.jpg",
     "achievement": "news/default_achievement.jpg",
-    "record": "news/default_record.jpg",
     "round": "news/default_round.jpg",
-    "general": "news/default_general.jpg",
+
+    # fallback para categorías sin imagen específica
+    "record": "news/default_league.jpg",
+    "general": "news/default_league.jpg",
 }
 
 
