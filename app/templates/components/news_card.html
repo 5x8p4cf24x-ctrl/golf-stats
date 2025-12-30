@@ -5,9 +5,7 @@
      aria-label="Abrir: {{ item.title }}"></a>
 
   <div class="news-img">
-    <small style="display:block; color:#999; font-size:12px;">
-      DEBUG image_path: {{ item.image_path }}
-    </small>
+    
     <img
       src="{{ ('/uploads/' ~ item.image_path) if item.image_path and not item.image_path.startswith('/uploads/') and not item.image_path.startswith('http') else (item.image_path if item.image_path else '/static/news_placeholder.jpg') }}"
       alt="{{ item.title }}"

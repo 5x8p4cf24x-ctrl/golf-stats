@@ -55,6 +55,24 @@ UPLOAD_COURSES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_LEAGUES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_NEWS_DIR.mkdir(parents=True, exist_ok=True)
 
+import shutil
+from pathlib import Path
+
+DEFAULTS = [
+    "default_league.jpg",
+    "default_achievement.jpg",
+    "default_record.jpg",
+    "default_round.jpg",
+    "default_general.jpg",
+]
+
+for name in DEFAULTS:
+    src = Path("app/static/uploads/news") / name
+    dst = UPLOAD_NEWS_DIR / name
+    if src.exists() and not dst.exists():
+        shutil.copyfile(src, dst)
+
+
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
 
 ADMIN_KEY = os.getenv("ADMIN_KEY", "")  # en local puedes dejarlo vacío si quieres

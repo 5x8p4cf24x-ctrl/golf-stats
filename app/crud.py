@@ -853,12 +853,13 @@ def get_news_page(db: Session, skip: int = 0, limit: int = 30):
 # ==============================================================================
 
 DEFAULT_NEWS_IMAGES = {
-    "league": "/static/uploads/news/default_league.jpg",
-    "achievement": "/static/uploads/news/default_achievement.jpg",
-    "record": "/static/uploads/news/default_record.jpg",
-    "round": "/static/uploads/news/default_round.jpg",
-    "general": "/static/uploads/news/default_general.jpg",
+    "league": "news/default_league.jpg",
+    "achievement": "news/default_achievement.jpg",
+    "record": "news/default_record.jpg",
+    "round": "news/default_round.jpg",
+    "general": "news/default_general.jpg",
 }
+
 
 def create_news(
     db: Session,
