@@ -43,14 +43,30 @@
           {{ course.city or "Ciudad desconocida" }}
         </div>
 
-        <div class="course-head-meta">
-          Par total: <strong>{{ course.par_total }}</strong>
+        <div class="course-head-meta course-metrics">
+          <div class="metric">
+            <span class="metric-label">Par total</span>
+            <span class="metric-value">{{ course.par_total }}</span>
+          </div>
+
           {% if course.meters_total %}
-            · Metros: <strong>{{ course.meters_total }} m</strong>
+          <div class="metric">
+            <span class="metric-label">Metros</span>
+            <span class="metric-value">{{ course.meters_total }} m</span>
+          </div>
           {% endif %}
-          · Slope: <strong>{{ course.slope_yellow }}</strong>
-          · Rating: <strong>{{ "%.1f"|format(course.rating_yellow) }}</strong>
+
+          <div class="metric">
+            <span class="metric-label">Slope</span>
+            <span class="metric-value">{{ course.slope_yellow }}</span>
+          </div>
+
+          <div class="metric">
+            <span class="metric-label">Rating</span>
+            <span class="metric-value">{{ "%.1f"|format(course.rating_yellow) }}</span>
+          </div>
         </div>
+
       </div>
     </div>
   </section>

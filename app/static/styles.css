@@ -781,6 +781,7 @@ body.gm-body{ padding-top: 78px; }
   display:block;
 }
 
+
 /* Ajuste móvil */
 @media (max-width: 768px){
   .news-img{ height: 170px; }
@@ -2313,24 +2314,77 @@ main.gm-wrap.player-profile-page{
   min-width: 0;
 }
 
-/* Logo de GolfMode (derecha) */
-.course-detail-page .course-head-gm-logo{
-  height: 44px;
-  width: auto;
-  flex: 0 0 auto;
+
+
+/* ===================== COURSE DETAIL: MÉTRICAS EN FILAS (MÓVIL) ===================== */
+@media (max-width: 640px){
+
+  /* En móvil, el header respira más */
+  .course-detail-page .course-head{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .course-detail-page .course-head-left{
+    width: 100%;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .course-detail-page .course-head-logo{
+    width: 140px;
+    max-width: 140px;
+    height: 80px;
+  }
+
+  .course-head-title{
+    font-size: 1.00rem;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+
+  .course-head-city{
+    margin-top: 2px;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  /* Métricas: una fila por variable */
+  .course-metrics{
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .course-metrics .metric{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(20,83,45,0.05);
+    border: 1px solid rgba(20,83,45,0.10);
+  }
+
+  .course-metrics .metric-label{
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #14532d;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .course-metrics .metric-value{
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #14532d;
+  }
 }
 
-/* móvil */
-@media (max-width: 640px){
-  .course-detail-page .course-head{
-    align-items:flex-start;
-  }
-  .course-detail-page .course-head-logo{
-    width: 160px;
-    max-width: 160px;
-    height: 90px;
-  }
-}
+
 
 /* ============================================================================================
    SCORECARD — FILA METROS (amarillo claro)
@@ -2348,7 +2402,70 @@ main.gm-wrap.player-profile-page{
 .scorecard .row-meters th{
   border-bottom: 1px solid #f1e7a3;
 }
+/* ===================== COURSE DETAIL: SCORECARD RESPONSIVE ===================== */
 
+.scorecard-wrap{
+  width: 100%;
+  overflow-x: auto;                 /* ✅ scroll horizontal */
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* ✅ inercia iOS */
+  border-radius: 12px;
+}
+
+/* evita que la tabla intente encajar a la fuerza */
+.scorecard{
+  width: max-content;               /* ✅ ocupa lo que necesita */
+  min-width: 100%;                  /* ✅ pero no menos que el contenedor */
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+}
+
+/* celdas compactas y consistentes */
+.scorecard th,
+.scorecard td{
+  white-space: nowrap;
+}
+
+/* (opcional) un pelín más compacto en móvil */
+@media (max-width: 640px){
+  .scorecard th,
+  .scorecard td{
+    font-size: 0.82rem;
+    padding: 8px 10px;
+  }
+}
+
+/* ===================== COURSE DETAIL: TÍTULOS SECCIONES ===================== */
+
+.course-detail-page section.card > h2{
+  font-size: 1.00rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #14532d;
+  margin-bottom: 12px;
+}
+
+
+/* ===================== COURSE DETAIL: TABLA HOYO A HOYO ===================== */
+
+.scorecard{
+  border: 1px solid rgba(20,83,45,0.12);
+  border-radius: 10px;
+  overflow: hidden; /* respeta el radio */
+}
+
+/* Separador de filas más suave */
+.scorecard th,
+.scorecard td{
+  border-bottom: 1px solid rgba(20,83,45,0.08);
+}
+
+/* Quitar borde inferior última fila */
+.scorecard tr:last-child th,
+.scorecard tr:last-child td{
+  border-bottom: none;
+}
 
 
 /* =============================================================================================== */
