@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from .db import Base
 from datetime import datetime
 from sqlalchemy import Boolean, DateTime
+from sqlalchemy.sql import func
 
 
 class Player(Base):
@@ -161,3 +162,24 @@ class PlayerAchievement(Base):
 
     player = relationship("Player", back_populates="achievements")
     achievement = relationship("Achievement", back_populates="players")
+
+
+class News(Base):
+    __tablename__ = "news"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Contenido
+    title = Column(String(120), nullable=False)
+    excerpt = Column(Text, nullable=False)  # texto corto (3-5 líneas)
+    category = Column(String(32), nullable=False, default="general")  # league|achievement|record|round|general
+
+    # Imagen 400x300 (ruta en /static/uploads/news/...)
+    image_path = Column(String(255), nullable=False)
+
+    # Opcional: link interno a algo (liga/jugador/logro)
+    related_url = Column(String(255), nullable=True)
+
+    # Publicación
+    published = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -1,0 +1,48 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+<h1>Editar noticia</h1>
+
+<form method="post" enctype="multipart/form-data" class="form">
+
+  <div class="form-row">
+    <label>Título</label>
+    <input type="text" name="title" value="{{ item.title }}" required>
+  </div>
+
+  <div class="form-row">
+    <label>Texto</label>
+    <textarea name="excerpt" rows="4" required>{{ item.excerpt }}</textarea>
+  </div>
+
+  <div class="form-row">
+    <label>Categoría</label>
+    <select name="category">
+      {% for c in ["general","league","achievement","record","round"] %}
+        <option value="{{ c }}" {% if item.category == c %}selected{% endif %}>
+          {{ c }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-row">
+    <label>Link</label>
+    <input type="text" name="related_url" value="{{ item.related_url or '' }}">
+  </div>
+
+  <div class="form-row">
+    <label>Imagen nueva (opcional)</label>
+    <input type="file" name="image" accept="image/*">
+    {% if item.image_path %}
+      <div style="margin-top:8px;">
+        <img src="{{ item.image_path }}" style="max-width:200px;border-radius:8px;">
+      </div>
+    {% endif %}
+  </div>
+
+  <button class="btn btn-primary">Guardar cambios</button>
+  <a href="/admin/news" class="btn">Cancelar</a>
+
+</form>
+{% endblock %}

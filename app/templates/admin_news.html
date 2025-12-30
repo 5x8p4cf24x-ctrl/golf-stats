@@ -1,0 +1,105 @@
+{% extends "admin_base.html" %}
+
+{% block content %}
+
+<h1>Noticias</h1>
+
+<!-- ===================== CREAR NOTICIA ===================== -->
+<section class="card">
+  <h2>Nueva noticia</h2>
+
+  <form action="/admin/news/new" method="post" enctype="multipart/form-data" class="form">
+
+    <div class="form-row">
+      <label>Título</label>
+      <input type="text" name="title" maxlength="120" required>
+    </div>
+
+    <div class="form-row">
+      <label>Texto (máx. 5 líneas)</label>
+      <textarea name="excerpt" rows="4" required></textarea>
+    </div>
+
+    <div class="form-row">
+      <label>Categoría</label>
+      <select name="category">
+        <option value="general">General</option>
+        <option value="league">Liga</option>
+        <option value="achievement">Logro</option>
+        <option value="record">Récord</option>
+        <option value="round">Ronda</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label>Link (opcional)</label>
+      <input
+        type="text"
+        name="related_url"
+        placeholder="/public/leagues/3  ·  /players/2  ·  /public/rounds/5"
+      >
+    </div>
+
+    <div class="form-row">
+      <label>Imagen (opcional)</label>
+      <input type="file" name="image" accept="image/*">
+      <small>Recomendado 400×300 (formato 4:3)</small>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Publicar noticia</button>
+
+  </form>
+</section>
+
+<!-- ===================== LISTADO ===================== -->
+<section class="card" style="margin-top:24px;">
+  <h2>Últimas noticias</h2>
+
+  {% if news %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Título</th>
+                <th>Categoría</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for n in news %}
+            <tr>
+                <td>{{ n.created_at.strftime("%d/%m/%Y %H:%M") if n.created_at else "" }}</td>
+                <td>{{ n.title }}</td>
+                <td>{{ n.category }}</td>
+                <td>
+                {% if n.published %}
+                    ✅ Publicada
+                {% else %}
+                    ⛔ Oculta
+                {% endif %}
+                </td>
+                <td>
+                <a href="/admin/news/{{ n.id }}/edit" class="btn btn-small">Editar</a>
+
+                <form action="/admin/news/{{ n.id }}/delete"
+                        method="post"
+                        style="display:inline;">
+                    <button
+                    class="btn btn-small btn-danger"
+                    onclick="return confirm('¿Borrar esta noticia?')">
+                    Borrar
+                    </button>
+                </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+  {% else %}
+    <p>No hay noticias todavía.</p>
+  {% endif %}
+</section>
+
+{% endblock %}

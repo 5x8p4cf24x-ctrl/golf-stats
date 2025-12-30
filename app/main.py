@@ -44,13 +44,16 @@ app = FastAPI(title="Golf Stats")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 UPLOAD_BASE_DIR = Path(os.getenv("UPLOAD_BASE_DIR", "app/static/uploads"))
+
 UPLOAD_PLAYERS_DIR = UPLOAD_BASE_DIR / "players"
 UPLOAD_COURSES_DIR = UPLOAD_BASE_DIR / "courses"
 UPLOAD_LEAGUES_DIR = UPLOAD_BASE_DIR / "leagues"
+UPLOAD_NEWS_DIR = UPLOAD_BASE_DIR / "news"
 
 UPLOAD_PLAYERS_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_COURSES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_LEAGUES_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_NEWS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
 
@@ -357,7 +360,25 @@ def admin_assign_achievement_to_player(
     achievement_id: int = Form(...),
     db: Session = Depends(get_db)
 ):
+    # 1) asigna logro
     crud.assign_achievement_to_player(db, player_id, achievement_id)
+
+    # 2) crea noticia
+    player = crud.get_player(db, player_id)
+    achievement = crud.get_achievement(db, achievement_id)
+
+    if player and achievement:
+        crud.create_news(
+            db,
+            title=f"{player.name} desbloquea: {achievement.name}",
+            excerpt=f"Nuevo logro para {player.name}: {achievement.name}. ¡GolfMode ON!",
+            category="achievement",
+            image_path="/static/uploads/news/default_achievement.jpg",
+            related_url=f"/players/{player_id}",  # ✅ PERFIL REAL
+        )
+
+
+
     return RedirectResponse(f"/admin/players/{player_id}/achievements", status_code=303)
 
 
@@ -845,7 +866,51 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
     # 4) Si todos tienen tarjeta cerrada -> cerrar vuelta + ganador
     rps = crud.get_round_players(db, round_id)
     if all(x.gross_total is not None for x in rps):
+        # cerramos y calculamos ganador
         crud.close_round_and_set_winner(db, round_id)
+
+        # volvemos a cargar la ronda ya actualizada
+        r = crud.get_round(db, round_id)
+        course = crud.get_course(db, r.course_id)
+
+        # intentamos sacar ganador de forma robusta
+        winner_name = None
+        winner_gross = None
+
+        for rp2 in rps:
+            # si tu modelo tiene winner_id en Round, lo usamos
+            if hasattr(r, "winner_id") and r.winner_id and rp2.player_id == r.winner_id:
+                winner_name = rp2.player.name if rp2.player else None
+                winner_gross = rp2.gross_total
+                break
+
+        # fallback: si no hay winner_id, pillamos el menor gross_total
+        if winner_name is None:
+            valid = [x for x in rps if x.gross_total is not None]
+            if valid:
+                best = min(valid, key=lambda x: x.gross_total)
+                winner_name = best.player.name if best.player else None
+                winner_gross = best.gross_total
+
+        course_name = course.name if course else "Campo"
+
+        # texto corto
+        if winner_name and winner_gross is not None:
+            title = f"Ronda cerrada en {course_name}"
+            excerpt = f"Ganador: {winner_name} con {winner_gross} golpes. ¡GolfMode ON!"
+        else:
+            title = f"Ronda cerrada en {course_name}"
+            excerpt = "Ronda cerrada y resultados actualizados."
+
+        crud.create_news(
+            db,
+            title=title,
+            excerpt=excerpt,
+            category="round",
+            image_path="/static/uploads/news/default_round.jpg",
+            related_url=f"/public/rounds/{round_id}",  # ✅ correcto según tu main.py
+        )
+
 
     return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=303)
 
@@ -881,7 +946,18 @@ async def admin_leagues_new(
         logo_url = f"leagues/{filename}"
 
     crud.create_league(db, name=name, logo_url=logo_url)
+
+    # ✅ Crear noticia automática (simple y sin líos)
+    crud.create_news(
+        db,
+        title=f"Arranca la liga: {name}",
+        excerpt=f"Ya está en marcha {name}. ¡Mucha suerte a todos y a por el título!",
+        category="league",
+        related_url="/public/leagues",  # de momento genérico
+    )
+
     return RedirectResponse("/admin/leagues", status_code=303)
+
 
 
 
@@ -889,6 +965,104 @@ async def admin_leagues_new(
 def admin_leagues_close(league_id: int, db: Session = Depends(get_db)):
     crud.close_league(db, league_id)
     return RedirectResponse("/admin/leagues", status_code=303)
+
+
+# ===========================================================================================
+# ----------------------------------- ADMIN: NEWS -------------------------------------------
+# ===========================================================================================
+
+@app.get("/admin/news", response_class=HTMLResponse, name="admin_news")
+def admin_news(request: Request, db: Session = Depends(get_db)):
+    news = crud.get_news_page(db, limit=200)  # reutilizamos el listado
+    return templates.TemplateResponse(
+        "admin_news.html",
+        {
+            "request": request,
+            "news": news,
+        }
+    )
+
+@app.post("/admin/news/new")
+async def admin_news_new(
+    title: str = Form(...),
+    excerpt: str = Form(...),
+    category: str = Form("general"),
+    related_url: str = Form(""),
+    image: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    image_path = None
+
+    # Subida opcional de imagen
+    if image and image.filename:
+        filename = f"{uuid4().hex}_{image.filename}"
+        dest_path = UPLOAD_NEWS_DIR / filename
+
+        with open(dest_path, "wb") as f:
+            f.write(await image.read())
+
+        image_path = f"/uploads/news/{filename}"  # 👈 coherente con tu sistema
+
+    crud.create_news(
+        db,
+        title=title,
+        excerpt=excerpt,
+        category=category,
+        image_path=image_path,     # si None → default por categoría
+        related_url=related_url or None,
+        published=True,
+    )
+
+    return RedirectResponse("/admin/news", status_code=303)
+
+@app.post("/admin/news/{news_id}/delete")
+def admin_news_delete(news_id: int, db: Session = Depends(get_db)):
+    crud.delete_news(db, news_id)
+    return RedirectResponse("/admin/news", status_code=303)
+
+@app.get("/admin/news/{news_id}/edit", response_class=HTMLResponse)
+def admin_news_edit(news_id: int, request: Request, db: Session = Depends(get_db)):
+    item = crud.get_news_by_id(db, news_id)
+    if not item:
+        return HTMLResponse("Noticia no encontrada", status_code=404)
+
+    return templates.TemplateResponse(
+        "admin_news_edit.html",
+        {"request": request, "item": item}
+    )
+
+
+@app.post("/admin/news/{news_id}/edit")
+async def admin_news_edit_save(
+    news_id: int,
+    title: str = Form(...),
+    excerpt: str = Form(...),
+    category: str = Form("general"),
+    related_url: str = Form(""),
+    image: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    item = crud.get_news_by_id(db, news_id)
+    if not item:
+        return RedirectResponse("/admin/news", status_code=303)
+
+    item.title = title
+    item.excerpt = excerpt
+    item.category = category
+    item.related_url = related_url or None
+
+    if image and image.filename:
+        filename = f"{uuid4().hex}_{image.filename}"
+        dest_path = UPLOAD_NEWS_DIR / filename
+        with open(dest_path, "wb") as f:
+            f.write(await image.read())
+        item.image_path = f"/uploads/news/{filename}"
+
+    db.commit()
+    db.refresh(item)
+
+    return RedirectResponse("/admin/news", status_code=303)
+
 
 
 
@@ -1293,13 +1467,29 @@ def rankings(request: Request, db: Session = Depends(get_db)):
 # -----------------------------------------------------------------------------------------
 
 
-
-
 @app.get("/public", response_class=HTMLResponse)
-def public_home(request: Request):
+def public_home(request: Request, db: Session = Depends(get_db)):
+    latest_news = crud.get_latest_news(db, limit=3)  # grid en home
+
     return templates.TemplateResponse(
         "public_home.html",
-        {"request": request}
+        {
+            "request": request,
+            "latest_news": latest_news,
+        }
+    )
+
+
+@app.get("/public/noticias", response_class=HTMLResponse)
+def public_news(request: Request, db: Session = Depends(get_db)):
+    news = crud.get_news_page(db, limit=60)  # listado completo
+
+    return templates.TemplateResponse(
+        "public_news.html",
+        {
+            "request": request,
+            "news": news,
+        }
     )
 
 

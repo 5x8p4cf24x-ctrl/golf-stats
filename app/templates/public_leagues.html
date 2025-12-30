@@ -1,27 +1,24 @@
 {% extends "public_base.html" %}
 
 {% block title %}Ligas · Golf Mode{% endblock %}
+{% block container_class %}leagues-page{% endblock %}
 
-{% block container_class %}gm-wrap{% endblock %}
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Ligas", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
-{% block header %}
+{% block content %}
+
   <header class="public-header">
     <h1 class="public-title">Ligas</h1>
-
-    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
-
     <p class="public-subtitle">
       Aquí encontrarás todas las ligas disputadas con el grupo.
     </p>
   </header>
-
-  <div class="public-back-wrap">
-    <a class="public-back" href="/public">← Volver</a>
-  </div>
-{% endblock %}
-
-
-{% block content %}
 
   {% if leagues|length == 0 %}
 
@@ -68,7 +65,5 @@
     </section>
 
   {% endif %}
-
-  
 
 {% endblock %}

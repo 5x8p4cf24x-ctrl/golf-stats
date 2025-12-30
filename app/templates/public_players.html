@@ -1,28 +1,25 @@
 {% extends "public_base.html" %}
 
 {% block title %}Jugadores · Golf Mode{% endblock %}
+{% block container_class %}players-page{% endblock %}
 
-{# Mantienes tu wrapper actual para no romper CSS #}
-{% block container_class %}gm-wrap players-page{% endblock %}
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Jugadores", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
-{% block header %}
+{% block content %}
+
   <header class="public-header">
     <h1 class="public-title">Jugadores</h1>
-
-    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
-
     <p class="public-subtitle">
       Selecciona un jugador para ver sus estadísticas completas.
     </p>
   </header>
 
-  <div class="public-back-wrap">
-    <a class="public-back" href="/public">← Volver</a>
-  </div>
-{% endblock %}
-
-
-{% block content %}
   <section class="players-grid">
     {% for p in players %}
       <a href="/players/{{ p.id }}" class="player-card">
@@ -52,4 +49,3 @@
   </section>
 
 {% endblock %}
-

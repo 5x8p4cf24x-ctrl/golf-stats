@@ -1,27 +1,24 @@
 {% extends "public_base.html" %}
 
 {% block title %}Campos · Golf Mode{% endblock %}
+{% block container_class %}courses-page{% endblock %}
 
-{# Mantienes tu wrapper actual para no romper CSS #}
-{% block container_class %}gm-wrap courses-page{% endblock %}
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Campos", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
-{% block header %}
+{% block content %}
+
   <header class="public-header">
     <h1 class="public-title">Campos</h1>
-    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
     <p class="public-subtitle">
       Listado de campos disponibles. Haz clic para ver el detalle hoyo a hoyo.
     </p>
   </header>
-
-  <div class="public-back-wrap">
-    <a class="public-back" href="/public">← Volver</a>
-  </div>
-{% endblock %}
-
-
-
-{% block content %}
 
   <!-- FILTRO POR CIUDAD -->
   <section class="courses-filters">
@@ -80,8 +77,5 @@
       </a>
     {% endfor %}
   </section>
-
-  
-
 
 {% endblock %}

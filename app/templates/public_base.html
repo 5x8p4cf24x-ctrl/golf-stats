@@ -12,17 +12,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/styles.css?v=15" />
+  <link rel="stylesheet" href="/static/styles.css?v=17" />
   {% block head_extra %}{% endblock %}
 </head>
 
-<body class="{% block body_class %}{% endblock %}">
-  <main class="container {% block container_class %}{% endblock %}">
-    {% block header %}{% endblock %}
+<body class="gm-body {% block body_class %}{% endblock %}">
+  {% block header %}
+    {% include "components/public_topbar.html" %}
+  {% endblock %}
+
+  {% block breadcrumbs %}{% endblock %}
+
+  <main class="gm-wrap {% block container_class %}{% endblock %}">
     {% block content %}{% endblock %}
   </main>
+
+  <script src="/static/public_topbar.js?v=1"></script>
+  <script src="/static/news_share.js?v=1"></script>
 
   {% block scripts %}{% endblock %}
   {% block body_extra %}{% endblock %}
 </body>
+
 </html>

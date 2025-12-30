@@ -1,0 +1,49 @@
+<article class="news-card">
+
+  <!-- Link que hace la card clicable -->
+  <a class="news-card-link"
+     href="{{ item.related_url or '/public/noticias' }}"
+     aria-label="Abrir: {{ item.title }}"></a>
+
+  <div class="news-img">
+    <img
+      src="{{ item.image_path }}"
+      alt="{{ item.title }}"
+      loading="lazy"
+    >
+
+    <span class="news-badge cat-{{ item.category }}">
+      {% if item.category == "league" %}Liga{% endif %}
+      {% if item.category == "achievement" %}Logro{% endif %}
+      {% if item.category == "record" %}Récord{% endif %}
+      {% if item.category == "round" %}Ronda{% endif %}
+      {% if item.category not in ["league","achievement","record","round"] %}GolfMode{% endif %}
+    </span>
+
+    <!-- Botón compartir (solo visible en móvil por CSS) -->
+    <button
+      type="button"
+      class="news-share"
+      data-share-title="{{ item.title|e }}"
+      data-share-text="{{ item.excerpt|default('')|e }}"
+      data-share-url="{{ item.related_url or '/public/noticias' }}"
+      aria-label="Compartir noticia"
+      title="Compartir"
+    >
+      <img src="/static/icons/share.svg" alt="" aria-hidden="true">
+    </button>
+  </div>
+
+  <div class="news-body">
+    <h3 class="news-title">{{ item.title }}</h3>
+
+    <p class="news-excerpt">
+      {{ item.excerpt }}
+    </p>
+
+    <div class="news-meta">
+      {{ item.created_at.strftime("%d/%m/%Y") if item.created_at else "" }}
+    </div>
+  </div>
+
+</article>

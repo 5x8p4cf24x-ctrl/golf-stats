@@ -1,23 +1,23 @@
 {% extends "public_base.html" %}
 
-{% block title %}Rankings{% endblock %}
+{% block title %}Rankings · Golf Mode{% endblock %}
 
-{% block header %}
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Rankings", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
   <header class="public-header">
     <h1 class="public-title">Rankings</h1>
-    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
     <p class="public-subtitle">
       Clasificaciones globales por rendimiento y estadísticas.
     </p>
   </header>
-
-  <div class="public-back-wrap">
-    <a class="public-back" href="/public">← Volver</a>
-  </div>
-{% endblock %}
-
-
-{% block content %}
 
 {% macro table_block(title, icon, subtitle, rows, key, fmt="%.1f") %}
   <section class="card rankings-card">
@@ -63,18 +63,18 @@
   </section>
 {% endmacro %}
 
-<section class="rankings-grid">
-  {{ table_block("Media puntos Stableford", "🏆", "HCP (más es mejor)", by_avg_pts, "avg_pts", "%.1f") }}
-  {{ table_block("Media puntos Scratch", "⭐", "Scratch (más es mejor)", by_avg_scr, "avg_scr", "%.1f") }}
+  <section class="rankings-grid">
+    {{ table_block("Media puntos Stableford", "🏆", "HCP (más es mejor)", by_avg_pts, "avg_pts", "%.1f") }}
+    {{ table_block("Media puntos Scratch", "⭐", "Scratch (más es mejor)", by_avg_scr, "avg_scr", "%.1f") }}
 
-  {{ table_block("Victorias", "🥇", "Desempate por empates", by_wins, "wins", "%d") }}
-  {{ table_block("Putts por hoyo", "🟣", "Menor es mejor", by_putts, "putts_per_hole", "%.2f") }}
+    {{ table_block("Victorias", "🥇", "Desempate por empates", by_wins, "wins", "%d") }}
+    {{ table_block("Putts por hoyo", "🟣", "Menor es mejor", by_putts, "putts_per_hole", "%.2f") }}
 
-  {{ table_block("FIR %", "🎯", "Precisión desde tee", by_fir, "fir_pct", "%.0f%%") }}
-  {{ table_block("GIR %", "⛳", "Greens en regulación", by_gir, "gir_pct", "%.0f%%") }}
+    {{ table_block("FIR %", "🎯", "Precisión desde tee", by_fir, "fir_pct", "%.0f%%") }}
+    {{ table_block("GIR %", "⛳", "Greens en regulación", by_gir, "gir_pct", "%.0f%%") }}
 
-  {{ table_block("Birdies totales", "🐦", "Acumulado", by_birdies, "birdies", "%d") }}
-  {{ table_block("Eagles totales", "🦅", "Acumulado", by_eagles, "eagles", "%d") }}
-</section>
+    {{ table_block("Birdies totales", "🐦", "Acumulado", by_birdies, "birdies", "%d") }}
+    {{ table_block("Eagles totales", "🦅", "Acumulado", by_eagles, "eagles", "%d") }}
+  </section>
 
 {% endblock %}

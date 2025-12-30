@@ -1,26 +1,24 @@
 {% extends "public_base.html" %}
 
 {% block title %}Rondas · Golf Mode{% endblock %}
+{% block container_class %}rounds-page{% endblock %}
 
-{# Mantienes tu wrapper actual para no romper CSS #}
-{% block container_class %}gm-wrap rounds-page{% endblock %}
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Rondas", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
-{% block header %}
+{% block content %}
+
   <header class="public-header">
     <h1 class="public-title">Rondas</h1>
-    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
-
     <p class="public-subtitle">
       Lista de rondas jugadas. Filtra por campo, jugador o fecha para ver el historial.
     </p>
   </header>
-
-  <div class="public-back-wrap">
-    <a class="public-back" href="/public">← Volver</a>
-  </div>
-{% endblock %}
-
-{% block content %}
 
   <!-- FILTROS -->
   <section class="rounds-filters">
@@ -56,7 +54,6 @@
           <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
         {% endfor %}
       </select>
-
 
       <button type="submit">Aplicar</button>
 
@@ -102,5 +99,4 @@
     {% endfor %}
   </section>
 
-  
 {% endblock %}

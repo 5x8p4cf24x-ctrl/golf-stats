@@ -1,24 +1,24 @@
 {% extends "public_base.html" %}
 
-{% block title %}Estadísticas{% endblock %}
+{% block title %}Estadísticas · Golf Mode{% endblock %}
 {% block container_class %}container--wide{% endblock %}
 
-{% block header %}
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Estadísticas", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
   <header class="public-header">
     <h1 class="public-title">Estadísticas</h1>
-    <img src="/static/golfmode_logo.png" class="public-logo" alt="Golf Mode">
     <p class="public-subtitle">
       Resumen global + visor de vueltas (tipo Excel) con filtros.
     </p>
   </header>
-
-  <div class="public-back-wrap">
-    <a class="public-back" href="/public">← Volver</a>
-  </div>
-{% endblock %}
-
-
-{% block content %}
 
 {% macro rounds_table(rows, show_index=True) %}
   <div class="stats-table-wrap">
@@ -65,7 +65,6 @@
                 -
               {% endif %}
             </td>
-
 
             {% for i in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18) %}
               {% set s = r["h" ~ i] %}

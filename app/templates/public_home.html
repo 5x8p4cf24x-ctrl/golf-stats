@@ -6,69 +6,37 @@
 {% block body_class %}gm-body{% endblock %}
 
 {% block content %}
+
+  <!-- HERO FULL WIDTH -->
+  <section class="gm-hero-full">
+    <div class="gm-hero-full-image"></div>
+  </section>
+
+  <!-- CONTENIDO CENTRADO -->
   <div class="gm-wrap">
 
-    <!-- LOGO + MENÚ HORIZONTAL (PC) -->
-    <header class="gm-header">
-      <img src="/static/golfmode_logo.png" alt="Golf Mode" class="gm-logo">
+    <!-- NOTICIAS -->
+    <section class="news-section">
+      <div class="section-head">
+        <h2>Noticias</h2>
+        <a class="section-link" href="/public/noticias">Ver todas</a>
+      </div>
 
-      <nav class="gm-menu-horizontal" aria-label="Navegación principal (PC)">
-        <a href="/public/players"   class="gm-menu-link">Jugadores</a>
-        <a href="/public/courses"   class="gm-menu-link">Campos</a>
-        <a href="/public/rounds"    class="gm-menu-link">Rondas</a>
-        <a href="/public/leagues"   class="gm-menu-link">Ligas</a>
-        <a href="/public/stats"     class="gm-menu-link gm-menu-link--emphasis">Estadísticas</a>
-        <a href="/public/rankings"  class="gm-menu-link">Rankings</a>
-      </nav>
-    </header>
-
-    <!-- HERO -->
-    <section class="gm-hero">
-      <div class="gm-hero-image"></div>
-      <div class="gm-signature">By Sergi Moli</div>
+      <div class="news-grid">
+        {% if latest_news and latest_news|length > 0 %}
+          {% for item in latest_news %}
+            {% include "components/news_card.html" %}
+          {% endfor %}
+        {% else %}
+          <div class="news-empty">
+            Aún no hay noticias. En cuanto arranque la próxima liga… aquí lo verás 😉
+          </div>
+        {% endif %}
+      </div>
     </section>
 
   </div>
 
-  <!-- Bottom Nav (solo móvil) -->
-  <nav class="gm-bottom-nav" aria-label="Navegación principal (móvil)">
-    <a href="/public/players" class="gm-nav-item">
-      <span class="gm-nav-icon" aria-hidden="true">👤</span>
-      <span class="gm-nav-label">Jugadores</span>
-    </a>
-    <a href="/public/courses" class="gm-nav-item">
-      <span class="gm-nav-icon" aria-hidden="true">⛳</span>
-      <span class="gm-nav-label">Campos</span>
-    </a>
-    <a href="/public/rounds" class="gm-nav-item">
-      <span class="gm-nav-icon" aria-hidden="true">📝</span>
-      <span class="gm-nav-label">Rondas</span>
-    </a>
-    <a href="/public/leagues" class="gm-nav-item">
-      <span class="gm-nav-icon" aria-hidden="true">🏆</span>
-      <span class="gm-nav-label">Ligas</span>
-    </a>
-    <a href="/public/stats" class="gm-nav-item">
-      <span class="gm-nav-icon" aria-hidden="true">📊</span>
-      <span class="gm-nav-label">Stats</span>
-    </a>
-    <a href="/public/rankings" class="gm-nav-item">
-      <span class="gm-nav-icon" aria-hidden="true">📈</span>
-      <span class="gm-nav-label">Rankings</span>
-    </a>
-  </nav>
 {% endblock %}
 
-{% block scripts %}
-  <script>
-    (function () {
-      const path = window.location.pathname.replace(/\/$/, "");
-      document.querySelectorAll(".gm-bottom-nav .gm-nav-item").forEach(a => {
-        const href = (a.getAttribute("href") || "").replace(/\/$/, "");
-        if (href && (path === href || path.startsWith(href + "/"))) {
-          a.classList.add("is-active");
-        }
-      });
-    })();
-  </script>
-{% endblock %}
+

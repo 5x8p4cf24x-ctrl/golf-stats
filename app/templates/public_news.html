@@ -1,0 +1,36 @@
+{% extends "public_base.html" %}
+
+{% block title %}Noticias · Golf Mode{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Noticias", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+  <header class="public-header">
+    <h1 class="public-title">Noticias</h1>
+    <p class="public-subtitle">
+      Últimas novedades: ligas, logros, récords y rondas.
+    </p>
+  </header>
+
+  <section class="news-section" style="margin-top: 0;">
+    <div class="news-grid">
+      {% if news and news|length > 0 %}
+        {% for item in news %}
+          {% include "components/news_card.html" %}
+        {% endfor %}
+      {% else %}
+        <div class="news-empty">
+          Todavía no hay noticias publicadas.
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+{% endblock %}

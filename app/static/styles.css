@@ -31,37 +31,58 @@
   --btn-bg: #22c55e;
   --btn-text: #052012;
   --btn-bg-hover: #1fb453;
+  --topbar-h: 64px; /* ajusta si tu topbar no mide ~64px */
 }
 
 *{box-sizing:border-box}
 
 body{
-  font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial,  sans-serif;
-  background: var(--bg);
+  font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);   /* ✅ gris claro */
   color: var(--text);
-  margin:0;
+  margin: 0;
 }
 
+
+/* Admin / base */
+body:not(.gm-body){
+  background: var(--bg);
+  color: var(--text);
+}
+body:not(.gm-body) p{ color: var(--muted); }
+
+/* Público */
+body.gm-body{
+  background: var(--bg);
+  color: #14532d;
+}
+body.gm-body p{ color: #64748b; }
+
+body.gm-body a{
+  color:#14532d;
+  text-decoration:none;
+  font-weight:600;
+}
+body.gm-body a:hover{ text-decoration: underline; }
+
+/*body.gm-body h1{
+  font-size:2.2rem;
+  font-weight:800;
+  letter-spacing:-0.02em;
+  color:#14532d;
+}*/
+body.gm-body h2{
+  font-size:1.25rem;
+  font-weight:700;
+  color:#14532d;
+}
+
+/* Admin container (si lo sigues usando) */
 .container{
   max-width:1100px;
   margin:32px auto;
   padding:0 16px;
 }
-
-h1{font-size:2rem; margin:0 0 8px 0;}
-h2{
-  font-size:1.2rem;
-  margin:0 0 12px 0;
-  color: var(--text);
-}
-
-p{color:var(--muted);}
-
-a{
-  color:var(--accent-2);
-  text-decoration:none;
-}
-a:hover{opacity:.9; text-decoration:underline;}
 
 .card{
   background: var(--panel);
@@ -73,6 +94,7 @@ a:hover{opacity:.9; text-decoration:underline;}
 }
 
 
+
 table{
   width:100%;
   border-collapse:collapse;
@@ -82,12 +104,7 @@ th,td{
   padding:8px 6px;
   border-bottom:1px solid var(--border);
 }
-/*th{
-  color:#fff;
-  font-weight:600;
-  text-align:center;
-}
-td{ text-align:center; }*/
+
 
 th{
   color: var(--text);
@@ -200,6 +217,52 @@ input[readonly], textarea[readonly]{
 .kpi .label{color:var(--muted); font-size:.85rem;}
 .kpi .value{font-size:1.6rem; font-weight:800; margin-top:2px;}
 .kpi .sub{color:var(--muted); font-size:.8rem;}
+
+/* ===================== BREADCRUMBS (franja gris) ===================== */
+
+.gm-breadcrumbs{
+  background: #f3f4f6;
+  border-bottom: 1px solid rgba(20, 83, 45, 0.10);
+  position: sticky;          /* 👈 NUEVO */
+  top: var(--topbar-h);       /* 👈 NUEVO (debajo de la topbar) */
+  z-index: 40;                /* 👈 NUEVO */
+}
+
+.gm-breadcrumbs-inner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 22px; /* ✅ mismo padding horizontal que la topbar */
+
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(20, 83, 45, 0.65);
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gm-crumb-link{
+  color: rgba(20, 83, 45, 0.70);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.gm-crumb-link:hover{
+  text-decoration: underline;
+}
+
+.gm-crumb-sep{
+  color: rgba(20, 83, 45, 0.35);
+  font-weight: 800;
+}
+
+.gm-crumb-current{
+  color: rgba(20, 83, 45, 0.95);
+  font-weight: 800;
+}
 
 
 /* ================================================================================================= */
@@ -492,232 +555,572 @@ input[readonly], textarea[readonly]{
 /* ============================= PUBLIC LANDING ================================ */
 /* ============================================================================= */
 
-
-
 /* ============================================================================== */
-/* ========================== GOLF MODE LANDING HOME ============================ */
+/* ============================ GOLF MODE: BASE ================================ */
 /* ============================================================================== */
 
-
-/* Fondo blanco general */
-.gm-body {
+.gm-body{
   margin: 0;
   background: #ffffff;
- font-family: 'Montserrat', sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Display", "SF Pro Text",
+               "Segoe UI", Roboto, Helvetica, Arial, "Montserrat", sans-serif;
   color: #14532d;
 }
 
-.gm-wrap {
+.gm-wrap{
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 32px 32px;
 }
 
-/* LOGO + MENÚ CENTRADOS */
+/* ============================================================================== */
+/* ============================ TOP BAR (FIJA) ================================= */
+/* ============================================================================== */
 
-.gm-header {
-  text-align: center;
-  margin-bottom: 8px;
+header.gm-topbar{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9998;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(20, 83, 45, 0.12);
 }
 
-.gm-logo {
-  height: 450px;      /* ajusta el tamaño a tu gusto */
-  display: block;
-  margin: 0 auto 2px auto;
+body.gm-body{ padding-top: 78px; }
+
+/* Contenedor */
+.gm-topbar-inner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 22px;
+
+  display: grid;
+  grid-template-columns: auto 1fr; /* ✅ logo izquierda, menú ocupa resto */
+  align-items: center;
+  column-gap: 08px;
 }
 
-/* Menú horizontal centrado */
+/* Logo anclado izquierda */
+.gm-brand{ justify-self: start; display:flex; align-items:center; text-decoration:none; }
+.gm-brand-logo{ height: 44px; width:auto; display:block; }
 
-.gm-menu-horizontal {
-  max-width: 850px;                  /* mismo ancho que la imagen */
-  margin: 0 auto;                    /* centrado */
+/* Menú centrado */
+.gm-topnav{
+  justify-self: start;      /* ✅ pegado al logo */
+  margin-left: 14px;        /* ✅ separación sutil */
   display: flex;
   align-items: center;
-  justify-content: space-between;    /* reparte los enlaces a lo ancho */
-  margin-top: -60px;
+  gap: 0;                   /* ✅ el separador ya hace el spacing */
+  flex-wrap: wrap;
 }
 
 
-/* Texto script en verde con sombrita tipo botón */
-.gm-menu-link {
+/* Links base */
+.gm-topnav-link{
   font-family: 'Montserrat', sans-serif;
-  font-weight: 600; /* similar al grosor del logo */
-  font-size: 1rem;
+  font-weight: 400;          /* 👈 antes 800: demasiado */
+  font-size: 0.85rem;         /* un poco más pequeño */
+  letter-spacing: 0.10em;    /* 👈 CLAVE: aire tipo Apple */
+  text-transform: uppercase;/* opcional pero recomendable */
   color: #14532d;
   text-decoration: none;
-
-  /* sombra opcional tipo glow verde suave 
-  text-shadow: 1px 1px 2px rgba(34, 197, 94, 0.25);*/
+  padding: 8px 10px;
 }
 
-/* hover sencillo */
-.gm-menu-link:hover {
-  text-decoration: underline;
-}
+.gm-topnav-link:hover{ background: rgba(20, 83, 45, 0.08); }
+.gm-topnav-link.is-active{ background: rgba(20, 83, 45, 0.12); }
 
-
-/* IMAGEN PRINCIPAL CENTRADA */
-
-.gm-hero {
+/* Separadores finos entre items (·) */
+.gm-topnav-link + .gm-topnav-link{
   position: relative;
-  margin-top: 10px;
+  padding-left: 18px; /* deja espacio para el separador */
 }
 
-/* marco centrado de la imagen */
-.gm-hero-frame {
-  max-width: 1200px;
-  margin: 0 auto;
-  border-radius: 20px;
-  overflow: hidden;              /* por si más adelante queremos redondear bordes */
-  /* box-shadow: 0 22px 45px rgba(0, 0, 0, 0.35);  si quieres sombra, descomenta */
+.gm-topnav-link + .gm-topnav-link::before{
+  content: "·";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(20, 83, 45, 0.35);
+  font-weight: 900;
 }
 
-/* imagen que respeta su proporción completa */
-.gm-hero-img {
-  display: block;
+
+/* ============================================================================== */
+/* ============================== HERO FULL ==================================== */
+/* ============================================================================== */
+
+/* hero fuera del wrap, full width, centrado */
+.gm-hero-full{
   width: 100%;
-  height: auto;                  /* clave: NO recorta, solo escala */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* ✅ centra el bloque */
+  margin-top: 12px;
 }
 
-/* contenedor centrado, ancho máximo */
-.gm-hero-image {
+.gm-hero-full-image{
   max-width: 1200px;
-  margin: 0 auto;
   width: 100%;
-  height: min(50vh, 400px);
-  background-image: url("/static/golf_hero.jpg"); /* <-- CAMBIA AQUÍ TU IMAGEN */
+  height: 460px;
+  margin: 0 auto;
+  border-radius: 22px;
 
-  /* Ajustes para menos zoom / mejor encuadre */
-  background-size: cover;            /* mantiene el relleno */
-  background-position: 50% 20%;      /* mueve la foto hacia arriba (menos recorte) */
-
-  border-radius: 20px;
-  position: relative;
+  background-image: url("/static/golf_hero.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;   /* ✅ se ve completa */
+  background-color: #ffffff; /* fondo limpio */
 }
 
 
-
-
-/* Firma abajo centrada a la derecha visualmente */
-.gm-signature {
-  margin-top: 10px;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: right;
-  padding-right: 8px;
-  font-family: "Segoe Script", "Dancing Script", cursive;
-  font-size: 0.95rem;
-  color: #363535;
-  text-shadow: none;
-}
 
 /* Responsive */
-@media (max-width: 768px) {
-  .gm-wrap {
+@media (max-width: 768px){
+  body.gm-body{ padding-top: 66px; }
+
+  .gm-wrap{
     padding: 16px 12px 24px;
   }
 
-  .gm-logo {
-    height: 220px;
+  .gm-brand-logo{ height: 32px; }
+
+  .gm-topnav{ display: none; } /* en móvil usas bottom nav */
+
+  .gm-hero-full-image{
+    width: calc(100vw - 24px);
+    height: 240px;
+    border-radius: 18px;
   }
 
-  .gm-menu-horizontal {
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .gm-hero-image {
-    height: 220px;
+  .gm-hero-full-signature{
+    width: calc(100vw - 24px);
   }
 }
 
 /* ============================================================================== */
-/* ===================== GOLF MODE: MOBILE BOTTOM NAV =========================== */
+/* ============================ GOLF MODE: NOTICIAS ============================= */
 /* ============================================================================== */
 
-/* Por defecto (PC): oculto */
-.gm-bottom-nav {
+.news-section{
+  margin-top: 18px;
+  padding: 18px 0 8px;
+}
+
+.section-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+
+.section-head h2,
+.section-head h1{
+  margin:0;
+  color:#14532d;
+}
+
+.section-link{
+  font-weight:800;
+  color:#14532d;
+  text-decoration:none;
+}
+
+.section-link:hover{
+  text-decoration:underline;
+}
+
+.news-grid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:14px;
+}
+
+@media (max-width: 980px){
+  .news-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px){
+  .news-grid{ grid-template-columns: 1fr; }
+}
+
+.news-card{
+  display:flex;
+  flex-direction:column;
+  background:#fff;
+  border-radius:16px;
+  overflow:hidden;
+  text-decoration:none;
+  border:1px solid rgba(20, 83, 45, 0.12);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.news-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,.10);
+}
+
+/* =========================================================
+   IMAGEN: MISMO ALTO PARA TODAS (unifica ronda vs general)
+   ========================================================= */
+
+.news-img{
+  position:relative;
+  width:100%;
+  height: 220px;            /* ✅ mismo alto en todas */
+  overflow:hidden;
+  background:#f3f4f6;
+}
+
+.news-img img{
+  width:100%;
+  height:100%;
+  object-fit:cover;          /* ✅ recorta sin deformar */
+  display:block;
+}
+
+/* Ajuste móvil */
+@media (max-width: 768px){
+  .news-img{ height: 170px; }
+}
+
+/* Badge encima de la imagen */
+.news-badge{
+  position:absolute;
+  left:10px;
+  top:10px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:.72rem;
+  font-weight:900;
+  background: rgba(20, 83, 45, .92);
+  color:#fff;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+/* Variantes por categoría */
+.news-badge.cat-achievement{ background: rgba(212, 175, 55, .92); color:#14352d; }
+.news-badge.cat-record{ background: rgba(17, 24, 39, .92); }
+.news-badge.cat-league{ background: rgba(20, 83, 45, .92); }
+.news-badge.cat-round{ background: rgba(20, 83, 45, .92); }
+
+.news-body{
+  padding:12px 12px 14px;
+}
+
+.news-title{
+  margin:0 0 8px;
+  font-size:0.90rem;
+  line-height:1.15;
+  color:#111827;
+  font-weight:900;
+}
+
+.news-excerpt{
+  margin:0;
+  color:#6b7280;
+  font-size:.80rem;
+  line-height:1.35;
+
+  /* Máx 5 líneas */
+  display:-webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow:hidden;
+}
+
+.news-meta{
+  margin-top:10px;
+  font-size:.78rem;
+  color:#6b7280;
+  font-weight:800;
+}
+
+.news-empty{
+  padding:14px;
+  border-radius:12px;
+  border:1px dashed rgba(20, 83, 45, 0.25);
+  color:#6b7280;
+  font-weight:700;
+}
+
+/* ===================== NEWS — COMPACTAR EN MÓVIL ===================== */
+@media (max-width: 640px){
+
+  /* Card más baja */
+  .news-card{
+    padding: 10px 10px !important;   /* antes más alto */
+    border-radius: 12px;
+  }
+
+  /* Título más compacto */
+  .news-card h3,
+  .news-card-title{
+    font-size: 0.8rem !important;
+    line-height: 1.25;
+    margin-bottom: 6px !important;
+  }
+
+  /* Texto / extracto */
+  .news-card p,
+  .news-card-excerpt{
+    font-size: 0.75rem !important;
+    line-height: 1.35;
+    margin-bottom: 8px !important;
+  }
+
+  /* Meta (fecha, autor, etc.) */
+  .news-card-meta{
+    font-size: 0.6rem;
+  }
+
+  /* Si hay imagen arriba */
+  .news-card img,
+  .news-card-image{
+    max-height: 140px;     /* 👈 clave si ahora son muy altas */
+    object-fit: cover;
+  }
+}
+
+/* =========================== COMPARTIR MOVIL ===========================*/
+
+/* La card ahora es contenedor */
+.news-card{
+  position: relative;
+}
+
+/* Link invisible que cubre toda la card */
+.news-card-link{
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ===================== NEWS SHARE ICON — SOLO ICONO (MÓVIL) ===================== */
+
+.news-share{
   display: none;
 }
 
-/* Móvil */
-@media (max-width: 768px) {
+@media (max-width: 640px){
+  .news-share{
+    display: inline-flex;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 3;
 
-  /* 1) Oculta el menú horizontal superior SOLO en móvil */
-  .gm-menu-horizontal {
-    display: none !important;
+    width: auto;
+    height: auto;
+    padding: 4px;
+
+    border: none;
+    background: transparent;   /* 👈 sin círculo */
+    box-shadow: none;
+    backdrop-filter: none;
+
+    cursor: pointer;
   }
 
-  /* 2) Reserva espacio abajo para que el nav no tape nada */
-  body.gm-body {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  .news-share img{
+    width: 15px;
+    height: 15px;
+
+    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,.45));
+    opacity: 0.95;
   }
 
-  /* Si prefieres que SOLO el contenido tenga padding y no el body:
-     comenta el body arriba y usa esto:
-     .gm-wrap { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
-  */
+  /* feedback táctil */
+  .news-share:active img{
+    transform: scale(0.9);
+    opacity: 1;
+  }
+}
 
-  /* 3) Barra inferior fija */
-  .gm-bottom-nav {
-    display: flex;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
 
-    height: 72px;
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-    gap: 6px;
 
-    background: #ffffff;
-    border-top: 1px solid rgba(20, 83, 45, 0.18);
+
+/* ============================================================================== */
+/* ===================== GOLF MODE: MOBILE NAV (APPLE-LIKE) ===================== */
+/* ============================================================================== */
+
+/* Bottom nav: fuera (ya usamos topbar + burger) */
+.gm-bottom-nav{
+  display: none !important;
+}
+
+
+/* Ocultar bottom-nav antigua en móvil */
+@media (max-width: 768px){
+  .gm-bottom-nav{ display:none !important; }
+  .gm-topnav{ display:none !important; }     /* ocultamos el menú desktop */
+}
+
+/* ===== Burger ===== */
+.gm-burger{
+  display:none;                               /* solo visible en móvil */
+  background: rgba(20,83,45,0.06);
+  border: 1px solid rgba(20,83,45,0.12);
+  padding: 10px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.gm-burger span{
+  display:block;
+  width: 18px;
+  height: 2px;
+  background: #14532d;
+  border-radius: 2px;
+  transition: transform 160ms ease, opacity 120ms ease;
+}
+
+/* Burger visible en móvil */
+@media (max-width: 768px){
+  .gm-burger{
+    display:inline-flex !important;
+    justify-self:end;
+  }
+}
+
+/* Burger -> X cuando está abierto */
+.gm-burger.is-open span:nth-child(1){
+  transform: translateY(6px) rotate(45deg);
+}
+.gm-burger.is-open span:nth-child(2){
+  opacity: 0;
+}
+.gm-burger.is-open span:nth-child(3){
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* ===== Overlay (blur) ===== */
+/* (sin display:none para que las transiciones sean suaves) */
+.gm-mobile-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.gm-mobile-overlay.is-open{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ===== Menu sheet (animable) ===== */
+@media (max-width: 768px){
+  .gm-mobile-menu{
+    position: absolute;
+    top: 72px;                 /* ajusta si tu topbar cambia */
+    left: 10px;
+    right: 10px;
     z-index: 9999;
+
+    background: rgba(255,255,255,0.90);
+    border: 1px solid rgba(20, 83, 45, 0.12);
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: 0 22px 60px rgba(0,0,0,0.16);
+
+    /* cerrado (animable) */
+    transform: translateY(-14px);
+    opacity: 0;
+    pointer-events: none;
+
+    transition: transform 220ms cubic-bezier(.2,.8,.2,1),
+                opacity 180ms ease;
+
+    will-change: transform, opacity;
   }
 
-  /* 4) Botones grandes y cómodos */
-  .gm-nav-item {
-    flex: 1;
-    min-width: 0;
+  .gm-mobile-menu.is-open{
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  /* Links dentro del sheet */
+  .gm-mobile-link{
+    display: block;
+    padding: 16px 14px;
+    border-radius: 14px;
+
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;        /* 👈 igual que desktop (no 700) */
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;  /* 👈 más sutil que antes */
+    text-transform: none;    /* 👈 más editorial */
 
     text-decoration: none;
-    border-radius: 14px;
-    padding: 8px 6px;
-
     color: #14532d;
-    transition: transform 0.05s ease, background 0.15s ease;
   }
 
-  .gm-nav-item:active {
-    transform: scale(0.98);
+  .gm-mobile-link:hover{
+    background: rgba(20, 83, 45, 0.08);
   }
 
-  .gm-nav-icon {
-    font-size: 20px;
-    line-height: 1;
+  .gm-mobile-link:active{
+    transform: scale(0.99);
+  }
+}
+
+/* Bloquear scroll cuando menú móvil está abierto */
+body.is-menu-open{
+  overflow: hidden;
+  touch-action: none;
+}
+
+.gm-mobile-menu{
+  padding: 14px;
+}
+
+.gm-mobile-link{
+  padding: 16px 14px;
+}
+
+.gm-mobile-link + .gm-mobile-link{
+  margin-top: 6px;
+}
+
+@media (max-width: 768px){
+
+  /* Reorganizamos la topbar en móvil */
+  .gm-topbar-inner{
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* izquierda | logo | burger */
+    align-items: center;
   }
 
-  .gm-nav-label {
-    font-size: 11px;
-    line-height: 1.1;
-    margin-top: 5px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  /* Logo perfectamente centrado */
+  .gm-brand{
+    grid-column: 2;
+    justify-self: center;
   }
 
-  /* Activo */
-  .gm-nav-item.is-active {
-    background: rgba(20, 83, 45, 0.10);
+  /* Burger anclado a la derecha */
+  .gm-burger{
+    grid-column: 3;
+    justify-self: end;
+  }
+
+  /* Menú desktop fuera */
+  .gm-topnav{
+    display: none !important;
   }
 }
 
@@ -730,6 +1133,27 @@ input[readonly], textarea[readonly]{
 
 .players-page {
   padding-top: 32px;
+}
+
+/* Player profile: header limpio, pero H1 sigue existiendo */
+.player-profile-page .public-subtitle{
+  display: none;
+}
+
+.player-profile-page .public-title{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+main.gm-wrap.player-profile-page{
+  padding-top: 00px; /* o incluso 0 */
 }
 
 
@@ -891,174 +1315,178 @@ input[readonly], textarea[readonly]{
   background: #ffffff !important;
 }
 
-/* =============================================================================
-   BLOQUE 1: HEADER DEL JUGADOR
-   ========================================================================== */
+/* ===================== PLAYER HEADER (card) ===================== */
 
-.player-header {
-  display: flex;
-  justify-content: space-between;
+.player-header{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
   align-items: center;
-  gap: 20px;
-  padding: 20px 24px;    /* + aire respecto a versión anterior */
+  padding: 20px 24px;
   margin-bottom: 18px;
 }
 
-.player-header-main {
+/* ---------------- LEFT ---------------- */
+
+.player-header-main{
   display: flex;
   align-items: center;
   gap: 18px;
+  min-width: 0;
 }
 
-/* Sirve tanto si es <div><img></div> como si es <img class="player-header-avatar"> */
-.player-header-avatar {
+/* Avatar */
+.player-header-avatar{
   width: 100px;
   height: 100px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid #e5e7eb;
   background: #f9fafb;
+  flex: 0 0 auto;
+  object-fit: cover;
+  display: block;
+}
+
+/* Nombre + nick */
+.player-header-name{
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.player-header-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.player-header-avatar--fallback span {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #14532d;
-}
-
-.player-header-name {
-  margin: 0 0 4px 0;
+  gap: 10px;
   font-size: 1.4rem;
   font-weight: 700;
   color: #14532d;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.player-nick-badge {
-  background: #14532d;   /* verde corporativo */
+.player-nick-badge{
+  background: #14532d;
   color: #ffffff;
-  padding: 3px 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  flex: 0 0 auto;
 }
 
-
-.player-header-meta {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #6b7280;
-}
-
+/* Estrellas */
 .player-header-stars{
-  margin-top: 4px;
+  margin-top: 6px;
   display: flex;
-  align-items: center;
   gap: 4px;
 }
 
 .league-star{
-  display: inline-block;     /* CLAVE para iOS */
+  display: inline-block;
   font-size: 18px;
   line-height: 1;
-
   background: linear-gradient(180deg, #f6e27a, #d4af37);
   -webkit-background-clip: text;
   background-clip: text;
-
   -webkit-text-fill-color: transparent;
-  color: transparent;        /* fallback consistente */
+  color: transparent;
 }
 
-
-/* Contenedor de las badges de victorias/empates */
-.player-header-right,
-.player-header-badges {        /* alias por si el HTML tiene el nombre antiguo */
+/* Meta -> chips */
+.player-header-meta{
+  margin-top: 10px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-@media (max-width: 768px) {
-  .player-header-avatar {
-    width: 56px !important;
-    height: 56px !important;
-    border-radius: 50% !important;
+.player-header-meta .meta-sep{
+  display: none;
+}
 
-    display: block !important;
-    flex: 0 0 56px !important;   /* clave contra la distorsión */
-    object-fit: cover !important; /* clave contra aplastamiento */
+.player-header-meta .meta-item{
+  background: rgba(20, 83, 45, 0.06);
+  border: 1px solid rgba(20, 83, 45, 0.12);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 350;
+  color: #374151;
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.player-header-meta .meta-label{
+  color: rgba(20, 83, 45, 0.60);
+  font-weight: 700;
+}
+
+/* ===================== META NUMBERS TUNING ===================== */
+
+/* Valores numéricos */
+.player-header-meta .meta-item strong{
+  font-weight: 600;
+  color: #374151;           /* gris oscuro (Tailwind gray-700) */
+}
+
+/* Etiquetas un poco más suaves */
+.player-header-meta .meta-label{
+  color: rgba(20, 83, 45, 0.55);
+}
+
+/* ---------------- RIGHT (KPIs) ---------------- */
+
+.player-header-right,
+.player-header-badges{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  justify-items: end;
+  min-width: 150px;
+}
+
+.player-header-right .badge{
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+
+@media (max-width: 768px){
+  .player-header-avatar{
+    width: 56px;
+    height: 56px;
   }
 
-  .player-header-main {
-    align-items: flex-start; /* suele quedar mejor con texto en 2 líneas */
+  .player-header-main{
+    align-items: flex-start;
   }
 
-  /* si el nombre ocupa mucho, le damos aire */
-  .player-header-name {
+  .player-header-name{
     font-size: 1.2rem;
   }
 }
-@media (max-width: 520px) {
-  /* Header pasa a columna para que no comprima el texto */
-  .player-header {
-    flex-direction: column;
-    align-items: stretch;
+
+@media (max-width: 520px){
+  .player-header{
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  /* Mantiene avatar + nombre en fila, pero con mejor aire */
-  .player-header-main {
+  .player-header-main{
     gap: 12px;
   }
 
-  /* Badges pasan abajo y en fila */
   .player-header-right,
-  .player-header-badges {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
+  .player-header-badges{
+    grid-template-columns: 1fr 1fr;
+    justify-items: stretch;
+    min-width: 0;
   }
 
-  /* Estrellas: que no se peguen y respiren */
-  .player-header-stars {
-    margin-top: 6px;
-  }
-
-  /* META en “chips” (si aplicas el HTML con meta-item) */
-  .player-header-meta {
-    margin-top: 6px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    line-height: 1.1;
-  }
-
-  .player-header-meta .meta-label {
-    display: none; /* fuera texto largo en móvil */
-  }
-
-  .player-header-meta .meta-sep {
-    display: none; /* fuera los puntos en móvil */
-  }
-
-  .player-header-meta .meta-item {
-    background: rgba(20, 83, 45, 0.06);
-    border: 1px solid rgba(20, 83, 45, 0.12);
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 12.5px;
-    color: #374151;
+  .player-header-right .badge{
+    text-align: center;
   }
 }
 
@@ -1166,6 +1594,35 @@ input[readonly], textarea[readonly]{
   font-size: 0.7rem;
   color: #6b7280;
 }
+
+/* ===================== KPIs: 2 por fila en móvil ===================== */
+@media (max-width: 640px){
+  .kpi-grid.player-kpis{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  /* Compactar un pelín la card en móvil */
+  .kpi-grid.player-kpis .kpi{
+    padding: 10px 12px;
+    min-height: 82px;
+  }
+
+  .kpi-grid.player-kpis .kpi .value{
+    font-size: 1.25rem;
+  }
+
+  .kpi-grid.player-kpis .kpi .label{
+    font-size: 0.72rem;
+    margin-bottom: 6px;
+  }
+
+  .kpi-grid.player-kpis .kpi .sub{
+    font-size: 0.68rem;
+  }
+}
+
+
 
 /* =============================================================================
    PERFIL JUGADOR – BLOQUE 3 ESTILO LIGA (GOLPES / DONUT / FIR-GIR)
@@ -1313,6 +1770,35 @@ input[readonly], textarea[readonly]{
   font-size: var(--legend-value-size);
   font-weight: var(--legend-value-weight);
   color: var(--legend-value-color);
+}
+
+/* ===================== DONUT LEGEND: 2 columnas en móvil ===================== */
+@media (max-width: 640px){
+  .player-donut-legend{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+    row-gap: 8px;
+    margin-top: 10px; /* por si respira mejor bajo el donut */
+  }
+
+  .player-donut-legend-item{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .player-donut-legend-name{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .player-donut-legend-val{
+    margin-left: auto;
+    font-weight: 600;
+  }
 }
 
 
@@ -1589,6 +2075,27 @@ input[readonly], textarea[readonly]{
   transition-delay: 1s;  /* ⬅️ delay del tooltip */
 }
 
+/* ===================== PLAYER PROFILE — TITULOS FINOS (como antes) ===================== */
+
+/* Estos 3 (Evolución / Medias por par / Distribución) viven en .player-league-block */
+.player-league-block h2{
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;     /* más fino */
+  letter-spacing: 0.02em !important;
+  color: #14532d !important;
+  margin: 0 0 12px 0 !important;
+}
+
+/* Si “Logros” usa otro wrapper, esto lo cubre */
+.player-profile-page h2{
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  color: #14532d !important;
+  margin: 0 0 12px 0 !important;
+}
+
+
 /* ============================================================================================
    PÁGINA DE CAMPOS (GOLF MODE)
    ============================================================================================ */
@@ -1766,156 +2273,82 @@ input[readonly], textarea[readonly]{
 }
 
 
-/* ===============================
-   PUBLIC COURSE DETAIL (GolfMode)
-   scope: .course-detail-page
-   =============================== */
-
-.course-detail-page .course-head{
-  display:flex;
-  gap:14px;
-  align-items:center;
-  padding: 14px 16px;            /* más compacto */
-}
-
-.course-detail-page .course-head-logo{
-  width:110px;
-  height:110px;
-  object-fit:contain;
-  background:#fff;
-  border-radius:12px;
-  padding:6px;
-  border: 1px solid var(--border);
-}
-
-.course-detail-page .course-head-title{
-  margin:0 0 4px 0;
-  font-size: 1.35rem;            /* ⬅ baja el tamaño */
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  color: var(--gm-green);
-}
-
-.course-detail-page .course-head-city{
-  margin:0;
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-
-.course-detail-page .course-head-meta{
-  margin:4px 0 0 0;
-  font-size:0.9rem;              /* ⬅ más fino */
-  color: var(--muted);
-}
-
-.course-detail-page .card h2{
-  font-size: 1.05rem;
-  margin: 0 0 10px 0;
-  color: var(--text);
-}
-
-/* Tabla “hoyo a hoyo” */
-.course-detail-page .scorecard-wrap{
-  overflow-x: auto;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-}
-
-.course-detail-page table.scorecard{
-  width: 100%;
-  min-width: 980px;              /* evita que se comprima raro */
-  border-collapse: separate;
-  border-spacing: 0;
-  background: var(--panel);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Celdas más densas */
-.course-detail-page table.scorecard th,
-.course-detail-page table.scorecard td{
-  padding: 7px 8px;              /* ⬅ menos alto */
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  text-align: center;
-  white-space: nowrap;
-
-  font-size: 0.82rem;            /* ⬅ más compacto */
-  font-weight: 600;
-  color: var(--text);
-}
-
-.course-detail-page table.scorecard th.rowhdr{
-  text-align: left;
-  background: var(--panel-2);
-  font-weight: 800;
-  min-width: 108px;
-
-  position: sticky;
-  left: 0;
-  z-index: 2;
-}
-
-.course-detail-page table.scorecard th.colhdr,
-.course-detail-page table.scorecard th.totalhdr{
-  background: var(--panel-2);
-  font-weight: 800;
-}
-
-.course-detail-page table.scorecard td.totalcell{
-  background: #f9fafb;
-  font-weight: 800;
-}
-
-/* Metros: dorado suave GolfMode */
-.course-detail-page table.scorecard tr.row-meters td{
-  background: rgba(212, 175, 55, 0.18);
-  color: #92400e;
-  font-weight: 800;
-}
-
-/* No pintar la celda total de Metros */
-.course-detail-page table.scorecard tr.row-meters td.totalcell{
-  background: #f9fafb;
-  color: var(--text);
-  font-weight: 800;
-}
-
-/* Link volver */
-.course-detail-page .back-link{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 18px 0 0 0;
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--gm-green);
-  text-decoration: none;
-}
-.course-detail-page .back-link:hover{ text-decoration: underline; }
-
-/* Logo GolfMode en cabecera de campo */
-.course-detail-page .course-head{
-  justify-content: space-between;
-}
-
-.course-detail-page .course-head-left{
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.course-detail-page .course-head-gm-logo{
-  height: 110px;
-  width: auto;
-  opacity: 0.85;
-}
 
 @media (max-width: 640px){
   .course-detail-page .course-head-gm-logo{
     display:none;
   }
 }
+
+/* ============================================================================================
+   COURSE DETAIL (detalle de campo) — FIX logo enorme
+   ============================================================================================ */
+
+.course-detail-page .course-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 18px;
+}
+
+.course-detail-page .course-head-left{
+  display:flex;
+  align-items:center;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* ✅ LIMITA el logo del campo */
+.course-detail-page .course-head-logo{
+  width: 220px;
+  max-width: 220px;
+  height: 120px;
+  object-fit: contain;   /* no recorta, no deforma */
+  display:block;
+  flex: 0 0 auto;
+}
+
+/* Evita que el texto empuje cosas raras */
+.course-detail-page .course-head-info{
+  min-width: 0;
+}
+
+/* Logo de GolfMode (derecha) */
+.course-detail-page .course-head-gm-logo{
+  height: 44px;
+  width: auto;
+  flex: 0 0 auto;
+}
+
+/* móvil */
+@media (max-width: 640px){
+  .course-detail-page .course-head{
+    align-items:flex-start;
+  }
+  .course-detail-page .course-head-logo{
+    width: 160px;
+    max-width: 160px;
+    height: 90px;
+  }
+}
+
+/* ============================================================================================
+   SCORECARD — FILA METROS (amarillo claro)
+   ============================================================================================ */
+
+.scorecard .row-meters th,
+.scorecard .row-meters td{
+  background: #fff7cc;              /* amarillo claro elegante */
+  color: #14532d;
+  font-weight: 600;
+}
+
+/* separador sutil */
+.scorecard .row-meters td,
+.scorecard .row-meters th{
+  border-bottom: 1px solid #f1e7a3;
+}
+
 
 
 /* =============================================================================================== */
@@ -4180,6 +4613,108 @@ input[readonly], textarea[readonly]{
   box-shadow: inset 0 0 0 2px rgba(34,197,94,0.18);
 }*/
 
+/* ===================== STATS: FIX SCROLL EN MÓVIL (desactivar freeze) ===================== */
+@media (max-width: 768px){
+
+  .stats-table-wrap{
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fuerza ancho real para que haya scroll */
+  .stats-table{
+    width: max-content !important;
+    min-width: 1600px !important;   /* más grande -> scroll real */
+    table-layout: auto !important;
+  }
+
+  /* 🔥 Desactivar "inmovilizar columnas" SOLO en móvil */
+  .stats-table .sticky,
+  .stats-table .sticky2,
+  .stats-table .sticky3,
+  .stats-table .sticky4{
+    position: static !important;
+    left: auto !important;
+    z-index: auto !important;
+    background: transparent !important;
+  }
+
+  /* Si también te molesta el header sticky en móvil, activa esto:
+  .stats-table thead th{
+    position: static !important;
+    top: auto !important;
+  }
+  */
+}
+
+/* ===================== STATS KPIs = estilo Player Profile ===================== */
+
+
+/* Grid: en móvil 2 columnas (no 1) */
+@media (max-width: 560px){
+  .stats-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
+
+/* Cards: mismo “feel” que KPIs de player */
+.stat-card{
+  border-radius: 14px;
+  padding: 10px 12px;                 /* más compacto */
+  border: 1px solid rgba(20,83,45,.10);
+  box-shadow: 0 1px 0 rgba(0,0,0,.02); /* sutil */
+}
+
+/* Label: más fino */
+.stat-label{
+  font-size: 0.75rem;
+  font-weight: 600;                   /* antes 500 */
+  color: #14532d;     /* verde Golf Mode */
+  letter-spacing: 0.02em;
+}
+
+/* Value: mismo grosor/size que player */
+.stat-value{
+  margin-top: 6px;
+  font-size: 1.4rem;                 /* antes 1.5rem */
+  font-weight: 700;                   /* más “pro” */
+  color:  #1f8347;                     /* verde más sobrio (como player) */
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Si quieres que en pantallas muy pequeñas no se apriete */
+@media (max-width: 380px){
+  .stats-grid{
+    grid-template-columns: 1fr !important;
+  }
+}
+/* ===================== FIX CHIP "MEJOR VUELTA" SOLO MÓVIL ===================== */
+@media (max-width: 560px){
+
+  /* el header debe poder bajar a 2 líneas */
+  .stats-section-head{
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  /* el chip ocupa toda la línea y ya no se deforma */
+  .stats-section-head .stats-chip{
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+
+    white-space: normal !important;
+    line-height: 1.25 !important;
+
+    padding: 8px 12px !important;
+    text-align: left !important;
+  }
+}
+
 
 /* ==========================================================
    PUBLIC HEADER (Golf Mode) — patrón único
@@ -4191,43 +4726,46 @@ input[readonly], textarea[readonly]{
   margin: 0 auto 80px auto;
 }
 
-.public-title{
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #14532d;
+/* ===== Public page header ===== */
+
+.public-breadcrumb{
+  background:#f1f3f5;
+  border-bottom:1px solid #e5e7eb;
+  padding:10px 0;
+  font-size:.75rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
 }
 
-.public-logo{
-  position: absolute;
-  top: -6px;
-  right: 0;
-  height: 110px;
-  width: auto;
+.public-breadcrumb a{
+  color:#14532d;
+  font-weight:600;
+}
+
+.public-breadcrumb .sep{
+  margin:0 6px;
+  color:#94a3b8;
+}
+
+.public-page-header{
+  padding:24px 0 10px;
+}
+
+body.gm-body h1.public-title{
+  font-size:1.35rem;
+  font-weight:500;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  color:#14532d;
+  margin:0;
 }
 
 .public-subtitle{
-  margin-top: 6px;
-  font-size: 1rem;
-  color: #6b7280;
+  margin-top:6px;
+  font-size:.9rem;
+  color:#64748b;
 }
 
-/* Volver fuera del header */
-.public-back-wrap{
-  max-width: 1200px;
-  margin: -40px auto 24px auto;
-}
-
-.public-back{
-  color: #14532d;
-  font-weight: 600;
-  text-decoration: none;
-  font-size: .9rem;
-}
-
-.public-back:hover{
-  text-decoration: underline;
-}
 
 /* Móvil */
 @media (max-width: 640px){

@@ -1,39 +1,48 @@
 {% extends "public_base.html" %}
 
-{% block title %}Vuelta — {{ course.name }}{% endblock %}
-{% block container_class %}gm-wrap round-public{% endblock %}
+{% block title %}Vuelta — {{ course.name }} · Golf Mode{% endblock %}
+{% block container_class %}round-public{% endblock %}
+
+{# ===== Breadcrumbs (franja gris) ===== #}
+{% block breadcrumbs %}
+  {% if league_id %}
+    {% set crumbs = [
+      {"label":"Inicio", "url":"/public"},
+      {"label":"Ligas", "url":"/public/leagues"},
+      {"label": (league.name if league is defined else "Liga"), "url": ("/public/leagues/" ~ league_id)},
+      {"label":"Vuelta", "url": None}
+    ] %}
+  {% else %}
+    {% set crumbs = [
+      {"label":"Inicio", "url":"/public"},
+      {"label":"Rondas", "url":"/public/rounds"},
+      {"label":"Vuelta", "url": None}
+    ] %}
+  {% endif %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-  <!-- HEADER -->
-  <section class="card round-header-card">
-    <div class="round-header-main">
-      <h1>Vuelta — {{ course.name }}</h1>
-      <p>
-        Fecha: {{ round.date }} · Tee: {{ round.tee }} · Tipo: {{ round.type }}
-      </p>
-
+  <!-- CABECERA HOMOGÉNEA -->
+  <header class="public-header">
+    <h1 class="public-title">Vuelta — {{ course.name }}</h1>
+    <p class="public-subtitle">
+      Fecha: {{ round.date }} · Tee: {{ round.tee }} · Tipo: {{ round.type }}
       {% if winner_names and winner_names|length > 0 %}
-        <p class="round-winner-row">
-          <span class="badge win">
-            {% if winner_names|length == 1 %}
-              🏆 Ganador
-            {% else %}
-              🤝 Empate en primera posición
-            {% endif %}
-          </span>
-          <span class="round-winner-names">
-            {{ winner_names|join(", ") }}
-          </span>
-        </p>
+        ·
+        {% if winner_names|length == 1 %}
+          🏆 Ganador: {{ winner_names|join(", ") }}
+        {% else %}
+          🤝 Empate: {{ winner_names|join(", ") }}
+        {% endif %}
       {% endif %}
-    </div>
+    </p>
+  </header>
 
-    <!-- logo arriba derecha -->
-    <img src="/static/golfmode_logo.png" alt="Golf Mode" class="round-header-logo">
-  </section>
-
-  <!-- RESUMEN DE JUGADORES -->
+  <!-- =========================
+       RESUMEN DE JUGADORES
+       ========================= -->
   <section class="card">
     <h2>Resumen de jugadores</h2>
 
@@ -100,7 +109,6 @@
                   <div class="summary-bar" data-pct="{{ firp }}%">
                     <div class="summary-bar-fill" style="width: {{ firp }}%;"></div>
                   </div>
-
                 {% else %}
                   -
                 {% endif %}
@@ -113,7 +121,6 @@
                   <div class="summary-bar" data-pct="{{ girp }}%">
                     <div class="summary-bar-fill gir" style="width: {{ girp }}%;"></div>
                   </div>
-
                 {% else %}
                   -
                 {% endif %}
@@ -209,7 +216,9 @@
     {% endif %}
   </section>
 
-  <!-- DETALLE POR JUGADOR (TARJETA HORIZONTAL) -->
+  <!-- =========================
+       DETALLE POR JUGADOR (TARJETA)
+       ========================= -->
   <section class="card">
     <h2>Detalle por jugador</h2>
 
@@ -217,7 +226,7 @@
       <p>No hay jugadores en esta vuelta.</p>
     {% else %}
 
-      <form method="get" action="">
+      <form method="get" action="" class="league-player-select">
         {% if league_id %}
           <input type="hidden" name="league_id" value="{{ league_id }}">
         {% endif %}
@@ -420,11 +429,5 @@
       {% endif %}
     {% endif %}
   </section>
-
-  {% if league_id %}
-    <p><a href="/public/leagues/{{ league_id }}">&larr; Volver a la liga</a></p>
-  {% else %}
-    <p><a href="/public/rounds">&larr; Volver al listado de vueltas</a></p>
-  {% endif %}
 
 {% endblock %}

@@ -1,11 +1,27 @@
 {% extends "public_base.html" %}
 
 {% block title %}Perfil — {{ player.name }}{% endblock %}
-{% block container_class %}gm-wrap{% endblock %}
+{% block container_class %}player-profile-page{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Jugadores", "url":"/public/players"},
+    {"label": player.name, "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-  <!-- HEADER -->
+  <header class="public-header">
+    <h1 class="public-title">{{ player.name }}</h1>
+    <p class="public-subtitle">
+      Resumen de rendimiento, evolución, distribución y logros.
+    </p>
+  </header>
+
+  <!-- HEADER “CARD” DEL JUGADOR -->
   <section class="card player-header">
     <div class="player-header-main">
       {% if player.photo_url %}
@@ -15,12 +31,12 @@
       {% endif %}
 
       <div>
-        <h1 class="player-header-name">
+        <div class="player-header-name">
           {{ player.name }}
           {% if player.nickname %}
             <span class="player-nick-badge">{{ player.nickname }}</span>
           {% endif %}
-        </h1>
+        </div>
 
         {% if titles_count and titles_count > 0 %}
           <div class="player-header-stars" title="{{ titles_count }} título(s) de liga">
@@ -30,10 +46,9 @@
           </div>
         {% endif %}
 
-
         <p class="player-header-meta">
           <span class="meta-item">
-            <span class="meta-label">HCP exacto actual:</span>
+            <span class="meta-label">HCP actual:</span>
             <strong>{{ "%.1f"|format(player.hcp_exact) }}</strong>
           </span>
 
@@ -52,7 +67,6 @@
             </span>
           {% endif %}
         </p>
-
       </div>
     </div>
 
@@ -77,13 +91,11 @@
 
   <!-- KPI GRID -->
   <section class="kpi-grid player-kpis">
-
     <div class="kpi">
       <div class="label">Lvl medio de juego</div>
       <div class="value">{% if avg_play_level is not none %}{{ "%.1f"|format(avg_play_level) }}{% else %}-{% endif %}</div>
       <div class="sub">Media de nivel de juego real</div>
     </div>
-
 
     <div class="kpi">
       <div class="label">Media golpes brutos</div>
@@ -150,10 +162,9 @@
       <div class="value">{% if total_eagles is not none %}{{ total_eagles }}{% else %}-{% endif %}</div>
       <div class="sub">En todas las vueltas</div>
     </div>
-
   </section>
 
-  <!-- BLOQUE 3: ESTADÍSTICAS ESTILO LIGA -->
+  <!-- BLOQUE: GRÁFICOS + STATS -->
   <section class="card">
     <div class="player-league-grid">
 
@@ -252,10 +263,6 @@
       <p style="font-size:0.85rem; color:#6b7280;">Todavía no hay logros configurados.</p>
     {% endif %}
   </section>
-
-  <p style="margin-top:14px;">
-    <a href="/public/players" style="color:#14532d; font-weight:600;">← Volver a jugadores</a>
-  </p>
 
 {% endblock %}
 
@@ -371,7 +378,7 @@
 
       const minVal = Math.min(...values);
       const maxVal = Math.max(...values);
-      const pad = 2;
+      const pad = 5;
 
       let yMin = 80, yMax = 120;
       if (minVal < yMin) yMin = Math.floor((minVal - pad) / 5) * 5;
@@ -409,8 +416,15 @@
           },
           scales: {
             x: { display: false, grid: { display: false } },
-            y: { min: yMin, max: yMax, grid: { display: false }, ticks: { stepSize: 5, autoSkip: false, precision: 0 } }
+            y: {
+              min: yMin,
+              max: yMax,
+              beginAtZero: false,
+              grid: { display: false },
+              ticks: { stepSize: 5, autoSkip: false, precision: 0 }
+            }
           }
+
         }
       });
     })();

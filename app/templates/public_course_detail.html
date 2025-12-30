@@ -1,12 +1,31 @@
 {% extends "public_base.html" %}
 
 {% block title %}{{ course.name }} · Campo{% endblock %}
-{% block container_class %}container course-detail-page{% endblock %}
+{% block container_class %}course-detail-page{% endblock %}
 
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Campos", "url":"/public/courses"},
+    {"label": course.name, "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-  <!-- CABECERA CAMPO -->
+  <header class="public-header">
+    <h1 class="public-title">{{ course.name }}</h1>
+    <p class="public-subtitle">
+      {{ course.city or "Ciudad desconocida" }}
+      · Par {{ course.par_total }}
+      {% if course.meters_total %} · {{ course.meters_total }} m{% endif %}
+      · Slope {{ course.slope_yellow }}
+      · Rating {{ "%.1f"|format(course.rating_yellow) }}
+    </p>
+  </header>
+
+  <!-- CABECERA CAMPO (CARD) -->
   <section class="card course-head">
     <div class="course-head-left">
       {% if course.logo_url %}
@@ -18,31 +37,23 @@
       {% endif %}
 
       <div class="course-head-info">
-        <h1 class="course-head-title">{{ course.name }}</h1>
+        <div class="course-head-title">{{ course.name }}</div>
 
-        <p class="course-head-city">
+        <div class="course-head-city">
           {{ course.city or "Ciudad desconocida" }}
-        </p>
+        </div>
 
-        <p class="course-head-meta">
+        <div class="course-head-meta">
           Par total: <strong>{{ course.par_total }}</strong>
           {% if course.meters_total %}
             · Metros: <strong>{{ course.meters_total }} m</strong>
           {% endif %}
           · Slope: <strong>{{ course.slope_yellow }}</strong>
           · Rating: <strong>{{ "%.1f"|format(course.rating_yellow) }}</strong>
-        </p>
+        </div>
       </div>
     </div>
-
-    <!-- LOGO GOLFMODE -->
-    <img
-      src="/static/golfmode_logo.png"
-      alt="Golf Mode"
-      class="course-head-gm-logo"
-    >
   </section>
-
 
   <!-- TABLA HOYO A HOYO -->
   <section class="card">
@@ -93,7 +104,5 @@
       </div>
     {% endif %}
   </section>
-
-  <a href="/public/courses" class="back-link">← Volver a campos</a>
 
 {% endblock %}

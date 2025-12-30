@@ -1,0 +1,18 @@
+{# components/breadcrumbs.html #}
+{% if crumbs and crumbs|length > 0 %}
+  <div class="gm-breadcrumbs">
+    <div class="gm-breadcrumbs-inner">
+      {% for c in crumbs %}
+        {% if not loop.first %}
+          <span class="gm-crumb-sep">›</span>
+        {% endif %}
+
+        {% if c.url and not loop.last %}
+          <a class="gm-crumb-link" href="{{ c.url }}">{{ c.label }}</a>
+        {% else %}
+          <span class="gm-crumb-current">{{ c.label }}</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

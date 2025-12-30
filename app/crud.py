@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
 from collections import defaultdict
-
+from .models import News
 
 
 
@@ -823,3 +823,75 @@ def remove_achievement_from_player(db, player_id: int, achievement_id: int):
     if pa:
         db.delete(pa)
         db.commit()
+
+
+# ==============================================================================
+# NEWS – READ
+# ==============================================================================
+
+def get_latest_news(db: Session, limit: int = 6):
+    return (
+        db.query(News)
+        .filter(News.published == True)
+        .order_by(News.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+def get_news_page(db: Session, skip: int = 0, limit: int = 30):
+    return (
+        db.query(News)
+        .filter(News.published == True)
+        .order_by(News.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+# ==============================================================================
+# NEWS – CREATE / DELETE
+# ==============================================================================
+
+DEFAULT_NEWS_IMAGES = {
+    "league": "/static/uploads/news/default_league.jpg",
+    "achievement": "/static/uploads/news/default_achievement.jpg",
+    "record": "/static/uploads/news/default_record.jpg",
+    "round": "/static/uploads/news/default_round.jpg",
+    "general": "/static/uploads/news/default_general.jpg",
+}
+
+def create_news(
+    db: Session,
+    *,
+    title: str,
+    excerpt: str,
+    category: str = "general",
+    image_path: str | None = None,
+    related_url: str | None = None,
+    published: bool = True,
+) -> News:
+    img = image_path or DEFAULT_NEWS_IMAGES.get(category, DEFAULT_NEWS_IMAGES["general"])
+
+    item = News(
+        title=title.strip(),
+        excerpt=excerpt.strip(),
+        category=category,
+        image_path=img,
+        related_url=related_url,
+        published=published,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def delete_news(db: Session, news_id: int):
+    item = db.query(News).filter(News.id == news_id).first()
+    if not item:
+        return
+    db.delete(item)
+    db.commit()
+
+def get_news_by_id(db: Session, news_id: int):
+    return db.query(News).filter(News.id == news_id).first()
