@@ -5,19 +5,24 @@
      aria-label="Abrir: {{ item.title }}"></a>
 
   <div class="news-img">
-    <div class="news-img">
-      <div style="padding:8px; background:yellow; color:black; font-weight:900;">
-        NEWS CARD VERSION 999
-      </div>
+    {% set p = item.image_path or '' %}
 
-      <img src="/static/golfmode_logo.png" alt="test">
-    </div>
+    {# Normaliza rutas antiguas guardadas como /static/uploads/... #}
+    {% if p.startswith('/static/uploads/') %}
+      {% set p = p.replace('/static/uploads/', '') %}
+    {% endif %}
+
+    {# Si es ruta relativa (news/xxx.jpg), la servimos desde /uploads #}
+    {% if p and not p.startswith('/') and not p.startswith('http') %}
+      {% set p = '/uploads/' ~ p %}
+    {% endif %}
+
     <img
-      src="{{ ('/uploads/' ~ item.image_path) if item.image_path and not item.image_path.startswith('/uploads/') and not item.image_path.startswith('http') else (item.image_path if item.image_path else '/static/news_placeholder.jpg') }}"
+      src="{{ p if p else '/static/news_placeholder.jpg' }}"
       alt="{{ item.title }}"
       loading="lazy"
       onerror="this.onerror=null;this.src='/static/news_placeholder.jpg';"
-    />
+    >
 
     <span class="news-badge cat-{{ item.category }}">
       {% if item.category == "league" %}Liga{% endif %}
@@ -43,14 +48,9 @@
 
   <div class="news-body">
     <h3 class="news-title">{{ item.title }}</h3>
-
-    <p class="news-excerpt">
-      {{ item.excerpt }}
-    </p>
-
+    <p class="news-excerpt">{{ item.excerpt }}</p>
     <div class="news-meta">
       {{ item.created_at.strftime("%d/%m/%Y") if item.created_at else "" }}
     </div>
   </div>
-
 </article>
