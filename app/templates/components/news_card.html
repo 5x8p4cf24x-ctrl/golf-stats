@@ -1,16 +1,19 @@
 <article class="news-card">
-  <div style="border:5px solid red"></div>
   <!-- Link que hace la card clicable -->
   <a class="news-card-link"
      href="{{ item.related_url or '/public/noticias' }}"
      aria-label="Abrir: {{ item.title }}"></a>
 
   <div class="news-img">
+    <small style="display:block; color:#999; font-size:12px;">
+      DEBUG image_path: {{ item.image_path }}
+    </small>
     <img
-      src="{{ item.image_path }}"
+      src="{{ ('/uploads/' ~ item.image_path) if item.image_path and not item.image_path.startswith('/uploads/') and not item.image_path.startswith('http') else (item.image_path if item.image_path else '/static/news_placeholder.jpg') }}"
       alt="{{ item.title }}"
       loading="lazy"
-    >
+      onerror="this.onerror=null;this.src='/static/news_placeholder.jpg';"
+    />
 
     <span class="news-badge cat-{{ item.category }}">
       {% if item.category == "league" %}Liga{% endif %}
