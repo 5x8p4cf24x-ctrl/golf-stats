@@ -61,6 +61,8 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads
 import shutil
 from pathlib import Path
 
+STATIC_NEWS_DEFAULTS_DIR = Path(__file__).resolve().parent / "static" / "uploads" / "news"
+
 DEFAULT_NEWS_FILES = [
     "default_league.jpg",
     "default_achievement.jpg",
@@ -68,10 +70,11 @@ DEFAULT_NEWS_FILES = [
 ]
 
 for name in DEFAULT_NEWS_FILES:
-    src = Path("app/static/uploads/news") / name
+    src = STATIC_NEWS_DEFAULTS_DIR / name
     dst = UPLOAD_NEWS_DIR / name
     if src.exists() and not dst.exists():
         shutil.copyfile(src, dst)
+
 
 ADMIN_KEY = os.getenv("ADMIN_KEY", "")  # en local puedes dejarlo vacío si quieres
 
@@ -88,6 +91,23 @@ def require_admin(request: Request):
     # 3) Si no coincide -> fuera
     raise HTTPException(status_code=401, detail="Admin auth required")
 
+from fastapi.responses import JSONResponse
+
+@app.get("/__debug/uploads/news")
+def debug_uploads_news():
+    files = []
+    try:
+        if UPLOAD_NEWS_DIR.exists():
+            files = sorted([p.name for p in UPLOAD_NEWS_DIR.iterdir() if p.is_file()])
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+    return {
+        "UPLOAD_BASE_DIR": str(UPLOAD_BASE_DIR),
+        "UPLOAD_NEWS_DIR": str(UPLOAD_NEWS_DIR),
+        "news_dir_exists": UPLOAD_NEWS_DIR.exists(),
+        "news_files": files,
+    }
 
 
 # ================================================================================
