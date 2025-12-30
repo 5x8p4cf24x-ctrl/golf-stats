@@ -5,7 +5,13 @@
      aria-label="Abrir: {{ item.title }}"></a>
 
   <div class="news-img">
-    
+    <div class="news-img">
+      <div style="padding:8px; background:yellow; color:black; font-weight:900;">
+        NEWS CARD VERSION 999
+      </div>
+
+      <img src="/static/golfmode_logo.png" alt="test">
+    </div>
     <img
       src="{{ ('/uploads/' ~ item.image_path) if item.image_path and not item.image_path.startswith('/uploads/') and not item.image_path.startswith('http') else (item.image_path if item.image_path else '/static/news_placeholder.jpg') }}"
       alt="{{ item.title }}"
