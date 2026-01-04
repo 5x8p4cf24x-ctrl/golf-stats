@@ -256,66 +256,43 @@
       }
     }
     /* =========================
-      iOS/Safari PRINT: bordes visibles SIN “colarse” en el GAP
-      (solo iOS, no toca Android/PC)
+      iOS/Safari PRINT (MINIMAL y ESTABLE)
+      - fuerza líneas visibles
+      - respeta GAP (columna en blanco)
+      - respeta sepRow (fila separadora en blanco)
       ========================= */
     @supports (-webkit-touch-callout: none){
       @media print{
         html, body{
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
-          background:#fff !important;
         }
 
-        /* CLAVE: en iOS print, evita border-collapse: collapse */
-        table.scorecard{
-          border-collapse: separate !important;
-          border-spacing: 0 !important;
-        }
-
-        /* Fuerza bordes visibles (iOS se “come” hairlines) */
+        /* 1) iOS: fuerza bordes visibles */
         table.scorecard th,
         table.scorecard td{
           border: 1px solid #000 !important;
         }
 
-        /* GAP: debe ser un hueco limpio */
+        /* 2) GAP: sin bordes SIEMPRE (th y td) */
         table.scorecard th.gap,
         table.scorecard td.gap{
-          border: none !important;
-          background: transparent !important;
-          width: var(--gapW) !important;
-          min-width: var(--gapW) !important;
-        }
-
-        /* Fila separadora: hueco limpio */
-        table.scorecard tr.sepRow td{
-          border: none !important;
+          border: 0 !important;
           background: transparent !important;
         }
 
-        /* Quitar borde derecho de IDA (lado izquierdo del hueco) */
-        table.scorecard th.ida,
-        table.scorecard td.ida{
-          border-right: none !important;
+        /* 3) sepRow: sin bordes SIEMPRE */
+        table.scorecard tr.sepRow > td{
+          border: 0 !important;
+          background: transparent !important;
         }
 
-        /* Quitar borde izquierdo de la primera celda después del GAP (lado derecho del hueco)
-          Cubre TODAS las combinaciones th/td para que no falle en ninguna fila */
-        table.scorecard th.gap + th,
-        table.scorecard th.gap + td,
-        table.scorecard td.gap + th,
-        table.scorecard td.gap + td{
-          border-left: none !important;
-        }
-
-        /* (Opcional) borde exterior de la tarjeta */
+        /* 4) borde exterior (si lo quieres) */
         .card{
           border: 1px solid #000 !important;
         }
       }
     }
-
 
 
   </style>
