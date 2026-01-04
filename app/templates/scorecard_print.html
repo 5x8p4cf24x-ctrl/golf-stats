@@ -257,28 +257,29 @@
     }
     /* =========================
       iOS/Safari PRINT: bordes visibles SIN “colarse” en el GAP
-      (soluciona el bug de border-collapse en iOS)
+      (solo iOS, no toca Android/PC)
       ========================= */
     @supports (-webkit-touch-callout: none){
       @media print{
         html, body{
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
+          background:#fff !important;
         }
 
-        /* CLAVE: en iOS print, no uses collapse */
+        /* CLAVE: en iOS print, evita border-collapse: collapse */
         table.scorecard{
           border-collapse: separate !important;
           border-spacing: 0 !important;
         }
 
-        /* Fuerza bordes visibles */
+        /* Fuerza bordes visibles (iOS se “come” hairlines) */
         table.scorecard th,
         table.scorecard td{
           border: 1px solid #000 !important;
         }
 
-        /* EXCEPCIÓN: columna GAP (vacía) */
+        /* GAP: debe ser un hueco limpio */
         table.scorecard th.gap,
         table.scorecard td.gap{
           border: none !important;
@@ -287,23 +288,28 @@
           min-width: var(--gapW) !important;
         }
 
-        /* EXCEPCIÓN: fila separadora */
+        /* Fila separadora: hueco limpio */
         table.scorecard tr.sepRow td{
           border: none !important;
           background: transparent !important;
         }
 
-        /* Cortar las 2 líneas vecinas al GAP */
+        /* Quitar borde derecho de IDA (lado izquierdo del hueco) */
         table.scorecard th.ida,
         table.scorecard td.ida{
           border-right: none !important;
         }
+
+        /* Quitar borde izquierdo de la primera celda después del GAP (lado derecho del hueco)
+          Cubre TODAS las combinaciones th/td para que no falle en ninguna fila */
         table.scorecard th.gap + th,
+        table.scorecard th.gap + td,
+        table.scorecard td.gap + th,
         table.scorecard td.gap + td{
           border-left: none !important;
         }
 
-        /* (Opcional) borde exterior */
+        /* (Opcional) borde exterior de la tarjeta */
         .card{
           border: 1px solid #000 !important;
         }
