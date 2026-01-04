@@ -279,6 +279,23 @@
           background: transparent !important;
         }
 
+        /* --- quitar las 2 líneas “vecinas” del gap --- */
+
+        /* 1) IDA: quita el borde derecho */
+        table.scorecard th.ida,
+        table.scorecard td.ida{
+          border-right: none !important;
+        }
+
+        /* 2) Primera celda tras el gap (hoyo 10): quita el borde izquierdo */
+        table.scorecard th.gap + th,
+        table.scorecard td.gap + td,
+        table.scorecard th.gap + td,
+        table.scorecard td.gap + th{
+          border-left: none !important;
+        }
+
+
         /* 3) EXCEPCIÓN: fila separadora */
         table.scorecard tr.sepRow td{
           border: none !important;
