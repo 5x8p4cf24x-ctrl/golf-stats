@@ -255,6 +255,30 @@
         transform:none !important;      /* ✅ por si el JS metió transform inline */
       }
     }
+    /* =========================
+      iOS/Safari: líneas finas desaparecen al imprimir
+      SOLO iOS (no afecta desktop/Android)
+      ========================= */
+    @supports (-webkit-touch-callout: none){
+      @media print{
+        html, body{
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        /* fuerza bordes visibles en iOS */
+        table.scorecard th,
+        table.scorecard td{
+          border: 1px solid #000 !important;
+        }
+
+        /* borde exterior también (opcional pero recomendado) */
+        .card{
+          border: 1px solid #000 !important;
+        }
+      }
+    }
+
 
   </style>
 </head>
