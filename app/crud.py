@@ -10,7 +10,12 @@ from .models import News
 # --------------------------------------------------------------------------------
 
 def get_players(db: Session):
-    return db.query(models.Player).order_by(models.Player.name).all()
+    return (
+        db.query(models.Player)
+        .filter(models.Player.active == True)
+        .order_by(models.Player.name.asc())
+        .all()
+    )
 
 def get_player(db: Session, player_id: int):
     return db.query(models.Player).filter(models.Player.id == player_id).first()

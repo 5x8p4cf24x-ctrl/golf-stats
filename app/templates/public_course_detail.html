@@ -66,12 +66,11 @@
             <span class="metric-value">{{ "%.1f"|format(course.rating_yellow) }}</span>
           </div>
         </div>
-
       </div>
     </div>
   </section>
 
-  <!-- TABLA HOYO A HOYO -->
+  <!-- TABLA HOYO A HOYO (NO TOCAR) -->
   <section class="card">
     <h2>Hoyo a hoyo</h2>
 
@@ -120,5 +119,471 @@
       </div>
     {% endif %}
   </section>
+
+  <!-- TARJETA (UI NUEVA) -->
+  <section class="card gm-print-card">
+    <div class="gm-print-head">
+      <div>
+        <div class="gm-print-title">Tarjeta</div>
+        <div class="gm-print-sub">Elige hasta 4 jugadores y ajusta HCP si quieres.</div>
+      </div>
+    </div>
+
+    <div class="gm-print-grid">
+
+      <!-- Caja 1: selector -->
+      <div class="gm-box">
+        <div class="gm-box-title">Seleccionar jugador</div>
+
+        <div class="gm-add-row">
+          <select id="playerSelect" class="gm-select">
+            <option value="">— Selecciona jugador —</option>
+            <option value="__guest__">Jug. invitado</option>
+
+            {% for pl in players %}
+              <option
+                value="{{ pl.id }}"
+                data-hcp-exact="{{ pl.hcp_exact if pl.hcp_exact is not none else 0 }}"
+              >
+                {{ pl.name }}
+              </option>
+            {% endfor %}
+          </select>
+
+          <button type="button" class="btn-gm btn-gm--ghost" id="addPlayerBtn">Añadir</button>
+        </div>
+
+        <div class="gm-mini-hint">Máx. 4 jugadores (incluye invitados). Máx. 2 invitados.</div>
+      </div>
+
+      <!-- Caja 2: seleccionados -->
+      <div class="gm-box">
+        <div class="gm-box-title">Seleccionados</div>
+        <div id="selectedPlayers" class="gm-selected"></div>
+      </div>
+
+      <!-- Vista previa (DESKTOP) -->
+      <div class="gm-box gm-preview" id="scorecardPreview" hidden>
+        <div class="gm-box-title">Vista previa</div>
+        <iframe id="scorecardFrame" class="gm-frame" loading="lazy"></iframe>
+      </div>
+
+    </div>
+
+    <!-- Botones AL FINAL de Tarjeta -->
+    <div class="scorecard-actions scorecard-actions--bottom">
+      <button class="btn-gm btn-gm--ghost" type="button" id="btnPreview">
+        Ver tarjeta
+      </button>
+      <button class="btn-gm" type="button" id="btnPrint" disabled>
+        Imprimir
+      </button>
+    </div>
+  </section>
+
+  <!-- CSS MINIMO (sin duplicados, sin modal) -->
+  <style>
+    .scorecard-actions--bottom{
+      margin-top:12px;
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+    }
+
+    .gm-mini-hint{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    /* Preview embebido */
+    .gm-preview{ overflow:hidden; }
+    .gm-frame{
+      width:100%;
+      height:620px;
+      border:0;
+      display:block;
+      background:#fff;
+    }
+
+    /* ✅ MÓVIL: solo imprimir */
+    @media (max-width: 900px){
+      #btnPreview{ display:none !important; }        /* oculta Ver tarjeta */
+      #scorecardPreview{ display:none !important; } /* oculta caja preview */
+    }
+    /* =========================
+      SELECCIONADOS: look limpio tipo “Seleccionar jugador”
+      ========================= */
+    .gm-selected{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .gm-selected-row{
+      display:grid;
+      grid-template-columns: 1fr auto auto;
+      align-items:center;
+      gap:12px;
+      padding:12px;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:14px;
+      background:#fff;
+    }
+
+    .gm-sel-name{
+      min-width: 0;
+    }
+
+    .gm-sel-name .gm-name{
+      font-weight:400;          /* 👈 clave */
+      font-size:0.95rem;        /* un pelín más fino */
+      color:#111;
+      line-height:1.2;
+      display:block;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* Input nombre invitado “fino” */
+    .gm-sel-guestname{
+      width:100%;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:12px;
+      padding:8px 10px;
+      font-weight:700;
+      outline:none;
+      background:#fff;
+    }
+    .gm-sel-guestname:focus{
+      border-color: rgba(20,83,45,.45);
+      box-shadow: 0 0 0 3px rgba(20,83,45,.10);
+    }
+
+    /* Bloque HCP compacto */
+    .gm-sel-hcp{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border:1px solid rgba(20,83,45,.18);
+      border-radius:12px;
+      background:#fff;
+    }
+
+    /* “HCP” pequeñito y limpio */
+    .gm-sel-hcp .gm-hcp-label{
+      font-size:.75rem;
+      font-weight:500;
+      color:rgba(20,83,45,.9);
+    }
+
+    /* Input HCP igual de fino que un ghost button */
+    .gm-hcp-input{
+      font-family: inherit;   /* 👈 CLAVE */
+      font-weight: 400;       /* igual que Arnau Segura */
+      font-size: 0.95rem;     /* igual que el nombre */
+      line-height: 1.2;
+
+      border: none;
+      background: transparent;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      text-align: center;
+      color: #111;
+    }
+    .gm-hcp-input:focus{
+      border-color: rgba(20,83,45,.55);
+      box-shadow: 0 0 0 3px rgba(20,83,45,.12);
+    }
+
+    /* Botón quitar alineado visualmente */
+    .gm-sel-remove{
+      padding:8px 12px;
+      border-radius:12px;
+      font-weight:800;
+    }
+
+    /* Móvil: que no reviente */
+    @media (max-width: 640px){
+      .gm-selected-row{
+        grid-template-columns: 1fr;
+        gap:10px;
+      }
+      .gm-sel-hcp{
+        justify-content:space-between;
+      }
+      .gm-hcp-input{
+        width:64px;
+      }
+    }
+
+
+    
+  </style>
+
+  <script>
+  (function(){
+    const MAX = 4;
+    const MAX_GUESTS = 2;
+
+    const btnPreview = document.getElementById('btnPreview');
+    const btnPrint   = document.getElementById('btnPrint');
+
+    const addBtn = document.getElementById('addPlayerBtn');
+    const sel    = document.getElementById('playerSelect');
+    const list   = document.getElementById('selectedPlayers');
+
+    const previewBox   = document.getElementById('scorecardPreview');
+    const previewFrame = document.getElementById('scorecardFrame');
+
+    let chosen = [];
+
+    function isMobile(){
+      return window.matchMedia('(max-width: 900px)').matches;
+    }
+
+    function uid(){
+      return 'g_' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+    }
+
+    function escapeHtml(str){
+      return String(str || '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function guestsCount(){
+      return chosen.filter(x => x.type === 'guest').length;
+    }
+
+    function canAdd(){
+      return chosen.length < MAX;
+    }
+
+    function updateButtons(){
+      const ok = chosen.length > 0;
+      btnPrint.disabled = !ok;
+      btnPreview.disabled = !ok;
+    }
+
+    function buildParams(){
+      const params = new URLSearchParams();
+
+      // jugadores BD
+      chosen.forEach(p => {
+        if(p.type === 'player'){
+          params.append('pid', p.id);
+          params.append('hcp', String(p.hcp || 0));
+        }
+      });
+
+      // invitados
+      const guests = chosen.filter(x => x.type === 'guest');
+
+      // compat backend antiguo (1 invitado)
+      if(guests[0]){
+        params.set('guest_name', (guests[0].name || '').trim());
+        params.set('guest_hcp', String(parseInt(guests[0].hcp || 0, 10) || 0));
+      }
+
+      // backend nuevo (2 invitados)
+      guests.slice(0,2).forEach((g, k) => {
+        const n = k + 1;
+        params.set(`guest_name${n}`, (g.name || '').trim());
+        params.set(`guest_hcp${n}`, String(parseInt(g.hcp || 0, 10) || 0));
+      });
+
+      return params;
+    }
+
+    function baseUrl(){
+      return `/public/courses/{{ course.id }}/scorecard/print?` + buildParams().toString();
+    }
+
+    function embeddedPreviewUrl(){
+      const url = baseUrl();
+      return url + (url.includes('?') ? '&' : '?') + `preview=1&_ts=${Date.now()}`;
+    }
+
+    function loadEmbeddedPreview(){
+      previewFrame.src = embeddedPreviewUrl();
+    }
+
+    function render(){
+      list.innerHTML = '';
+
+      chosen.forEach((p, idx) => {
+        const row = document.createElement('div');
+        row.className = 'gm-selected-row';
+
+        if(p.type === 'guest'){
+          row.innerHTML = `
+            <div class="gm-sel-name">
+              <input class="gm-sel-guestname"
+                placeholder="Nombre invitado"
+                value="${escapeHtml(p.name || '')}"
+                data-idx="${idx}"
+                data-field="name">
+            </div>
+
+            <div class="gm-sel-hcp">
+              <span class="gm-hcp-label">HCP</span>
+              <input class="gm-hcp-input" type="number" min="0" max="54"
+                value="${Number(p.hcp || 0)}"
+                data-idx="${idx}"
+                data-field="hcp">
+            </div>
+
+            <button type="button"
+              class="btn-gm btn-gm--ghost btn-gm--sm gm-sel-remove"
+              data-remove="${idx}">
+              Quitar
+            </button>
+          `;
+        } else {
+          row.innerHTML = `
+            <div class="gm-sel-name">
+              <span class="gm-name">${escapeHtml(p.name)}</span>
+            </div>
+
+            <div class="gm-sel-hcp">
+              <span class="gm-hcp-label">HCP</span>
+              <input class="gm-hcp-input" type="number" min="0" max="54"
+                value="${Number(p.hcp || 0)}"
+                data-idx="${idx}"
+                data-field="hcp">
+            </div>
+
+            <button type="button"
+              class="btn-gm btn-gm--ghost btn-gm--sm gm-sel-remove"
+              data-remove="${idx}">
+              Quitar
+            </button>
+          `;
+        }
+
+
+        list.appendChild(row);
+      });
+
+      // inputs
+      list.querySelectorAll('input[data-idx]').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          const i = parseInt(e.target.dataset.idx, 10);
+          const field = e.target.dataset.field;
+
+          if(field === 'hcp'){
+            chosen[i].hcp = parseInt(e.target.value || '0', 10) || 0;
+          } else if(field === 'name'){
+            chosen[i].name = (e.target.value || '').trim();
+          }
+
+          updateButtons();
+
+          // refresca preview si está visible
+          if(!isMobile() && previewBox && !previewBox.hidden) loadEmbeddedPreview();
+        });
+      });
+
+      // remove
+      list.querySelectorAll('button[data-remove]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const i = parseInt(e.target.dataset.remove, 10);
+          chosen.splice(i, 1);
+          render();
+          updateButtons();
+
+          if(!isMobile() && previewBox && !previewBox.hidden) loadEmbeddedPreview();
+        });
+      });
+
+      addBtn.disabled = !canAdd();
+      sel.disabled = !canAdd();
+      updateButtons();
+    }
+
+    // ADD
+    addBtn.addEventListener('click', async () => {
+      const id = sel.value;
+      if(!id) return;
+      if(!canAdd()) return;
+
+      // guest
+      if(id === '__guest__'){
+        if(guestsCount() >= MAX_GUESTS) return;
+        chosen.push({ type:'guest', key:uid(), name:'', hcp:0 });
+        render();
+        if(!isMobile() && previewBox && !previewBox.hidden) loadEmbeddedPreview();
+        sel.value = '';
+        return;
+      }
+
+      // player
+      if(chosen.some(x => x.type === 'player' && String(x.id) === String(id))) return;
+
+      const opt = sel.options[sel.selectedIndex];
+      const name = (opt.textContent || '').trim();
+      const fallbackExact = parseFloat(opt.getAttribute('data-hcp-exact') || '0') || 0;
+
+      let defHcp = 0;
+      try{
+        const r = await fetch(`/public/courses/{{ course.id }}/course_handicap?player_id=${encodeURIComponent(id)}`, {
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await r.json();
+        if(data && data.ok){
+          defHcp = parseInt(data.course_handicap || 0, 10) || 0;
+        } else {
+          defHcp = Math.round(fallbackExact);
+        }
+      }catch(_){
+        defHcp = Math.round(fallbackExact);
+      }
+
+      chosen.push({ type:'player', id, name, hcp:defHcp });
+      render();
+      if(!isMobile() && previewBox && !previewBox.hidden) loadEmbeddedPreview();
+      sel.value = '';
+    });
+
+    // PREVIEW (desktop)
+    btnPreview.addEventListener('click', () => {
+      if(btnPreview.disabled) return;
+
+      // móvil: no preview (por si alguien lo fuerza)
+      if(isMobile()) return;
+
+      previewBox.hidden = false;
+      loadEmbeddedPreview();
+      previewBox.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+
+    // PRINT
+    btnPrint.addEventListener('click', () => {
+      if(btnPrint.disabled) return;
+
+      const url = baseUrl();
+      const printUrl = url + (url.includes('?') ? '&' : '?') + `autoprint=1&_ts=${Date.now()}`;
+
+      // móvil: misma pestaña (evita bloqueos)
+      if(isMobile()){
+        window.location.href = printUrl;
+      }else{
+        window.open(printUrl, '_blank', 'noopener,noreferrer');
+      }
+    });
+
+    // init
+    chosen = [];
+    render();
+  })();
+  </script>
+
 
 {% endblock %}

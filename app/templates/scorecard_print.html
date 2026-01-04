@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Tarjeta — {{ course.name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    :root{
+      --line:#000;
+      --bw: 0.5pt; /* prueba 0.5pt–0.75pt */
+      --lineW:0.25mm;
+
+      --muted:#666;
+      --font: Arial, Helvetica, sans-serif;
+
+      /* tarjeta */
+      --cardW:210mm;
+      --pad:5mm;
+
+      /* columnas */
+      --labelW:21mm;    /* 1cm más estrecha aprox */
+      --holeW: calc((100% - (var(--labelW) + var(--idaW) + var(--gapW) + var(--vtaW) + var(--totW)))/ 18);
+      --idaW:7mm;
+      --gapW:7mm;       /* separación real entre IDA y 10 */
+      --vtaW:8mm;
+      --totW:20mm;
+
+      /* tipografía */
+      --fs:9px;
+      --fsSmall:8px;
+
+      /* alturas */
+      --hRow:6mm;        /* hoyos/metros/par/hcp */
+      --pNameRow:7mm;    /* fila "nombre + golpes" */
+      --pRow:6mm;        /* putts / fir */
+
+      /* ====== COLORES TARJETA ====== */
+      --gm-green:#14532d;        /* GolfMode green */
+      --col-soft:#f2f2f2;        /* gris muy claro (columnas rojas) */
+      --col-strong:#e9eef7;      /* gris un pelín más fuerte (columna azul) */
+      --meters-yellow:#fff3a6;   /* amarillo de metros */
+      --player-name-green:#eef6f1; /* verde clarito GolfMode */
+    }
+
+    body{ font-family:var(--font); margin:0; color:#111; background:#fff; }
+
+    .page{
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding:10mm;
+      box-sizing:border-box;
+      background:#fff;
+    }
+
+    .card{
+      width:var(--cardW);
+      box-sizing:border-box;
+      border: var(--lineW) solid var(--line);
+      padding:var(--pad);
+      background:#fff;
+
+      /* que crezca con el contenido */
+      height:auto;
+      overflow:hidden;
+    }
+
+    .head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10mm;
+      margin-bottom:2mm;
+    }
+
+    .headLeft{
+      min-width:90mm;
+      display:flex;
+      flex-direction:column;
+      gap:2mm;
+      align-self:flex-start;
+      margin-top:1mm;
+    }
+
+    .title{
+      margin:0;
+      font-weight:900;
+      font-size:16px;
+      letter-spacing:.2px;
+      color: var(--gm-green);
+    }
+
+    .subtitle{
+      margin:6px 0 0 0;
+      font-size:10px;
+      color:var(--muted);
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .headRight{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10mm;
+      min-width: 70mm;
+    }
+
+    .logo{
+      width:32mm;
+      height:32mm;
+      object-fit:contain;
+      display:block;
+    }
+
+   
+    /* tabla */
+    table.scorecard{
+      width:100%;
+      max-width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:var(--fs);
+      margin:0;
+    }
+
+    table.scorecard th,
+    table.scorecard td{
+      border:var(--bw) solid var(--line);
+      padding:2px 2px;
+      text-align:center;
+      vertical-align:middle;
+    }
+
+    /* 1) Resaltar fila de metros */
+    tr.metersRow > th,
+    tr.metersRow > td{
+      background: var(--meters-yellow);
+    }
+
+    /* anchos */
+    .label{ width:var(--labelW); text-align:left !important; font-weight:800; padding-left:6px !important; }
+    .hole{ width:var(--holeW); }
+    .ida{ width:var(--idaW); font-weight:900; }
+    .vta{ width:var(--vtaW); font-weight:900; }
+    .tot{ width:var(--totW); font-weight:900; }
+
+    /* columna separadora sin bordes */
+    .gap{
+      width:var(--gapW);
+      border:none !important;
+      padding:0 !important;
+      background:transparent !important;
+    }
+
+    /* filas */
+    .rowH th, .rowH td{ height:var(--hRow); }
+    .rowPname th, .rowPname td{ height:var(--pNameRow); }
+    .rowP th, .rowP td{ height:var(--pRow); }
+
+    /* nombre jugador dentro de label */
+    .pname{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      line-height:1.05;
+    }
+    .hcp{
+      font-size:var(--fsSmall);
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .stars{
+      font-weight:900;
+      letter-spacing:-0.5px;
+      display:inline-block;
+      position:relative;
+      top:-8px;
+    }
+
+    /* Coloreado de columnas */
+    .col-soft{ background: var(--col-soft); }
+    .col-strong{ background: var(--col-strong); }
+
+    /* Verde suave SOLO en la celda del nombre */
+    table.scorecard tr.rowPname > th.label{
+      background: var(--player-name-green);
+    }
+
+    /* separadores dentro de la tabla */
+    tr.sepRow td{
+      border:none !important;
+      padding:0 !important;
+      height:2mm;
+    }
+
+    /* =========================
+      PREVIEW: quitar “lienzo” 100vh + padding
+      ========================= */
+    body.is-preview .page{
+      min-height:0 !important;
+      height:auto !important;
+      padding:0 !important;
+      align-items:center !important;
+      justify-content:center !important;
+      background:transparent !important;
+    }
+    body.is-preview .card{
+      min-height:0 !important;
+    }
+
+    /* =========================
+      MÓVIL: ver la tarjeta entera en pantalla (contain)
+      (solo pantalla, no afecta impresión)
+      ========================= */
+    @media screen and (max-width: 900px){
+      /* deja el layout “flexible” en pantalla móvil */
+      :root{
+        --cardW: auto;
+      }
+
+      .page{
+        padding:12px !important;
+        min-height:100vh;
+        align-items:flex-start !important;
+        justify-content:center !important;
+      }
+
+      /* la tarjeta puede ser más ancha que el viewport; el JS la escalará */
+      .card{
+        width:max-content;
+        max-width:none;
+        transform-origin: top center;
+      }
+    }
+
+    /* =========================
+      IMPRIME: A4 apaisado + reset total de escalados
+      ========================= */
+    @media print{
+      @page { size: A4 landscape; margin: 10mm; }
+
+      .page{
+        padding:0 !important;
+        min-height:auto !important;
+        zoom:1 !important;              /* ✅ por si el JS metió zoom inline */
+      }
+
+      .card{
+        margin:0 auto !important;
+        transform:none !important;      /* ✅ por si el JS metió transform inline */
+      }
+    }
+
+  </style>
+</head>
+
+<body class="{% if preview %}is-preview{% endif %}">
+  <div class="page">
+    <div class="card">
+
+      <!-- HEADER -->
+      <div class="head">
+        <div class="headLeft">
+          <h1 class="title">TARJETA — {{ course.name }}</h1>
+          <p class="subtitle">
+            <span>{{ course.city or "Ciudad" }}</span>
+            <span>· Par {{ course.par_total }}</span>
+            {% if course.meters_total %}<span>· {{ course.meters_total }} m</span>{% endif %}
+            <span>· Slope {{ course.slope_yellow }}</span>
+            <span>· Rating {{ "%.1f"|format(course.rating_yellow) }}</span>
+          </p>
+        </div>
+
+        <div class="headRight">
+          {% if course.logo_url %}
+            <img class="logo" src="/uploads/{{ course.logo_url }}" alt="Logo {{ course.name }}">
+          {% endif %}
+          <img class="logo" src="/static/golfmode_logo.png?v=2025" alt="GolfMode">
+        </div>
+      </div>
+
+      
+      {# Totales #}
+      {% set m_front = (holes_front | map(attribute='meters_yellow') | select | sum) %}
+      {% set m_back  = (holes_back  | map(attribute='meters_yellow') | select | sum) %}
+      {% set p_front = (holes_front | map(attribute='par') | select | sum) %}
+      {% set p_back  = (holes_back  | map(attribute='par') | select | sum) %}
+
+      <table class="scorecard">
+
+        <!-- HOYOS -->
+        <tr class="rowH">
+          <th class="label">Hoyos</th>
+          {% for h in holes_front %}<th class="hole">{{ h.number }}</th>{% endfor %}
+          <th class="ida col-soft">IDA</th>
+          <td class="gap"></td>
+          {% for h in holes_back %}<th class="hole">{{ h.number }}</th>{% endfor %}
+          <th class="vta col-soft">VTA</th>
+          <th class="tot col-strong">TOT</th>
+        </tr>
+
+        <!-- METROS -->
+        <tr class="rowH metersRow">
+          <th class="label">Metros</th>
+          {% for h in holes_front %}<td class="hole">{{ h.meters_yellow if h.meters_yellow is not none else "-" }}</td>{% endfor %}
+          <td class="ida col-soft">{{ m_front if m_front else "-" }}</td>
+          <td class="gap"></td>
+          {% for h in holes_back %}<td class="hole">{{ h.meters_yellow if h.meters_yellow is not none else "-" }}</td>{% endfor %}
+          <td class="vta col-soft">{{ m_back if m_back else "-" }}</td>
+          <td class="tot col-strong">{{ (m_front + m_back) if (m_front and m_back) else "-" }}</td>
+        </tr>
+
+        <!-- PAR -->
+        <tr class="rowH">
+          <th class="label">Par</th>
+          {% for h in holes_front %}<td class="hole">{{ h.par }}</td>{% endfor %}
+          <td class="ida col-soft">{{ p_front }}</td>
+          <td class="gap"></td>
+          {% for h in holes_back %}<td class="hole">{{ h.par }}</td>{% endfor %}
+          <td class="vta col-soft">{{ p_back }}</td>
+          <td class="tot col-strong">{{ p_front + p_back }}</td>
+        </tr>
+
+        <!-- HCP -->
+        <tr class="rowH">
+          <th class="label">HCP</th>
+          {% for h in holes_front %}<td class="hole">{{ h.stroke_index }}</td>{% endfor %}
+          <td class="ida col-soft" style="color:var(--muted); font-weight:800;">-</td>
+          <td class="gap"></td>
+          {% for h in holes_back %}<td class="hole">{{ h.stroke_index }}</td>{% endfor %}
+          <td class="vta col-soft" style="color:var(--muted); font-weight:800;">-</td>
+          <td class="tot col-strong" style="color:var(--muted); font-weight:800;">-</td>
+        </tr>
+
+        <!-- separador limpio (2mm) -->
+        <tr class="sepRow">
+          <td colspan="23"></td>
+        </tr>
+
+        <!-- JUGADORES -->
+        {% for p in selected_players %}
+          {% set idx = loop.index0 %}
+
+          <!-- GOLPES -->
+          <tr class="rowPname">
+            <th class="label">
+              <div class="pname">
+                <div>{{ p.name }}</div>
+                <div class="hcp">HCP: {{ p.hcp }}</div>
+              </div>
+            </th>
+
+            {% for n in range(1,10) %}
+              {% set s = strokes_map[idx].get(n, 0) %}
+              <td class="hole">{% if s > 0 %}<span class="stars">{{ "*" * s }}</span>{% endif %}</td>
+            {% endfor %}
+            <td class="ida col-soft"></td>
+
+            <td class="gap"></td>
+
+            {% for n in range(10,19) %}
+              {% set s = strokes_map[idx].get(n, 0) %}
+              <td class="hole">{% if s > 0 %}<span class="stars">{{ "*" * s }}</span>{% endif %}</td>
+            {% endfor %}
+            <td class="vta col-soft"></td>
+            <td class="tot col-strong"></td>
+          </tr>
+
+          <!-- PUTTS -->
+          <tr class="rowP">
+            <th class="label" style="color:var(--muted);">Putts</th>
+            {% for _ in range(1,10) %}<td class="hole"></td>{% endfor %}
+            <td class="ida col-soft"></td>
+            <td class="gap"></td>
+            {% for _ in range(10,19) %}<td class="hole"></td>{% endfor %}
+            <td class="vta col-soft"></td>
+            <td class="tot col-strong"></td>
+          </tr>
+
+          <!-- FIR -->
+          <tr class="rowP">
+            <th class="label" style="color:var(--muted);">FIR</th>
+
+            {% for h in holes_front %}
+              <td class="hole">
+                {% if h.par == 3 %}–{% endif %}
+              </td>
+            {% endfor %}
+
+            <td class="ida col-soft"></td>
+            <td class="gap"></td>
+
+            {% for h in holes_back %}
+              <td class="hole">
+                {% if h.par == 3 %}–{% endif %}
+              </td>
+            {% endfor %}
+
+            <td class="vta col-soft"></td>
+            <td class="tot col-strong"></td>
+          </tr>
+
+        {% endfor %}
+
+      </table>
+
+      <script>
+      (function(){
+        const qs = new URLSearchParams(window.location.search);
+        const autoprint = qs.get('autoprint') === '1';
+        const preview = qs.get('preview') === '1';
+
+        // Preview: jamás imprimas
+        if (preview) return;
+
+        // Imprime SOLO si viene explícito
+        if (autoprint){
+          window.addEventListener('load', () => window.print());
+        }
+      })();
+      </script>
+      <script>
+      (function(){
+        const page = document.querySelector('.page');
+        const card = document.querySelector('.card');
+        if(!page || !card) return;
+
+        function clearFit(){
+          page.style.zoom = '';
+          card.style.transform = '';
+          card.style.transformOrigin = '';
+        }
+
+        function fitCardToViewport(){
+          // Nunca ajustar si estamos imprimiendo (por si acaso)
+          if (window.matchMedia('print').matches) return;
+
+          // Solo móvil
+          if(!window.matchMedia('(max-width: 900px)').matches){
+            clearFit();
+            return;
+          }
+
+          // Reset para medir bien
+          clearFit();
+
+          const cardW = card.scrollWidth || card.getBoundingClientRect().width;
+          const vw = Math.min(document.documentElement.clientWidth, window.innerWidth || 0);
+          const padding = 24;
+
+          const scale = Math.min((vw - padding) / cardW, 1);
+
+          // Chrome/Android
+          page.style.zoom = String(scale);
+
+          // Fallback iOS/Safari
+          if(getComputedStyle(page).zoom === undefined || getComputedStyle(page).zoom === 'normal'){
+            card.style.transformOrigin = 'top center';
+            card.style.transform = `scale(${scale})`;
+          }
+        }
+
+        // ✅ CLAVE: antes de imprimir, limpiar
+        window.addEventListener('beforeprint', clearFit);
+
+        // ✅ tras imprimir, re-aplicar fit para pantalla
+        window.addEventListener('afterprint', () => {
+          setTimeout(fitCardToViewport, 50);
+        });
+
+        window.addEventListener('load', fitCardToViewport);
+        window.addEventListener('resize', fitCardToViewport);
+      })();
+      </script>
+
+
+    </div>
+  </div>
+</body>
+</html>

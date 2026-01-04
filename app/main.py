@@ -20,6 +20,9 @@ import os
 from fastapi import HTTPException
 from fastapi.responses import PlainTextResponse
 import shutil
+from app.golf_calc import course_handicap, strokes_received_per_hole
+from fastapi import Query
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -1674,12 +1677,115 @@ def public_course_detail(course_id: int, request: Request, db: Session = Depends
     holes = crud.get_holes_for_course(db, course_id)
     holes_sorted = sorted(holes, key=lambda h: h.number)
 
+    players = crud.get_players(db)
+
     return templates.TemplateResponse(
         "public_course_detail.html",
         {
             "request": request,
             "course": course,
             "holes": holes_sorted,
+            "players": players,
+        }
+    )
+
+
+# ===========================================================================================
+# -------------------------- HELPERS: COURSE HCP (para el modal) ----------------------------
+# ===========================================================================================
+
+@app.get("/public/courses/{course_id}/course_handicap")
+def public_course_handicap_calc(
+    course_id: int,
+    player_id: int,
+    db: Session = Depends(get_db),
+):
+    course = crud.get_course(db, course_id)
+    player = crud.get_player(db, player_id)
+
+    if not course or not player:
+        return {"ok": False}
+
+    # HCP de juego (Course Handicap) calculado por campo
+    ch = course_handicap(player.hcp_exact, course.slope_yellow)
+
+    return {"ok": True, "course_handicap": ch, "hcp_exact": player.hcp_exact}
+
+
+# ===========================================================================================
+# -------------------------- PRINT (DENTRO DE COURSE DETAIL) --------------------------------
+# ===========================================================================================
+
+@app.get("/public/courses/{course_id}/scorecard/print", response_class=HTMLResponse)
+def public_course_scorecard_print(
+    course_id: int,
+    request: Request,
+    pid: list[int] = Query(default=[]),
+    hcp: list[int] = Query(default=[]),
+    guest_name: str | None = None,
+    guest_hcp: int | None = None,
+    preview: int | None = 0,          # 👈 AÑADIR
+    autoprint: int | None = 0,        # 👈 opcional (si lo usas)
+    db: Session = Depends(get_db),
+):
+    course = crud.get_course(db, course_id)
+    if not course:
+        return HTMLResponse("Campo no encontrado", status_code=404)
+
+    holes = crud.get_holes_for_course(db, course_id)
+    holes = sorted(holes, key=lambda h: h.number)
+
+    # -------------------------
+    # normaliza y limita a 4
+    # -------------------------
+    selected = []
+
+    pairs = list(zip(pid, hcp))  # si vienen descuadrados, zip recorta
+    for player_id, play_hcp in pairs[:4]:
+        p = crud.get_player(db, player_id)
+        if p:
+            selected.append({
+                "id": p.id,
+                "name": p.name,
+                "hcp": int(play_hcp or 0),  # HCP de juego final (ya ajustado por usuario)
+                "is_guest": False
+            })
+
+    # invitado (si cabe)
+    if guest_name and len(selected) < 4:
+        selected.append({
+            "id": None,
+            "name": guest_name.strip(),
+            "hcp": int(guest_hcp or 0),
+            "is_guest": True
+        })
+
+    # -------------------------
+    # golpes recibidos por hoyo (para asteriscos)
+    # usando tu lógica de golf_calc
+    # -------------------------
+    strokes_map = []
+    for s in selected:
+        received = strokes_received_per_hole(s["hcp"], holes)  # {hole_number: golpes}
+        strokes_map.append(received)
+
+    # split 1-9 / 10-18
+    holes_front = [h for h in holes if 1 <= h.number <= 9]
+    holes_back  = [h for h in holes if 10 <= h.number <= 18]
+
+    is_preview = (preview == 1)
+
+    return templates.TemplateResponse(
+        "scorecard_print.html",
+        {
+            "request": request,
+            "course": course,
+            "holes_front": holes_front,
+            "holes_back": holes_back,
+            "selected_players": selected,
+            "strokes_map": strokes_map,
+            "preview": is_preview,        # ✅ AÑADIR
+            "autoprint": (autoprint == 1) # ✅ opcional
         }
     )
 
