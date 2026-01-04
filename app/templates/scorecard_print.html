@@ -256,8 +256,8 @@
       }
     }
     /* =========================
-      iOS/Safari PRINT: líneas visibles sin romper GAP/SEP
-      + cortar las 2 líneas laterales del hueco (IDA | GAP | 10)
+      iOS/Safari PRINT: bordes visibles SIN “colarse” en el GAP
+      (soluciona el bug de border-collapse en iOS)
       ========================= */
     @supports (-webkit-touch-callout: none){
       @media print{
@@ -266,87 +266,49 @@
           print-color-adjust: exact;
         }
 
-        /* 1) Fuerza bordes visibles en iOS (sí, a todo) */
+        /* CLAVE: en iOS print, no uses collapse */
+        table.scorecard{
+          border-collapse: separate !important;
+          border-spacing: 0 !important;
+        }
+
+        /* Fuerza bordes visibles */
         table.scorecard th,
         table.scorecard td{
           border: 1px solid #000 !important;
         }
 
-        /* 2) EXCEPCIÓN: columna GAP (tanto th como td) */
+        /* EXCEPCIÓN: columna GAP (vacía) */
         table.scorecard th.gap,
         table.scorecard td.gap{
           border: none !important;
           background: transparent !important;
+          width: var(--gapW) !important;
+          min-width: var(--gapW) !important;
         }
 
-        /* --- quitar las 2 líneas “vecinas” del gap --- */
-
-        /* 1) IDA: quita el borde derecho */
-        table.scorecard th.ida,
-        table.scorecard td.ida{
-          border-right: none !important;
-        }
-
-        /* 2) Primera celda tras el gap (hoyo 10): quita el borde izquierdo */
-        table.scorecard th.gap + th,
-        table.scorecard td.gap + td,
-        table.scorecard th.gap + td,
-        table.scorecard td.gap + th{
-          border-left: none !important;
-        }
-
-
-        /* 3) EXCEPCIÓN: fila separadora */
+        /* EXCEPCIÓN: fila separadora */
         table.scorecard tr.sepRow td{
           border: none !important;
           background: transparent !important;
         }
 
-        /* 4) Quitar las 2 líneas que enmarcan el gap:
-          estructura columnas:
-          1 label | 2-10 hoyos 1-9 | 11 IDA | 12 GAP | 13-21 hoyos 10-18 | 22 VTA | 23 TOT
-        */
-        table.scorecard tr > th:nth-child(11),
-        table.scorecard tr > td:nth-child(11){
-          border-right: none !important;   /* borde derecho de IDA */
+        /* Cortar las 2 líneas vecinas al GAP */
+        table.scorecard th.ida,
+        table.scorecard td.ida{
+          border-right: none !important;
+        }
+        table.scorecard th.gap + th,
+        table.scorecard td.gap + td{
+          border-left: none !important;
         }
 
-        table.scorecard tr > th:nth-child(13),
-        table.scorecard tr > td:nth-child(13){
-          border-left: none !important;    /* borde izquierdo del hoyo 10 */
-        }
-
-        /* 5) Respeta cortes si los usas */
-        table.scorecard .noR{ border-right:none !important; }
-        table.scorecard .noL{ border-left:none !important; }
-
-        /* 6) Borde exterior (opcional) */
+        /* (Opcional) borde exterior */
         .card{
           border: 1px solid #000 !important;
         }
-        /* 7) iOS: tapar líneas residuales alrededor del GAP (WebKit print) */
-        table.scorecard th.gap,
-        table.scorecard td.gap{
-          position: relative !important;
-          border: none !important;
-          background: transparent !important;
-        }
-
-        /* “parche” que cubre las 2 líneas vecinas aunque WebKit las dibuje */
-        table.scorecard th.gap::after,
-        table.scorecard td.gap::after{
-          content:"";
-          position:absolute;
-          top:-2px; bottom:-2px;   /* cubre también un pelín arriba/abajo */
-          left:-2px; right:-2px;   /* se come los bordes de IDA y 10 */
-          background:#fff;         /* mismo fondo que la tarjeta */
-          z-index: 5;
-          pointer-events:none;
-        }
-
       }
     }
-
 
 
 
