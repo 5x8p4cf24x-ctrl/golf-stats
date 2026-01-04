@@ -324,6 +324,26 @@
         .card{
           border: 1px solid #000 !important;
         }
+        /* 7) iOS: tapar líneas residuales alrededor del GAP (WebKit print) */
+        table.scorecard th.gap,
+        table.scorecard td.gap{
+          position: relative !important;
+          border: none !important;
+          background: transparent !important;
+        }
+
+        /* “parche” que cubre las 2 líneas vecinas aunque WebKit las dibuje */
+        table.scorecard th.gap::after,
+        table.scorecard td.gap::after{
+          content:"";
+          position:absolute;
+          top:-2px; bottom:-2px;   /* cubre también un pelín arriba/abajo */
+          left:-2px; right:-2px;   /* se come los bordes de IDA y 10 */
+          background:#fff;         /* mismo fondo que la tarjeta */
+          z-index: 5;
+          pointer-events:none;
+        }
+
       }
     }
 
