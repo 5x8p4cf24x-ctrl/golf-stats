@@ -278,6 +278,25 @@
         }
       }
     }
+    /* =========================
+      iOS/Safari PRINT: respetar columna separadora
+      ========================= */
+    @supports (-webkit-touch-callout: none){
+      @media print{
+        /* la columna gap NO debe tener bordes */
+        table.scorecard .gap{
+          border: none !important;
+          background: transparent !important;
+        }
+
+        /* por si Safari insiste en pintar algo */
+        table.scorecard .gap::before,
+        table.scorecard .gap::after{
+          display: none !important;
+        }
+      }
+    }
+
 
 
   </style>
