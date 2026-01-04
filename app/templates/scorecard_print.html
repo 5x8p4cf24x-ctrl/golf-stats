@@ -256,8 +256,7 @@
       }
     }
     /* =========================
-      iOS/Safari: líneas finas desaparecen al imprimir
-      SOLO iOS (no afecta desktop/Android)
+      iOS/Safari PRINT: líneas visibles sin romper GAP/SEP
       ========================= */
     @supports (-webkit-touch-callout: none){
       @media print{
@@ -266,45 +265,31 @@
           print-color-adjust: exact;
         }
 
-        /* fuerza bordes visibles en iOS */
-        table.scorecard th,
-        table.scorecard td{
+        /* 1) Fuerza bordes en iOS, PERO excluye gap y sepRow */
+        table.scorecard th:not(.gap),
+        table.scorecard td:not(.gap),
+        table.scorecard tr:not(.sepRow) td{
           border: 1px solid #000 !important;
         }
 
-        /* borde exterior también (opcional pero recomendado) */
+        /* 2) Excepciones explícitas (por si acaso) */
+        table.scorecard .gap,
+        table.scorecard tr.sepRow td{
+          border: none !important;
+          background: transparent !important;
+        }
+
+        /* 3) Respeta cortes si los usas */
+        table.scorecard .noR{ border-right:none !important; }
+        table.scorecard .noL{ border-left:none !important; }
+
+        /* 4) Borde exterior (opcional) */
         .card{
           border: 1px solid #000 !important;
         }
       }
     }
-    /* =========================
-      iOS/Safari PRINT: respetar columna separadora
-      ========================= */
-    @supports (-webkit-touch-callout: none){
-      @media print{
-        /* la columna gap NO debe tener bordes */
-        table.scorecard .gap{
-          border: none !important;
-          background: transparent !important;
-        }
 
-        /* por si Safari insiste en pintar algo */
-        table.scorecard .gap::before,
-        table.scorecard .gap::after{
-          display: none !important;
-        }
-        /* ✅ Mantener la FILA separadora (sepRow) sin bordes */
-        table.scorecard tr.sepRow td{
-          border:none !important;
-          background:transparent !important;
-        }
-
-        /* (Opcional pero recomendable) respetar cortes de bordes si los usas */
-        table.scorecard .noR{ border-right:none !important; }
-        table.scorecard .noL{ border-left:none !important; }
-      }
-    }
 
 
 
