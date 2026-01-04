@@ -268,43 +268,33 @@
           print-color-adjust: exact;
         }
 
-        /* 1) iOS: fuerza bordes visibles */
         table.scorecard th,
         table.scorecard td{
           border: 1px solid #000 !important;
         }
 
-        /* 2) GAP: sin bordes */
         table.scorecard th.gap,
         table.scorecard td.gap{
           border: 0 !important;
           background: transparent !important;
         }
 
-        /* 3) sepRow: sin bordes + altura */
         table.scorecard tr.sepRow > td{
-          border: 0 !important;
-          background: transparent !important;
-          padding: 0 !important;
           height: 2mm !important;
+          padding: 0 !important;
+          border-left: 0 !important;
+          border-right: 0 !important;
+          border-top: 2mm solid transparent !important;
+          border-bottom: 0 !important;
+          background: transparent !important;
         }
 
-        /* 4) 🔑 Quitar la línea “vecina” (la que se cuela en el hueco) */
-        table.scorecard tr.sepRow + tr > th,
-        table.scorecard tr.sepRow + tr > td{
-          border-top: 0 !important;     /* siguiente fila */
-        }
-        table.scorecard tr:has(+ tr.sepRow) > th,
-        table.scorecard tr:has(+ tr.sepRow) > td{
-          border-bottom: 0 !important;  /* fila anterior */
-        }
-
-        /* 5) Borde exterior */
         .card{
           border: 1px solid #000 !important;
         }
       }
     }
+
 
 
   </style>
