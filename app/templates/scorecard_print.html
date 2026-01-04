@@ -195,6 +195,12 @@
     tr.sepRow td{
       border:none !important;
       padding:0 !important;
+      height:auto;            /* deja que lo mande el spacer */
+      background:transparent !important;
+    }
+
+    tr.sepRow .sep-spacer{
+      display:block;
       height:2mm;
     }
 
@@ -268,32 +274,37 @@
           print-color-adjust: exact;
         }
 
+        /* líneas visibles en iOS */
         table.scorecard th,
         table.scorecard td{
           border: 1px solid #000 !important;
         }
 
+        /* GAP vertical (IDA | 10): intacto */
         table.scorecard th.gap,
         table.scorecard td.gap{
           border: 0 !important;
           background: transparent !important;
         }
 
-        table.scorecard tr.sepRow > td{
-          height: 2mm !important;
+        /* separador horizontal estable en iOS */
+        table.scorecard tr.sepRow td{
+          border: 0 !important;
           padding: 0 !important;
-          border-left: 0 !important;
-          border-right: 0 !important;
-          border-top: 2mm solid transparent !important;
-          border-bottom: 0 !important;
           background: transparent !important;
         }
+        table.scorecard tr.sepRow .sep-spacer{
+          display:block !important;
+          height:2mm !important;
+        }
 
+        /* borde exterior opcional */
         .card{
           border: 1px solid #000 !important;
         }
       }
     }
+
 
 
 
@@ -380,7 +391,7 @@
 
         <!-- separador limpio (2mm) -->
         <tr class="sepRow">
-          <td colspan="23"></td>
+          <td colspan="23"><span class="sep-spacer" aria-hidden="true"></span></td>
         </tr>
 
         <!-- JUGADORES -->
