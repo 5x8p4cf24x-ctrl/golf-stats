@@ -265,25 +265,30 @@
           print-color-adjust: exact;
         }
 
-        /* 1) Fuerza bordes en iOS, PERO excluye gap y sepRow */
-        table.scorecard th:not(.gap),
-        table.scorecard td:not(.gap),
-        table.scorecard tr:not(.sepRow) td{
+        /* 1) Fuerza bordes visibles en iOS (sí, a todo) */
+        table.scorecard th,
+        table.scorecard td{
           border: 1px solid #000 !important;
         }
 
-        /* 2) Excepciones explícitas (por si acaso) */
-        table.scorecard .gap,
+        /* 2) EXCEPCIÓN: columna GAP (tanto th como td) */
+        table.scorecard th.gap,
+        table.scorecard td.gap{
+          border: none !important;
+          background: transparent !important;
+        }
+
+        /* 3) EXCEPCIÓN: fila separadora */
         table.scorecard tr.sepRow td{
           border: none !important;
           background: transparent !important;
         }
 
-        /* 3) Respeta cortes si los usas */
+        /* 4) Respeta cortes si los usas */
         table.scorecard .noR{ border-right:none !important; }
         table.scorecard .noL{ border-left:none !important; }
 
-        /* 4) Borde exterior (opcional) */
+        /* 5) Borde exterior (opcional) */
         .card{
           border: 1px solid #000 !important;
         }
