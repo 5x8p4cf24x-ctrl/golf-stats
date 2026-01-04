@@ -257,6 +257,7 @@
     }
     /* =========================
       iOS/Safari PRINT: líneas visibles sin romper GAP/SEP
+      + cortar las 2 líneas laterales del hueco (IDA | GAP | 10)
       ========================= */
     @supports (-webkit-touch-callout: none){
       @media print{
@@ -284,11 +285,25 @@
           background: transparent !important;
         }
 
-        /* 4) Respeta cortes si los usas */
+        /* 4) Quitar las 2 líneas que enmarcan el gap:
+          estructura columnas:
+          1 label | 2-10 hoyos 1-9 | 11 IDA | 12 GAP | 13-21 hoyos 10-18 | 22 VTA | 23 TOT
+        */
+        table.scorecard tr > th:nth-child(11),
+        table.scorecard tr > td:nth-child(11){
+          border-right: none !important;   /* borde derecho de IDA */
+        }
+
+        table.scorecard tr > th:nth-child(13),
+        table.scorecard tr > td:nth-child(13){
+          border-left: none !important;    /* borde izquierdo del hoyo 10 */
+        }
+
+        /* 5) Respeta cortes si los usas */
         table.scorecard .noR{ border-right:none !important; }
         table.scorecard .noL{ border-left:none !important; }
 
-        /* 5) Borde exterior (opcional) */
+        /* 6) Borde exterior (opcional) */
         .card{
           border: 1px solid #000 !important;
         }
