@@ -250,15 +250,28 @@
     @media print{
       @page { size: A4 landscape; margin: 10mm; }
 
+      html, body{
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background:#fff !important;
+      }
+
+      /* ayuda extra: algunos Android lo respetan mejor si se aplica a la tabla */
+      table.scorecard,
+      table.scorecard *{
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
       .page{
         padding:0 !important;
         min-height:auto !important;
-        zoom:1 !important;              /* ✅ por si el JS metió zoom inline */
+        zoom:1 !important;              /* por si el JS metió zoom inline */
       }
 
       .card{
         margin:0 auto !important;
-        transform:none !important;      /* ✅ por si el JS metió transform inline */
+        transform:none !important;      /* por si el JS metió transform inline */
       }
     }
     /* =========================
