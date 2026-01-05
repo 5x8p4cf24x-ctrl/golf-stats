@@ -262,47 +262,41 @@
       }
     }
     /* =========================
-      iOS/Safari PRINT (MINIMAL y ESTABLE)
-      - fuerza líneas visibles
-      - respeta GAP (columna en blanco)
-      - respeta sepRow (fila separadora en blanco)
+      iOS/Safari PRINT: líneas visibles + GAP limpio (sin líneas fantasma)
       ========================= */
     @supports (-webkit-touch-callout: none){
       @media print{
         html, body{
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
+          background:#fff !important;
         }
 
-        /* líneas visibles en iOS */
+        /* 1) Líneas visibles en iOS (Safari suele “comerse” hairlines) */
         table.scorecard th,
         table.scorecard td{
           border: 1px solid #000 !important;
         }
 
-        /* GAP vertical (IDA | 10): intacto */
+        /* 2) GAP vertical (IDA | 10): siempre vacío y sin borde */
         table.scorecard th.gap,
         table.scorecard td.gap{
           border: 0 !important;
           background: transparent !important;
         }
 
-        /* separador horizontal estable en iOS */
+        /* 3) Separador horizontal (sepRow) estable */
         table.scorecard tr.sepRow td{
           border: 0 !important;
           padding: 0 !important;
           background: transparent !important;
         }
         table.scorecard tr.sepRow .sep-spacer{
-          display:block !important;
-          height:2mm !important;
+          display: block !important;
+          height: 2mm !important;
         }
 
-        /* borde exterior opcional */
-        .card{
-          border: 1px solid #000 !important;
-        }
-        /* iOS print: en filas de jugadores, tapa cualquier borde horizontal que WebKit pinte en el GAP */
+        /* 4) iOS print: en filas de jugadores, tapa la línea horizontal fantasma dentro del GAP */
         table.scorecard tr.rowPname td.gap,
         table.scorecard tr.rowP td.gap{
           position: relative !important;
@@ -312,16 +306,24 @@
 
         table.scorecard tr.rowPname td.gap::after,
         table.scorecard tr.rowP td.gap::after{
-          content:"";
-          position:absolute;
-          left:0; right:0;
-          top:-2px; bottom:-2px;     /* se come las 2 líneas horizontales */
-          background:#fff;
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: -2px;
+          bottom: -2px;     /* se come cualquier hairline horizontal que Safari pinte */
+          background: #fff; /* fondo hoja */
           z-index: 2;
+          pointer-events: none;
         }
 
+        /* 5) Borde exterior (opcional pero recomendable en iOS) */
+        .card{
+          border: 1px solid #000 !important;
+        }
       }
     }
+
 
 
 
