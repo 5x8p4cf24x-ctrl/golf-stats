@@ -284,23 +284,7 @@
         table.scorecard th.gap,
         table.scorecard td.gap{
           border: 0 !important;
-          border-top: 0 !important;
-          border-bottom: 0 !important;
           background: transparent !important;
-        }
-        /* Y por si Safari “se lo inventa” desde los vecinos, corta también:
-          - el borde inferior de la celda IDA
-          - el borde inferior/superior de la celda justo después del GAP
-          SOLO en filas de jugadores (a partir de rowPname / rowP) */
-        table.scorecard tr.rowPname td.ida,
-        table.scorecard tr.rowP td.ida{
-          border-bottom: 1px solid #000 !important; /* mantiene la línea fuera del hueco */
-        }
-
-        table.scorecard tr.rowPname td.gap,
-        table.scorecard tr.rowP td.gap{
-          border-top: 0 !important;
-          border-bottom: 0 !important;
         }
 
         /* separador horizontal estable en iOS */
@@ -318,6 +302,24 @@
         .card{
           border: 1px solid #000 !important;
         }
+        /* iOS print: en filas de jugadores, tapa cualquier borde horizontal que WebKit pinte en el GAP */
+        table.scorecard tr.rowPname td.gap,
+        table.scorecard tr.rowP td.gap{
+          position: relative !important;
+          border: 0 !important;
+          background: transparent !important;
+        }
+
+        table.scorecard tr.rowPname td.gap::after,
+        table.scorecard tr.rowP td.gap::after{
+          content:"";
+          position:absolute;
+          left:0; right:0;
+          top:-2px; bottom:-2px;     /* se come las 2 líneas horizontales */
+          background:#fff;
+          z-index: 2;
+        }
+
       }
     }
 
