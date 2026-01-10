@@ -264,195 +264,171 @@ input[readonly], textarea[readonly]{
   font-weight: 800;
 }
 
-
 /* ================================================================================================= */
-/* =========================================== ADMIN HOME ========================================== */
+/* ======================================= ADMIN (SIN TOCAR PUBLIC) ================================= */
 /* ================================================================================================= */
 
-/* =========================
-   ADMIN TABLE IMAGES
-   ========================= */
+/* Topbar admin: 3 columnas (logo | menú | CTA) */
+header.gm-topbar.gm-topbar--admin .gm-topbar-inner{
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center;
+  column-gap: 16px;
 
-.admin-table img{
-  max-width: 42px;
-  max-height: 42px;
-  object-fit: contain;
-  border-radius: 8px;
+  /* con logo 84px, no tiene sentido bajar mucho el padding */
+  padding: 10px 22px;
+}
+
+/* Logo admin: NO TOCAR (84px) */
+header.gm-topbar.gm-topbar--admin .gm-brand-logo.gm-brand-logo--admin{
+  height: 84px;
+  width: auto;
   display:block;
 }
 
-
-.admin-toolbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
-  margin: 10px 0 14px 0;
-}
-
-.admin-toolbar-left,
-.admin-toolbar-right{
+/* NAV admin: centrado y en una sola línea */
+header.gm-topbar.gm-topbar--admin .gm-topnav{
+  justify-self: center;
+  margin-left: 0 !important;     /* pisa el margin-left del public */
   display:flex;
   align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
+  justify-content: center;
+  flex-wrap: nowrap;              /* evita salto de línea */
+  white-space: nowrap;
 }
 
-/* Inputs y selects dentro de admin */
-.admin-field input,
-.admin-field select{
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background:#fff;
+/* Links admin (UNA sola definición, sin duplicados) */
+header.gm-topbar.gm-topbar--admin .gm-topnav-link{
+  padding: 8px 12px;
+  font-size: 0.78rem;
 }
 
-/* Botón secundario (si no lo tienes) */
-.btn-secondary{
-  display:inline-flex;
-  align-items:center;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background:#fff;
-  color:#14532d;
-  font-weight:800;
-  text-decoration:none;
-}
-.btn-secondary:hover{
-  border-color:#14532d;
-  background: rgba(20,83,45,0.04);
+/* Separador centrado SOLO en admin */
+header.gm-topbar.gm-topbar--admin .gm-topnav-link + .gm-topnav-link{
+  position: relative;
+  padding-left: 22px; /* deja hueco para el dot */
 }
 
-/* =========================
-   ADMIN TABLE (estándar)
-   ========================= */
-
-.admin-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:.95rem;
-}
-
-.admin-table th,
-.admin-table td{
-  padding:10px 10px;
-  border-bottom:1px solid var(--border);
-  text-align:left;
-  vertical-align:middle;
-}
-
-.admin-table thead th{
-  background: var(--gm-green);
-  color: #fff;
-  font-weight:800;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
-}
-
-.admin-table tbody tr:hover{
-  background: rgba(20, 83, 45, 0.04);
-}
-
-.admin-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-}
-
-.admin-logo{
-  height: 160px;
-  width:auto;
-  opacity:0.95;
-}
-
-/* =========================
-   ADMIN NAV (Golf Mode)
-   ========================= */
-.admin-nav{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-  padding: 12px 12px;
-  margin-bottom: 14px;
-}
-
-.admin-nav-item{
-  display:inline-flex;
-  align-items:center;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--gm-green) !important;   /* <- clave: no azul */
-  font-weight: 800;
-  text-decoration:none !important;     /* <- clave: no subrayado */
-  font-size: .92rem;
-  box-shadow: 0 6px 14px rgba(15,23,42,0.06);
-}
-
-.admin-nav-item:hover{
-  border-color: var(--gm-green);
-  background: rgba(20,83,45,0.06);
-}
-
-.admin-nav-item.is-active{
-  border-color: var(--gm-green);
-  background: rgba(20,83,45,0.12);
-}
-
-.admin-nav-item--ghost{
-  border-color: transparent;
-  background: transparent;
-  box-shadow:none;
-  color: var(--gm-green) !important;
-}
-
-.admin-nav-item--push-right{ margin-left:auto; }
-
-.admin-nav-item--primary{
-  background: var(--gm-green);
-  color: #fff !important;
-  border-color: rgba(0,0,0,0.06);
-}
-.admin-nav-item--primary:hover{
-  filter: brightness(1.02);
-  background: var(--gm-green);
-}
-
-/* =========================
-   ADMIN HOME CARDS
-   ========================= */
-.admin-grid{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
-}
-@media (max-width: 980px){
-  .admin-grid{ grid-template-columns: 1fr; }
-}
-
-.admin-card{
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-}
-
-.admin-card h3{
-  margin:0 0 6px 0;
-  color: var(--gm-green);
+header.gm-topbar.gm-topbar--admin .gm-topnav-link + .gm-topnav-link::before{
+  content: "·";
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(20, 83, 45, 0.35);
   font-weight: 900;
 }
 
-.admin-card-text{
-  margin:0 0 12px 0;
-  color: var(--muted);
+/* CTA derecha (misma fila) */
+header.gm-topbar.gm-topbar--admin .gm-topbar-cta{
+  justify-self: end;
+  display: inline-flex;
+  align-items:center;
+
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: #14532d;
+
+  text-decoration:none;
+  padding: 8px 10px;
+  white-space:nowrap;
+  border-radius: 10px;
 }
+
+header.gm-topbar.gm-topbar--admin .gm-topbar-cta:hover{
+  background: rgba(20, 83, 45, 0.08);
+}
+
+/* IMPORTANTÍSIMO:
+   como la topbar es FIXED y tu logo mide 84px, el padding-top 78px del body se queda corto.
+   Esto empuja el MAIN hacia abajo SOLO en admin. */
+body.gm-body header.gm-topbar.gm-topbar--admin + main.gm-wrap{
+  padding-top: 36px;  /* sube/baja este valor hasta que quede perfecto */
+}
+
+/* Móvil: ocultamos CTA (ya lo pones en overlay) */
+@media (max-width: 980px){
+  header.gm-topbar.gm-topbar--admin .gm-topbar-inner{
+    padding: 10px 16px;
+    column-gap: 10px;
+  }
+
+  header.gm-topbar.gm-topbar--admin .gm-topbar-cta{
+    display:none;
+  }
+
+  /* si el nav no cabe en móvil, no lo forzamos */
+  header.gm-topbar.gm-topbar--admin .gm-topnav{
+    display:none; /* en móvil manda burger + overlay */
+  }
+}
+
+
+/* ================================================================================================= */
+/* ======================================= ADMIN HOME – FUNCIONAL ================================== */
+/* ================================================================================================= */
+
+.admin-actions{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap:14px;
+  margin-bottom: 28px;
+}
+
+.admin-actions--secondary{
+  grid-template-columns: repeat(4, minmax(0,1fr));
+}
+
+@media (max-width: 980px){
+  .admin-actions,
+  .admin-actions--secondary{
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-action{
+  display:block;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  padding:16px;
+  text-decoration:none;
+  box-shadow:0 6px 16px rgba(15,23,42,.06);
+}
+
+.admin-action h3{
+  margin:0 0 6px 0;
+  color: var(--gm-green);
+  font-weight:900;
+}
+
+.admin-action p{
+  margin:0;
+  color: var(--muted);
+  font-size:.9rem;
+}
+
+.admin-action:hover{
+  border-color: rgba(20,83,45,.35);
+}
+
+.admin-action--primary{
+  background: rgba(20,83,45,.08);
+  border-color: rgba(20,83,45,.35);
+}
+/* ================= ADMIN HOME: SEPARACIÓN INICIAL ================= */
+
+.admin-actions{
+  margin-top: 28px;   /* <-- este es el ajuste clave */
+}
+
+
+/* ============================================================================================================================= */
+/*                                           OTRO BLOQUE NO SE DE QUE PARTE ES                                                   */
+/* ============================================================================================================================= */
+
 
 /* =========================
    SCORE MATRIX (horizontal)

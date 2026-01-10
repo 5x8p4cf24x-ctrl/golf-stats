@@ -324,8 +324,48 @@
       }
     }
 
+    /* ===== REVERSO: asegurar 2 columnas separadas SIEMPRE ===== */
+    .card--back{ display:flex; }
 
+    .card--back .back-grid{
+      display:grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 24px !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: auto 0 !important;  /* centra vertical */
+      align-items: center !important;
+    }
 
+    /* Cada columna ocupa su mitad */
+    .card--back .back-brand,
+    .card--back .back-achievements{
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
+    /* Imágenes: siempre block y ocupan su contenedor */
+    .card--back img{
+      display:block !important;
+      width:100% !important;
+      height:auto !important;
+    }
+
+    /* Si quieres la línea vertical como antes */
+    .card--back .back-brand{
+      border-right: 1px solid rgba(0,0,0,.10) !important;
+      padding-right: 18px !important;
+    }
+    @media print{
+      :root{
+        --backShiftX: -3.5mm; /* 👈 HP SmartTank 6006: compensación */
+        --backShiftY: 0mm;
+      }
+
+      .card--back{
+        transform: translate(var(--backShiftX), var(--backShiftY)) !important;
+      }
+    }
 
 
   </style>
@@ -498,18 +538,20 @@
       </script>
       <script>
       (function(){
-        const page = document.querySelector('.page');
-        const card = document.querySelector('.card');
-        if(!page || !card) return;
+        const pages = Array.from(document.querySelectorAll('.page'));
+        const cards = Array.from(document.querySelectorAll('.card'));
+        if(!pages.length || !cards.length) return;
 
         function clearFit(){
-          page.style.zoom = '';
-          card.style.transform = '';
-          card.style.transformOrigin = '';
+          pages.forEach(p => p.style.zoom = '');
+          cards.forEach(c => {
+            c.style.transform = '';
+            c.style.transformOrigin = '';
+          });
         }
 
         function fitCardToViewport(){
-          // Nunca ajustar si estamos imprimiendo (por si acaso)
+          // Nunca ajustar si estamos imprimiendo
           if (window.matchMedia('print').matches) return;
 
           // Solo móvil
@@ -518,7 +560,11 @@
             return;
           }
 
-          // Reset para medir bien
+          // En móvil solo nos interesa “ver” la primera (front)
+          const page = pages[0];
+          const card = cards[0];
+          if(!page || !card) return;
+
           clearFit();
 
           const cardW = card.scrollWidth || card.getBoundingClientRect().width;
@@ -527,7 +573,6 @@
 
           const scale = Math.min((vw - padding) / cardW, 1);
 
-          // Chrome/Android
           page.style.zoom = String(scale);
 
           // Fallback iOS/Safari
@@ -537,21 +582,86 @@
           }
         }
 
-        // ✅ CLAVE: antes de imprimir, limpiar
         window.addEventListener('beforeprint', clearFit);
-
-        // ✅ tras imprimir, re-aplicar fit para pantalla
-        window.addEventListener('afterprint', () => {
-          setTimeout(fitCardToViewport, 50);
-        });
+        window.addEventListener('afterprint', () => setTimeout(fitCardToViewport, 50));
 
         window.addEventListener('load', fitCardToViewport);
         window.addEventListener('resize', fitCardToViewport);
       })();
       </script>
+      <script>
+      (function(){
+        const qs = new URLSearchParams(window.location.search);
+        const preview = qs.get('preview') === '1';
+        if (preview) return; // en preview solo existe la cara A
+
+        // Puedes ajustar aquí sin tocar CSS (opcional):
+        // document.documentElement.style.setProperty('--backShiftX', '-3mm');
+        // document.documentElement.style.setProperty('--backShiftY', '0mm');
+
+        function syncBackHeight(){
+          const front = document.querySelector('.card--front') || document.querySelector('.card');
+          const back  = document.querySelector('.card--back');
+          if(!front || !back) return;
+
+          // Limpia alto previo para medir "natural"
+          back.style.height = '';
+          back.style.minHeight = '';
+
+          // Mide frontal
+          const h = Math.ceil(front.getBoundingClientRect().height);
+
+          // Aplica al reverso
+          back.style.height = h + 'px';
+          back.style.minHeight = h + 'px';
+        }
+
+        window.addEventListener('load', syncBackHeight);
+
+        // por si cargan fuentes/imagenes tarde
+        setTimeout(syncBackHeight, 50);
+        setTimeout(syncBackHeight, 200);
+
+        // clave antes de imprimir
+        window.addEventListener('beforeprint', syncBackHeight);
+
+        window.addEventListener('resize', syncBackHeight);
+      })();
+      </script>
+
 
 
     </div>
   </div>
+  {% if not preview %}
+    <!-- PAGE 2: REVERSO (solo cuando no es preview) -->
+    <div class="page page-break">
+      <div class="card card--back">
+        <div class="back-grid">
+
+          <!-- IZQUIERDA: MARCA (imagen única) -->
+          <div class="back-brand">
+            <img
+              src="/static/logros_card.png?v=20260110"
+              alt="GolfMode · Activa el modo Golf"
+              class="back-brand-img"
+            >
+          </div>
+
+          <!-- DERECHA: LOGROS (imagen única) -->
+          <div class="back-achievements">
+            <img
+              src="/static/gm_brand_card.png?v=20260110"
+              alt="Logros GolfMode"
+              class="back-achievements-img"
+            >
+          </div>
+
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+
 </body>
 </html>

@@ -1775,6 +1775,8 @@ def public_course_scorecard_print(
 
     is_preview = (preview == 1)
 
+    achievements = crud.get_achievements(db)
+
     return templates.TemplateResponse(
         "scorecard_print.html",
         {
@@ -1785,7 +1787,8 @@ def public_course_scorecard_print(
             "selected_players": selected,
             "strokes_map": strokes_map,
             "preview": is_preview,        # ✅ AÑADIR
-            "autoprint": (autoprint == 1) # ✅ opcional
+            "autoprint": (autoprint == 1), # ✅ opcional
+            "achievements": achievements,
         }
     )
 
