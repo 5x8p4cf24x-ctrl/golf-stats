@@ -1,0 +1,63 @@
+{% extends "admin_base.html" %}
+{% block title %}Nueva Copa · Admin{% endblock %}
+
+{% block content %}
+  <section class="card admin-form-card">
+    <div class="admin-form-head">
+      <h1>Nueva Copa (Individual)</h1>
+      <p class="muted">Crea el torneo y selecciona hasta 16 jugadores.</p>
+    </div>
+  </section>
+
+  <section class="card admin-form-card" style="margin-top:14px;">
+    <form method="post" action="/admin/tournaments/new" enctype="multipart/form-data">
+      <div class="admin-form-grid" style="max-width:820px;">
+
+        <div class="admin-field admin-span-2">
+          <label>Nombre *</label>
+          <input name="name" type="text" required placeholder="Ej: Copa Invierno 2026">
+        </div>
+
+        <div class="admin-field">
+          <label>Fecha *</label>
+          <input name="date" type="date" required>
+        </div>
+
+        <div class="admin-field">
+          <label>Campo *</label>
+          <select name="course_id" required>
+            {% for c in courses %}
+              <option value="{{ c.id }}">{{ c.name }}{% if c.city %} ({{ c.city }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="admin-field admin-span-2">
+          <label>Imagen (opcional)</label>
+          <input type="file" name="image" accept="image/*">
+          <div class="muted admin-help">
+            Recomendado: JPG/PNG apaisado.
+          </div>
+        </div>
+
+        <div class="admin-field admin-span-2">
+          <label>Jugadores (2–16) *</label>
+          <select name="player_ids" multiple required size="10">
+            {% for p in players %}
+              <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+          </select>
+          <div class="muted admin-help">
+            Mantén CTRL (Windows) / CMD (Mac) para seleccionar varios.
+          </div>
+        </div>
+
+        <div class="admin-form-actions admin-span-2">
+          <a class="btn-gm btn-gm--outline" href="/admin/tournaments">Cancelar</a>
+          <button class="btn-gm" type="submit">Crear Copa</button>
+        </div>
+
+      </div>
+    </form>
+  </section>
+{% endblock %}

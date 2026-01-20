@@ -1,0 +1,105 @@
+{% extends "admin_base.html" %}
+{% block title %}Match · {{ tournament.name }}{% endblock %}
+
+{% block content %}
+
+  {# --- URL LIVE (solo para compartir) --- #}
+  {% set base = request.base_url|string %}
+  {% if base.endswith('/') %}
+    {% set base = base[:-1] %}
+  {% endif %}
+  {% set live_url = base ~ "/public/tournaments/" ~ tournament.id ~ "/matches/" ~ match.id ~ "/live?token=" ~ (match.edit_token or "") %}
+
+  {% set hole_map = holes_by_hole if holes_by_hole is defined and holes_by_hole else {} %}
+
+  <!-- HEADER -->
+  <section class="card admin-form-card">
+    <a class="btn-gm btn-gm--outline" href="/admin/tournaments/{{ tournament.id }}">← Volver al torneo</a>
+
+    <div class="admin-match-head">
+      <div class="admin-match-title">
+        <h1>{{ match.round }} · Partido #{{ match.position }}</h1>
+        <p class="muted">
+          {{ match.player_a.name if match.player_a else "-" }} vs {{ match.player_b.name if match.player_b else "-" }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LINK LIVE (SOLO COMPARTIR) -->
+  <section class="card admin-form-card" style="margin-top:14px;">
+    <div class="admin-live-row">
+      <div class="admin-live-left">
+        <div class="admin-live-label">Link Live (para móvil)</div>
+        <div class="muted admin-live-url">
+          {{ live_url }}
+        </div>
+      </div>
+
+      <button class="btn-gm"
+              type="button"
+              data-live-url="{{ live_url }}"
+              onclick="
+                const url = this.dataset.liveUrl;
+                navigator.clipboard.writeText(url).then(()=>{
+                  this.innerText='Copiado ✅';
+                  setTimeout(()=>this.innerText='Copiar link', 1200);
+                });
+              ">
+        Copiar link
+      </button>
+    </div>
+  </section>
+
+  {# =========================
+     BLOQUE: Partido cerrado + Reabrir
+     ========================= #}
+  {% if match.winner_id %}
+    <section class="card admin-form-card admin-alert-card" style="margin-top:14px;">
+      <div class="admin-alert-row">
+        <div class="admin-alert-left">
+          <div class="admin-alert-title">⚠ Partido cerrado</div>
+          <div class="muted admin-alert-text">
+            Resultado: <span class="admin-strong">{{ match.result_text or "—" }}</span>.
+            Para modificarlo es necesario reabrir el partido.
+          </div>
+        </div>
+
+        <form method="post"
+              action="/admin/tournaments/{{ tournament.id }}/matches/{{ match.id }}/reopen"
+              style="margin:0;">
+          <button class="btn-gm btn-gm--danger-outline"
+                  type="submit"
+                  onclick="return confirm('¿Reabrir partido?\n\nSe borrará el hoyo a hoyo y se recalculará el cuadro.')">
+            Reabrir partido
+          </button>
+        </form>
+      </div>
+    </section>
+  {% endif %}
+
+  <!-- HOYO A HOYO (SOLO LECTURA) -->
+  <section class="card admin-form-card" style="margin-top:14px;">
+    <div class="admin-section-head">
+      <h2>Hoyo a hoyo</h2>
+      <div class="muted admin-small">
+        {% if match.winner_id %}Cerrado{% else %}En curso{% endif %}
+        · Resultado: {{ match.result_text or "—" }}
+        {% if match.winner_id %} · Ganador: {{ match.winner.name }}{% endif %}
+      </div>
+    </div>
+
+    <div class="admin-holes-grid">
+      {% for i in range(1, 19) %}
+        {% set o = hole_map.get(i, "") %}
+        <div class="admin-hole">
+          <div class="admin-hole-n">H{{ i }}</div>
+          <div class="admin-hole-v {{ 'is-a' if o=='A' else ('is-b' if o=='B' else ('is-as' if o=='AS' else '')) }}">
+            {{ o if o else "—" }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+{% endblock %}

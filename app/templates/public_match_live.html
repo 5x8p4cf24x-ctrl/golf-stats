@@ -1,0 +1,525 @@
+{% extends "public_base.html" %}
+
+{% block title %}LIVE · {{ match.round }}{% endblock %}
+{% block container_class %}rounds-page{% endblock %}
+
+{% block head_extra %}
+<style>
+  :root{
+    --bd: rgba(0,0,0,.10);
+    --txt: rgba(0,0,0,.82);
+    --mut: rgba(0,0,0,.55);
+    --green: var(--gm-green, #14532d);
+  }
+
+  .live-wrap{ max-width: 520px; margin: 0 auto; }
+
+  .live-card{
+    border: 1px solid var(--bd);
+    border-radius: 16px;
+    background:#fff;
+    padding: 12px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  }
+
+  .live-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+
+  .live-title{
+    font-size: 1.05rem;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    color: var(--gm-green);
+  }
+
+  .btn-ghost{
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-weight: 850;
+    font-size: .78rem;
+    border: 1px solid var(--bd);
+    background:#fff;
+    cursor:pointer;
+    line-height: 1;
+    color: var(--txt);
+    text-decoration: none;
+  }
+
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 8px;
+  }
+
+  .pill{
+    border: 1px solid var(--bd);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-weight: 700;
+    font-size: .75rem;
+    line-height: 1;
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    white-space:nowrap;
+    max-width: 46%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .pill span:last-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .pill.a{ background: rgba(220,38,38,.10); }
+  .pill.b{ background: rgba(37,99,235,.10); }
+
+  .dot{
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    display:inline-block;
+    flex: 0 0 auto;
+  }
+
+  .dot.a{ background:#dc2626; }   /* rojo */
+  .dot.b{ background:#2563eb; }   /* azul */
+
+  .vs{
+    font-weight: 900;
+    opacity: .75;
+    padding: 0 4px;
+    font-size: .70rem;
+  }
+
+  .live-result{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    border: 1px solid var(--bd);
+    border-radius: 14px;
+    padding: 8px 10px;
+    margin-top: 20px;
+  }
+  .live-result .label{
+    font-weight: 700;
+    opacity: .75;
+    font-size: .75rem;
+  }
+
+  .lead-pill{
+    border: 1px solid var(--bd);
+    border-radius: 999px;
+    padding: 6px 22px;
+    font-weight: 950;
+    font-size: .75rem;
+    line-height: 1;
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    white-space:nowrap;
+  }
+  .lead-pill.a{ background: rgba(220,38,38,.10); }
+  .lead-pill.b{ background: rgba(37,99,235,.10); }
+  .lead-pill.as{ background: rgba(0,0,0,.05); }
+
+  .helper{
+    margin-top: 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+  }
+
+  .status{
+    font-weight: 850;
+    font-size: .75rem;
+    opacity: .55;
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .hole-card{
+    border: 1px solid var(--bd);
+    border-radius: 16px;
+    padding: 10px;
+    margin-top: 18px;
+    background:#fff;
+    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  }
+
+  .hole-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+  }
+
+  .navbtn{
+    width: 40px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--bd);
+    background:#fff;
+    font-weight: 900;
+    color: var(--gm-green, #14532d);
+    cursor:pointer;
+    font-size: .85rem;
+  }
+  .navbtn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .hole-title{
+    font-weight: 950;
+    font-size: 1.00rem;
+    margin: 0;
+    opacity: .78;
+  }
+
+  .choices{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .choice{
+    border-radius: 14px;
+    border: 1px solid var(---gm-green);
+    background:#fff;
+    padding: 11px 8px;
+    font-weight: 700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 6px;
+    min-height: 44px;
+    font-size: .75rem;
+  }
+
+  .choice.a.is-on{ background: rgba(220,38,38,.14); }
+  .choice.as.is-on{ background: rgba(0,0,0,.06); }
+  .choice.b.is-on{ background: rgba(37,99,235,.14); }
+
+  /* Modal */
+  .modal-back{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding: 18px;
+    z-index: 9999;
+  }
+  .modal{
+    width: 100%;
+    max-width: 520px;
+    background:#fff;
+    border-radius: 16px;
+    border: 1px solid var(--bd);
+    padding: 14px;
+  }
+  .modal h2{ margin:0; font-weight:950; font-size:1.05rem; }
+  .modal .muted{ opacity:.70; margin-top:6px; font-size:.9rem; }
+  .modal .actions{ display:flex; gap:10px; justify-content:flex-end; margin-top: 12px; flex-wrap:wrap; }
+
+  .btn-primary{
+    border-radius: 999px;
+    padding: 9px 12px;
+    font-weight: 700;
+    border: 0;
+    background: var(--green);
+    color:#fff !important;
+    cursor:pointer;
+    font-size: .85rem;
+    text-decoration:none;
+  }
+
+  .btn-legend{
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: .75rem;
+    font-weight: 700;
+    color: rgba(0,0,0,.45);
+    cursor:pointer;
+  }
+
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Copas", "url":"/public/tournaments"},
+    {"label":"Copa", "url":"/public/tournaments/" ~ tournament_id},
+    {"label":"LIVE", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="live-wrap">
+
+  <section class="live-card">
+    <div class="live-header">
+      <h1 class="live-title">Live match</h1>
+      {% if not match.winner_id %}
+        <a class="btn-ghost" href="/public/tournaments/{{ tournament_id }}">Salir</a>
+      {% endif %}
+    </div>
+
+    <div class="row">
+      <div class="pill a" id="pillA">
+        <span class="dot a"></span>
+        <span>{{ match.player_a.name if match.player_a else "-" }}</span>
+      </div>
+
+
+      <div class="vs">VS</div>
+
+      <div class="pill b" id="pillB">
+        <span class="dot b"></span>
+        <span>{{ match.player_b.name if match.player_b else "-" }}</span>
+      </div>
+    </div>
+
+    <div class="live-result">
+      <div class="label">Resultado</div>
+      <div class="lead-pill as" id="leadPill">—</div>
+    </div>
+
+    <div class="helper">
+      <div class="status" id="saveStatus">Sin cambios</div>
+      <button type="button" class="btn-legend" id="clearBtn">Limpiar hoyo</button>
+    </div>
+
+    {% if match.winner_id %}
+      <div style="margin-top:10px; font-weight:900; opacity:.75; font-size:.9rem;">
+        ✅ Partido finalizado: <span style="font-weight:1000;">{{ match.result_text or "—" }}</span>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="hole-card">
+    <div class="hole-nav">
+      <button class="navbtn" type="button" id="prevBtn">◀</button>
+      <div class="hole-title" id="holeTitle">Hoyo 1</div>
+      <button class="navbtn" type="button" id="nextBtn">▶</button>
+    </div>
+
+    <form method="post"
+          action="/public/tournaments/{{ tournament_id }}/matches/{{ match.id }}/live"
+          id="liveForm">
+
+      <input type="hidden" name="token" value="{{ token }}"/>
+
+      {% for i in range(1, 19) %}
+        <input type="hidden" name="o_{{ i }}" id="o_{{ i }}" value="{{ by_hole.get(i, '') }}"/>
+      {% endfor %}
+
+      <div class="choices" id="choices">
+        <button type="button" class="choice a" data-v="A" id="btnA">A</button>
+        <button type="button" class="choice as" data-v="AS" id="btnAS">AS</button>
+        <button type="button" class="choice b" data-v="B" id="btnB">B</button>
+      </div>
+    </form>
+  </section>
+
+</div>
+
+<div class="modal-back" id="doneModal">
+  <div class="modal">
+    <h2>🏁 Partido finalizado</h2>
+    <div class="muted">
+      Resultado: <strong id="finalText">—</strong>
+    </div>
+    <div class="actions">
+      <a class="btn-save" href="/public/tournaments/{{ tournament_id }}">Finalizar</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const locked = {{ "true" if match.winner_id else "false" }};
+
+  const form = document.getElementById('liveForm');
+  const current = { hole: 1 };
+
+  const btnPrev = document.getElementById('prevBtn');
+  const btnNext = document.getElementById('nextBtn');
+  const holeTitle = document.getElementById('holeTitle');
+
+  const clearBtn = document.getElementById('clearBtn');
+  const saveStatus = document.getElementById('saveStatus');
+
+  const choices = Array.from(document.querySelectorAll('.choice'));
+  const leadPill = document.getElementById('leadPill');
+
+  const btnA = document.getElementById('btnA');
+  const btnB = document.getElementById('btnB');
+
+  const modal = document.getElementById('doneModal');
+  const finalText = document.getElementById('finalText');
+
+  const nameA = "{{ match.player_a.name if match.player_a else '' }}";
+  const nameB = "{{ match.player_b.name if match.player_b else '' }}";
+
+  function shortName(full){
+    const s = (full || "").trim();
+    if(!s) return "-";
+    const parts = s.split(/\s+/).filter(Boolean);
+    if(parts.length === 1) return parts[0];
+    const first = parts[0];
+    const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+    return `${first} ${lastInitial}.`;
+  }
+  btnA.textContent = shortName(nameA);
+  btnB.textContent = shortName(nameB);
+
+  function getValue(h){
+    return (document.getElementById('o_' + h).value || '').trim();
+  }
+  function setValue(h, v){
+    document.getElementById('o_' + h).value = v || '';
+  }
+
+  function computeLive(){
+    let up = 0;
+    let last = 0;
+
+    for(let h=1; h<=18; h++){
+      const v = getValue(h);
+      if(!v) continue;
+
+      last = h;
+      if(v === 'A') up += 1;
+      else if(v === 'B') up -= 1;
+
+      const rem = 18 - h;
+      if(Math.abs(up) > rem){
+        const leader = (up > 0) ? 'A' : 'B';
+        return { finished: true, text: `${Math.abs(up)}&${rem}`, leader };
+      }
+    }
+
+    if(last === 0) return { finished:false, text:'—', leader:null };
+    if(up === 0) return { finished:false, text:'AS', leader:null };
+    const leader = (up > 0) ? 'A' : 'B';
+    return { finished:false, text:`${Math.abs(up)} UP`, leader };
+  }
+
+  function paintLead(text, leader){
+    leadPill.textContent = text;
+    leadPill.classList.remove('a','b','as');
+    if(leader === 'A') leadPill.classList.add('a');
+    else if(leader === 'B') leadPill.classList.add('b');
+    else leadPill.classList.add('as');
+  }
+
+  function setLockedUI(){
+    if(!locked) return;
+    choices.forEach(b => b.disabled = true);
+    clearBtn.disabled = true;
+    btnPrev.disabled = true;
+    btnNext.disabled = true;
+    saveStatus.textContent = "Cerrado ✅";
+  }
+
+  function render(){
+    holeTitle.textContent = 'Hoyo ' + current.hole;
+
+    btnPrev.disabled = (current.hole === 1);
+    btnNext.disabled = (current.hole === 18);
+
+    const v = getValue(current.hole);
+    choices.forEach(b => {
+      b.classList.toggle('is-on', b.dataset.v === v);
+    });
+
+    const r = computeLive();
+    paintLead(r.text, r.leader);
+
+    if(r.finished && !locked){
+      // Si el match está matemáticamente cerrado, mostramos modal inmediatamente.
+      finalText.textContent = r.text;
+      modal.style.display = 'flex';
+    }
+
+    setLockedUI();
+  }
+
+  async function autosave(){
+    if(locked) return;
+
+    saveStatus.textContent = "Guardando…";
+
+    const fd = new FormData(form);
+
+    try{
+      await fetch(form.action, {
+        method: "POST",
+        body: fd
+      });
+
+      saveStatus.textContent = "Guardado";
+      const r = computeLive();
+      if(r.finished){
+        finalText.textContent = r.text;
+        modal.style.display = 'flex';
+      }
+    }catch(e){
+      saveStatus.textContent = "Error al guardar";
+    }
+  }
+
+  choices.forEach(b => {
+    b.addEventListener('click', async () => {
+      if(locked) return;
+      setValue(current.hole, b.dataset.v);
+      render();
+      await autosave();
+    });
+  });
+
+  clearBtn.addEventListener('click', async () => {
+    if(locked) return;
+    setValue(current.hole, '');
+    render();
+    await autosave();
+  });
+
+  btnPrev.addEventListener('click', () => {
+    if(current.hole > 1) current.hole--;
+    render();
+  });
+
+  btnNext.addEventListener('click', () => {
+    if(current.hole < 18) current.hole++;
+    render();
+  });
+
+  // Inicia con el primer hoyo “pendiente” si existe
+  (function initHole(){
+    for(let h=1; h<=18; h++){
+      if(!getValue(h)){
+        current.hole = h;
+        return;
+      }
+    }
+    current.hole = 18;
+  })();
+
+  render();
+})();
+</script>
+{% endblock %}

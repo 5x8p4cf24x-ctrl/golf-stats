@@ -1,0 +1,877 @@
+{% extends "public_base.html" %}
+
+{% block title %}{{ tournament.name }} · Copa{% endblock %}
+{% block container_class %}rounds-page{% endblock %}
+
+{% block head_extra %}
+<style>
+
+  /* ===========================================================
+   0) Variables base (solo una vez)
+   =========================================================== */
+  :root{
+    --gm-green:#14532d;
+    --gm-text:#0f172a;
+    --gm-muted: rgba(15, 23, 42, .62);
+    --gm-border: rgba(15, 23, 42, .10);
+  }
+
+  /* ===========================================================
+    1) Header (arriba)
+    =========================================================== */
+  .public-header{
+    padding: 10px 0 6px 0;
+    margin-bottom: 6px;
+  }
+  .public-title{
+    font-size: 1.00rem;
+    letter-spacing: .04em;
+    margin: 0 0 4px 0;
+  }
+  .public-subtitle{
+    font-size: .78rem;
+    opacity: .65;
+    margin: 0;
+  }
+
+  .status-pill{
+    padding: 4px 10px;
+    font-size: .72rem;
+    font-weight: 900;
+    border-radius: 999px;
+    background: rgba(20,83,45,.08);
+    border: 1px solid rgba(20,83,45,.18);
+  }
+  .status-pill--on{
+    background: rgba(20,83,45,.10);
+    color: var(--gm-green);
+    border: 1px solid rgba(20,83,45,.25);
+  }
+
+  .status-pill--done{
+      background: rgba(57,255,136,.14);
+      color: #14532d;
+      border: 1px solid rgba(57,255,136,.55);
+      box-shadow: 0 0 0 1px rgba(57,255,136,.15) inset;
+  }
+
+  /* ===========================================================
+    2) Secciones (cards)
+    =========================================================== */
+  .block{ margin-top: 18px; }
+
+  .block-title{
+    font-weight: 1000;
+    margin: 0 0 10px 0;
+  }
+
+  .block-title--bracket{
+    font-size: .92rem;         /* más pequeño */
+    letter-spacing: .03em;
+    margin-bottom: 10px;
+  }
+
+  /* ===========================================================
+    3) Bracket wrapper (fondo + “panel”)
+    =========================================================== */
+  .brsvg-wrap{
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 18px;
+    background: #fff;              /* panel opaco */
+  }
+
+  /* FOTO visible 90% -> overlay MUY suave (10%) */
+  .brsvg-wrap::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(rgba(255,255,255,0.20), rgba(255,255,255,0.20)),
+      url("/static/bg_golf.png") center / cover no-repeat;
+    z-index:0;
+  }
+
+  /* SVG siempre por encima */
+  .brsvg{
+    position: relative;
+    z-index: 1;
+    display:block;
+    width:100%;
+    height:auto;
+  }
+
+  /* ===========================================================
+    BLOQUE 3 · Resumen de partidos (ms-*)
+    (Autocontenido: NO toca Bloque 2)
+    =========================================================== */
+
+  .ms .block-title--small{
+    font-size: .90rem;
+    letter-spacing: .03em;
+    margin-bottom: 10px;
+  }
+
+  .ms-wrap{
+    display: grid;
+    gap: 14px;
+  }
+
+  /* ===== Sección por ronda ===== */
+  .ms-round{
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    border: 1px solid rgba(15,23,42,.08);
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;              /* desktop OK */
+    margin-top: 12px;
+  }
+
+  .ms-round-left{
+    background: rgba(15,23,42,.02);
+    border-right: 1px solid rgba(15,23,42,.08);
+    padding: 12px;
+    display:flex;
+    align-items:flex-start;
+  }
+
+  .ms-round-title{
+    font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight:1000;
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color: rgba(15,23,42,.55);
+  }
+
+  .ms-round-right{ padding:12px; }
+
+  /* apilar en móvil */
+  @media (max-width: 720px){
+    .ms-round{ grid-template-columns: 1fr; }
+    .ms-round-left{
+      border-right:0;
+      border-bottom:1px solid rgba(15,23,42,.08);
+      padding:10px 12px;
+    }
+    .ms-round-right{ padding:10px 12px; }
+  }
+
+  .ms-table{ display:grid; }
+
+  .ms-row{
+    padding:10px 12px 12px 12px;
+    border-bottom:1px solid rgba(15,23,42,.08);
+    background:#fff;
+  }
+  .ms-row:last-child{ border-bottom:0; }
+
+  .ms-topline{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:8px;
+  }
+
+  .ms-left{
+    min-width:0;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+
+  .ms-match{
+    font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight:700;
+    font-size:.86rem;
+    color: rgba(20,83,45,.78);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:62vw;
+  }
+
+  .ms-vs{ opacity:.45; font-weight:900; padding:0 6px; }
+
+  .ms-tag{
+    font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-size:.72rem;
+    font-weight:900;
+    color: rgba(15,23,42,.45);
+    white-space:nowrap;
+  }
+
+  .ms-right{
+    font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight:900;
+    font-size:.78rem;
+    color: rgba(15,23,42,.62);
+    white-space:nowrap;
+  }
+  .ms-dot{ opacity:.35; padding:0 6px; }
+
+  
+
+  /* “tabla” hoyos */
+  .ms-grid{
+    display:grid;
+    gap:4px;
+  }
+
+  /* desktop: 18 columnas fluidas */
+  .ms-holes{
+    display:grid;
+    grid-template-columns: repeat(18, minmax(0, 1fr));
+    gap:2px;
+  }
+
+  .ms-cell{
+    height:22px;
+    border-radius:6px;
+    border:1px solid rgba(15,23,42,.10);
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+  }
+
+  .ms-num{
+    background: rgba(15,23,42,.03);
+    font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight:900;
+    font-size:.66rem;
+    color: rgba(15,23,42,.55);
+  }
+
+  .ms-val{
+    font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight:1000;
+    font-size:.66rem;
+    letter-spacing:.02em;
+    color: rgba(15,23,42,.92);
+  }
+
+  .ms-val.a{ background: rgba(220,38,38,.08); border-color: rgba(220,38,38,.18); }
+  .ms-val.b{ background: rgba(37,99,235,.08); border-color: rgba(37,99,235,.18); }
+  .ms-val.as{ background: rgba(15,23,42,.06); border-color: rgba(15,23,42,.12); }
+  .ms-val.empty{
+    background: rgba(15,23,42,.02);
+    color: rgba(15,23,42,.18);
+    border-color: rgba(15,23,42,.06);
+  }
+
+  /* ✅ SOLO MÓVIL: scroll horizontal en los hoyos */
+  @media (max-width: 520px){
+
+    .ms-row{ padding:10px; }
+    .ms-match{ max-width:58vw; }
+    .ms-cell{ height:21px; }
+    .ms-num, .ms-val{ font-size:.64rem; }
+    .ms-cell{ width:30px; }
+  }
+
+  /* ===========================================================
+    BLOQUE 3 · MÓVIL (ms-fix)
+    - Scroll horizontal real en hoyos
+    - Encabezado legible
+    NO toca desktop
+    =========================================================== */
+  @media (max-width: 520px){
+
+    /* 0) Si el contenedor recorta, el scroll no se ve */
+    .ms-fix .ms-round{ overflow: visible !important; }
+
+    /* 1) Clave en grids: permitir que la columna 1fr encoja */
+    .ms-fix .ms-round-right,
+    .ms-fix .ms-table,
+    .ms-fix .ms-row{
+      min-width: 0 !important;
+    }
+
+    /* 2) Encabezado limpio: nombre | tag, y debajo ganador/resultado */
+    .ms-fix .ms-topline{
+      display: grid !important;
+      grid-template-columns: 1fr auto !important;
+      align-items: center !important;
+      gap: 6px 10px !important;
+      margin-bottom: 8px !important;
+    }
+
+    .ms-fix .ms-left{ min-width: 0 !important; }
+
+    .ms-fix .ms-match{
+      max-width: 100% !important;
+      font-size: .72rem !important;
+      line-height: 1.15 !important;
+    }
+
+    .ms-fix .ms-tag{
+      justify-self: end !important;
+      font-size: .60rem !important;
+      opacity: .75 !important;
+      white-space: nowrap !important;
+    }
+
+    .ms-fix .ms-right{
+      grid-column: 1 / -1 !important;
+      white-space: normal !important;
+      font-size: .65rem !important;
+      font-weight: 800 !important;
+      opacity: .90 !important;
+      text-align: left !important;
+      margin-top: 2px !important;
+    }
+
+    /* 3) Viewport de scroll (solo hoyos) */
+    .ms-fix .ms-scroll{
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding-bottom: 10px !important;
+    }
+
+    .ms-fix .ms-scroll::-webkit-scrollbar{ display:none; }
+    .ms-fix .ms-scroll{ scrollbar-width:none; }
+
+    /* 4) La “tabla” debe ser más ancha que el móvil */
+    .ms-fix .ms-scroll .ms-holes{
+      display: inline-grid !important;
+      grid-auto-flow: column !important;
+      grid-auto-columns: 30px !important;  /* ancho por hoyo */
+      grid-template-columns: none !important;
+      gap: 2px !important;
+      width: max-content !important;
+    }
+
+    .ms-fix .ms-scroll .ms-cell{
+      width: 30px !important;
+      height: 21px !important;
+    }
+
+    .ms-fix .ms-num,
+    .ms-fix .ms-val{
+      font-size: .64rem !important;
+    }
+
+    .ms-fix .ms-dot{ opacity: .25 !important; padding: 0 6px !important; }
+  }
+
+  @media (max-width: 520px){
+    /* Oculta “SF #1 / F #1” en móvil */
+    .ms-fix .ms-tag{ display:none !important; }
+
+    /* Recupera espacio para el nombre */
+    .ms-fix .ms-topline{
+      display:block !important;
+    }
+
+    /* Permite que el nombre use todo el ancho */
+    .ms-fix .ms-match{
+      max-width: 100% !important;
+    }
+  }
+
+  @media (max-width: 520px){
+
+    .ms-fix .ms-scroll{
+      scrollbar-width: thin;                 /* Firefox */
+      scrollbar-color: rgba(15,23,42,.25) transparent;
+    }
+
+    .ms-fix .ms-scroll::-webkit-scrollbar{
+      height: 4px;                           /* línea fina */
+    }
+
+    .ms-fix .ms-scroll::-webkit-scrollbar-track{
+      background: transparent;
+    }
+
+    .ms-fix .ms-scroll::-webkit-scrollbar-thumb{
+      background: rgba(15,23,42,.25);
+      border-radius: 999px;
+    }
+  }
+
+
+
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Copas", "url":"/public/tournaments"},
+    {"label": tournament.name, "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+  <header class="public-header">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div style="min-width:0;">
+        <h1 class="public-title" style="margin-bottom:6px;">{{ tournament.name }}</h1>
+        <p class="public-subtitle" style="margin:0;">
+          {{ tournament.date }} · {{ tournament.course.name }} · Matchplay individual
+        </p>
+      </div>
+
+      {# Estado: En vigor / Finalizada #}
+      {% if champion %}
+        <div class="status-pill status-pill--done">Finalizada</div>
+      {% else %}
+        <div class="status-pill status-pill--on">En vigor</div>
+      {% endif %}
+    </div>
+  </header>
+
+  
+  {# ===========================================================
+   2) 🧩 BRACKET (SVG, 16 slots fijos + conectores con codos)
+   =========================================================== #}
+
+  <section class="card block">
+    <h2 class="block-title block-title--bracket">Fase eliminatoria</h2>
+
+    {% if matches_by_round|length == 0 %}
+      <p class="muted" style="margin:0;">Aún no hay cuadro generado.</p>
+    {% else %}
+
+      {# listas por ronda (pueden venir vacías) #}
+      {% set R16 = matches_by_round.get("R16", []) %}
+      {% set QF  = matches_by_round.get("QF", []) %}
+      {% set SF  = matches_by_round.get("SF", []) %}
+      {% set F   = matches_by_round.get("F", []) %}
+
+      {# helpers: buscar match por position dentro de una ronda #}
+      {% macro pick(round_list, pos) -%}
+        {%- for mm in round_list -%}
+          {%- if mm.position == pos -%}
+            {{- mm -}}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endmacro %}
+
+      <style>
+        
+        
+
+        .br-title{
+          font: 900 12px/1 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+          fill: rgba(255,255,255,.92);   /* blanco */
+          letter-spacing: .10em;
+        }
+
+        .slot{
+          fill:#fff;                                /* SIEMPRE BLANCO OPACO */
+          stroke: rgba(255,255,255,.55);            /* borde blanco suave */
+          stroke-width:1;
+        }
+
+        .slot.empty{
+          fill:#fff;                                /* también blanco opaco */
+          stroke: rgba(255,255,255,.30);            /* borde más flojo si está vacío */
+        }
+
+        .slot.win{
+          fill:#fff;                                /* sigue siendo blanco */
+          stroke: #39ff88;                          /* borde neón */
+          stroke-width: 2;
+          filter: drop-shadow(0 0 6px rgba(57,255,136,.22));
+        }
+
+        .champBox{
+          fill:#fff;
+          stroke: rgba(15,23,42,.14);
+          stroke-width:1.4;
+        }
+
+        .champBox.win{
+          stroke: #39ff88;
+          stroke-width: 2.6;
+          filter:
+            drop-shadow(0 0 6px rgba(57,255,136,.35))
+            drop-shadow(0 0 14px rgba(57,255,136,.20));
+        }
+
+
+        .name{
+          font: 800 12px/1 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+          fill:#0f172a;
+        }
+        .name.muted{ fill: rgba(15,23,42,.38); }
+
+        .seed{
+          font: 900 10px/1 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+          fill: rgba(15,23,42,.35);
+        }
+
+        /* líneas base */
+        .conn{
+          fill:none;
+          stroke: rgba(255,255,255,.65);  /* BLANCO */
+          stroke-width: 1.4;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+
+        .conn.win{
+          stroke: #39ff88;                 /* neón */
+          stroke-width: 2.2;
+          filter: drop-shadow(0 0 4px rgba(57,255,136,.35))
+                  drop-shadow(0 0 10px rgba(57,255,136,.18));
+        }
+
+        .res{
+          font: 900 11px/1 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+          fill: rgba(15,23,42,.55);
+        }
+
+        
+        .cup{ font: 900 20px/1 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+      </style>
+
+      {# ======================
+        Geometría fija
+        ====================== #}
+      {% set slotW = 160 %}
+      {% set slotH = 26 %}
+      {% set slotGap = 8 %}
+      {% set matchH = slotH*2 + slotGap %}  {# 60 #}
+      {% set groupGap = 22 %}               {# separación entre matches en una ronda #}
+      {% set step = matchH + groupGap %}    {# altura “bloque” de match en R16 #}
+
+      {% set y0 = 44 %}
+
+      {# columnas X #}
+      {% set xR16 = 12 %}
+      {% set xQF  = 230 %}
+      {% set xSF  = 448 %}
+      {% set xF   = 666 %}
+      {% set xC   = 884 %}
+
+      {# ancho total del viewBox (ajusta si quieres más aire) #}
+      {% set vbW = xC + 190 %}
+      {% set vbH = y0 + step*8 - groupGap + 40 %} {# altura total aproximada #}
+
+      {# función inline: Y top de cada match por ronda #}
+      {# R16 pos 1..8 -> y = y0 + (pos-1)*step #}
+      {# QF pos 1..4 -> y = y0 + (pos-1)*step*2 + ((matchH+groupGap)/2) #}
+      {# SF pos 1..2 -> y = y0 + (pos-1)*step*4 + ((matchH+groupGap)*1.5) #}
+      {# F  pos 1    -> y = y0 + ((matchH+groupGap)*3.5) #}
+
+      <div class="brsvg-wrap">
+        <svg class="brsvg"
+            viewBox="0 0 {{ vbW }} {{ vbH }}"
+            preserveAspectRatio="xMinYMin meet"
+            aria-label="Bracket eliminatoria">
+          
+
+          {# ===== Títulos ===== #}
+          <text class="br-title" x="{{ xR16 }}" y="14">OCTAVOS</text>
+          <text class="br-title" x="{{ xQF  }}" y="14">CUARTOS</text>
+          <text class="br-title" x="{{ xSF  }}" y="14">SEMIS</text>
+          <text class="br-title" x="{{ xF   }}" y="14">FINAL</text>
+          <text class="br-title" x="{{ xC   }}" y="14">CAMPEÓN</text>
+
+          {# ===========================================================
+            Macro: dibujar un match (2 slots) + conector hacia next
+            - nextCenterY: Y del centro del match siguiente (donde debe llegar)
+            - highlightA/B: ilumina el camino del ganador
+            =========================================================== #}
+          {% macro draw_match(mm, x, y, seed, nextX, nextCenterY) -%}
+            {# nombres #}
+            {% set a_name = (mm.player_a.name if mm and mm.player_a else "—") %}
+            {% set b_name = (mm.player_b.name if mm and mm.player_b else "—") %}
+
+            {# ganador (slot highlight) #}
+            {% set winA = (mm and mm.winner_id and mm.winner_id == mm.player_a_id) %}
+            {% set winB = (mm and mm.winner_id and mm.winner_id == mm.player_b_id) %}
+
+            {# empties #}
+            {% set emptyA = (not mm or not mm.player_a) %}
+            {% set emptyB = (not mm or not mm.player_b) %}
+
+            {# coords #}
+            {% set yA = y %}
+            {% set yB = y + slotH + slotGap %}
+            {% set cA = yA + (slotH/2) %}
+            {% set cB = yB + (slotH/2) %}
+            {% set outX = x + slotW %}
+            {% set midX = outX + 26 %}
+            {% set targetX = nextX %}
+            {% set targetY = nextCenterY %}
+
+            {# slots #}
+            <rect class="slot {{ 'win' if winA else ('empty' if emptyA else '') }}"
+                  x="{{ x }}" y="{{ yA }}" rx="12" ry="12" width="{{ slotW }}" height="{{ slotH }}"/>
+            <text class="name {{ 'muted' if emptyA else '' }}"
+                  x="{{ x + 12 }}" y="{{ yA + 17 }}">{{ a_name }}</text>
+
+            <rect class="slot {{ 'win' if winB else ('empty' if emptyB else '') }}"
+                  x="{{ x }}" y="{{ yB }}" rx="12" ry="12" width="{{ slotW }}" height="{{ slotH }}"/>
+            <text class="name {{ 'muted' if emptyB else '' }}"
+                  x="{{ x + 12 }}" y="{{ yB + 17 }}">{{ b_name }}</text>
+
+            {# seed #}
+            <text class="seed" x="{{ x }}" y="{{ y + matchH + 16 }}">#{{ seed }}</text>
+
+            {# resultado (solo si existe) #}
+            {% if mm and mm.result_text %}
+              <text class="res" x="{{ x + slotW - 6 }}" y="{{ y + matchH + 16 }}" text-anchor="end">
+                {{ mm.result_text }}
+              </text>
+            {% endif %}
+
+            {# conector hacia siguiente ronda (2 codos al centro) #}
+            {% if nextX is not none %}
+              {# camino A #}
+              <path class="conn {{ 'win' if winA else '' }}"
+                    d="M {{ outX }} {{ cA }}
+                      L {{ midX }} {{ cA }}
+                      L {{ midX }} {{ targetY }}
+                      L {{ targetX }} {{ targetY }}" />
+
+              {# camino B #}
+              <path class="conn {{ 'win' if winB else '' }}"
+                    d="M {{ outX }} {{ cB }}
+                      L {{ midX }} {{ cB }}
+                      L {{ midX }} {{ targetY }}
+                      L {{ targetX }} {{ targetY }}" />
+            {% endif %}
+          {%- endmacro %}
+
+          {# ======================
+            OCTAVOS (8 matches)
+            next: CUARTOS (4 matches)
+            ====================== #}
+          {% for pos in range(1, 9) %}
+            {% set mm = None %}
+            {% for m in R16 %}{% if m.position==pos %}{% set mm = m %}{% endif %}{% endfor %}
+
+            {% set y = y0 + (pos-1)*step %}
+
+            {# el match de cuartos al que alimenta: ceil(pos/2) #}
+            {% set qf_pos = ((pos+1)//2) %}
+            {% set qf_y = y0 + (qf_pos-1)*(step*2) + (step/2) %}
+            {% set qf_center = qf_y + (matchH/2) %}
+
+            {{ draw_match(mm, xR16, y, pos, xQF, qf_center) }}
+          {% endfor %}
+
+          {# ======================
+            CUARTOS (4 matches)
+            next: SEMIS (2 matches)
+            ====================== #}
+          {% for pos in range(1, 5) %}
+            {% set mm = None %}
+            {% for m in QF %}{% if m.position==pos %}{% set mm = m %}{% endif %}{% endfor %}
+
+            {% set y = y0 + (pos-1)*(step*2) + (step/2) %}
+
+            {% set sf_pos = ((pos+1)//2) %}
+            {% set sf_y = y0 + (sf_pos-1)*(step*4) + (step*1.5) %}
+            {% set sf_center = sf_y + (matchH/2) %}
+
+            {{ draw_match(mm, xQF, y, pos, xSF, sf_center) }}
+          {% endfor %}
+
+          {# ======================
+            SEMIS (2 matches)
+            next: FINAL (1 match)
+            OJO: por índice (robusto aunque position venga raro)
+            ====================== #}
+          {% for idx in range(0, 2) %}
+            {% set mm = SF[idx] if SF and (SF|length > idx) else None %}
+            {% set pos = idx + 1 %}
+
+            {% set y = y0 + (pos-1)*(step*4) + (step*1.5) %}
+
+            {% set f_y = y0 + (step*3.5) %}
+            {% set f_center = f_y + (matchH/2) %}
+
+            {{ draw_match(mm, xSF, y, pos, xF, f_center) }}
+          {% endfor %}
+
+
+          {# ======================
+            FINAL (1 match)
+            next: CAMPEÓN (caja trofeo)
+            ====================== #}
+          {% set mmF = F[0] if F|length else None %}
+          {% set yF = y0 + (step*3.5) %}
+          {% set champCenter = yF + (matchH/2) %}
+
+          {# conector final -> campeón #}
+          {{ draw_match(mmF, xF, yF, 1, xC, champCenter) }}
+
+          {# ======================
+            CAMPEÓN box (170x200) + copa 110x110 centrada + nombre + resultado
+            ====================== #}
+          {% set champName = (champion.name if champion else "—") %}
+
+          {# medidas fijas #}
+          {% set champBoxW = 170 %}
+          {% set champBoxH = 200 %}
+          {% set trophySize = 110 %}
+
+          {# posición del box centrado respecto a champCenter #}
+          {% set champX = xC %}
+          {% set champY = champCenter - (champBoxH / 2) %}
+
+          {# posición de la copa (centrada horizontal) #}
+          {% set trophyX = champX + (champBoxW - trophySize) / 2 %}
+          {% set trophyY = champY + 14 %}
+
+          {# posiciones de texto #}
+          {% set nameY = trophyY + trophySize + 28 %}
+          {% set resY  = nameY + 18 %}
+
+          {% set hasChampion = champion is not none %}
+
+          <rect class="champBox {% if hasChampion %}win{% endif %}"
+                x="{{ champX }}" y="{{ champY }}"
+                rx="16" ry="16"
+                width="{{ champBoxW }}" height="{{ champBoxH }}"/>
+
+          <image href="/static/cup.png"
+                x="{{ trophyX }}" y="{{ trophyY }}"
+                width="{{ trophySize }}" height="{{ trophySize }}"
+                preserveAspectRatio="xMidYMid meet" />
+
+          <text class="name"
+                x="{{ champX + champBoxW/2 }}"
+                y="{{ nameY }}"
+                text-anchor="middle">
+            {{ champName }}
+          </text>
+
+          {% if final_match and final_match.result_text %}
+            <text class="res"
+                  x="{{ champX + champBoxW/2 }}"
+                  y="{{ resY }}"
+                  text-anchor="middle">
+              {{ final_match.result_text }}
+            </text>
+          {% endif %}
+
+
+        </svg>
+      </div>
+
+    {% endif %}
+  </section>
+
+  {# ===========================================================
+    3) 📋 RESUMEN DE PARTIDOS (por ronda, estilo tabla)
+    Requiere: match_timelines (dict match_id -> timeline[18])
+    =========================================================== #}
+  <section class="card block ms ms-fix">
+    <h2 class="block-title block-title--small">Resumen de partidos</h2>
+
+    {% if finished_matches|length == 0 %}
+      <p class="muted" style="margin:0;">Aún no hay partidos finalizados.</p>
+    {% else %}
+
+      {# agrupamos por ronda #}
+      {% set groups = {"R16": [], "QF": [], "SF": [], "F": []} %}
+      {% for m in finished_matches %}
+        {% if groups.get(m.round) is not none %}
+          {% set _ = groups[m.round].append(m) %}
+        {% endif %}
+      {% endfor %}
+
+      {% macro round_label(r) -%}
+        {%- if r=="R16" -%}Octavos
+        {%- elif r=="QF" -%}Cuartos
+        {%- elif r=="SF" -%}Semifinales
+        {%- else -%}Final
+        {%- endif -%}
+      {%- endmacro %}
+
+      <div class="ms-wrap">
+
+        {% for r in ["R16","QF","SF","F"] %}
+          {% set arr = groups.get(r, []) %}
+          {% if arr|length > 0 %}
+
+            <div class="ms-round">
+              <div class="ms-round-left">
+                <div class="ms-round-title">{{ round_label(r) }}</div>
+              </div>
+
+              <div class="ms-round-right">
+                <div class="ms-table">
+
+                  {% for m in arr %}
+                    {% set tl = match_timelines.get(m.id, []) %}
+
+                    <div class="ms-row">
+                      <div class="ms-topline">
+                        <div class="ms-left">
+                          <span class="ms-match">
+                            <span class="ms-a">{{ m.player_a.name if m.player_a else "-" }}</span>
+                            <span class="ms-vs">vs</span>
+                            <span class="ms-b">{{ m.player_b.name if m.player_b else "-" }}</span>
+                          </span>
+                          <span class="ms-tag">{{ r }} #{{ m.position }}</span>
+                        </div>
+
+                        <div class="ms-right">
+                          {% if m.winner %}
+                            <span class="ms-win">Ganador: {{ m.winner.name }}</span>
+                            {% if m.result_text %}<span class="ms-dot">·</span><span class="ms-res">{{ m.result_text }}</span>{% endif %}
+                          {% else %}
+                            <span class="ms-res">{{ m.result_text or "—" }}</span>
+                          {% endif %}
+                        </div>
+                      </div>
+
+                      {# ✅ ÚNICO viewport scroll para los hoyos #}
+                      <div class="ms-scroll">
+                        <div class="ms-holes ms-holes--nums">
+                          {% for i in range(1, 19) %}
+                            <div class="ms-cell ms-num">{{ i }}</div>
+                          {% endfor %}
+                        </div>
+
+                        <div class="ms-holes ms-holes--vals">
+                          {% for cell in tl %}
+                            {% if not cell.text %}
+                              <div class="ms-cell ms-val empty"></div>
+                            {% else %}
+                              <div class="ms-cell ms-val {% if cell.leader=='A' %}a{% elif cell.leader=='B' %}b{% else %}as{% endif %}">
+                                {{ cell.text }}
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  {% endfor %}
+
+                </div>
+              </div>
+            </div>
+
+          {% endif %}
+        {% endfor %}
+
+      </div>
+    {% endif %}
+  </section>
+
+{% endblock %}

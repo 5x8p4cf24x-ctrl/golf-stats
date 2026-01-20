@@ -525,6 +525,377 @@ body.gm-body header.gm-topbar.gm-topbar--admin + main.gm-wrap{
   white-space: nowrap;
 }
 
+/* ===================================================================================== */
+/* ============================== ADMIN: NEW TOURNAMENT ================================= */
+/* ===================================================================================== */
+
+/* ADMIN – botón "+ Nueva Copa" */
+header.gm-topbar--admin .btn-gm,
+.admin-content .btn-gm,
+.btn-gm{
+  color:#ffffff !important;
+}
+
+.admin-form-card{
+  background:#fff;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:16px;
+  padding:18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+}
+
+.admin-form-head h1{
+  margin:0 0 6px 0;
+}
+
+.admin-form-head .muted{
+  margin:0;
+}
+
+.admin-form-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:14px 16px;
+  align-items:end;
+}
+
+.admin-span-2{
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 760px){
+  .admin-form-grid{ grid-template-columns: 1fr; }
+  .admin-span-2{ grid-column: auto; }
+}
+
+.admin-field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width: 220px;
+}
+
+.admin-field label{
+  font-size:.85rem;
+  font-weight:700;
+  margin:0;
+  color: rgba(0,0,0,.70);
+}
+
+.admin-field input[type="text"],
+.admin-field input[type="number"],
+.admin-field input[type="date"],
+.admin-field input[type="file"],
+.admin-field select,
+.admin-field textarea{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.12);
+  background:#fff;
+  outline:none;
+  font-size:.95rem;
+}
+
+.admin-field select[multiple]{
+  padding:10px;
+}
+
+.admin-field input:focus,
+.admin-field select:focus,
+.admin-field textarea:focus{
+  border-color: rgba(20,83,45,.45);
+  box-shadow: 0 0 0 4px rgba(20,83,45,.12);
+}
+
+.admin-help{
+  font-size:.85rem;
+  margin-top:6px;
+}
+
+.admin-form-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:flex-end;
+  margin-top: 6px;
+  flex-wrap:wrap;
+}
+
+/* Botón outline para admin */
+.btn-gm--outline{
+  background: transparent !important;
+  color: var(--gm-green) !important;
+  border: 1px solid rgba(20,83,45,.30) !important;
+}
+
+.btn-gm--outline:hover{
+  background: rgba(20,83,45,.08) !important;
+}
+
+/* ===================================================================================== */
+/* ============================ ADMIN: TOURNAMENT DETAIL ================================ */
+/* ===================================================================================== */
+
+.admin-detail-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.admin-detail-title{
+  min-width:0;
+}
+
+.admin-detail-title h1{
+  margin:0;
+}
+
+.admin-detail-title .muted{
+  margin:6px 0 0 0;
+}
+
+.admin-detail-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.btn-gm--danger{
+  background:#b91c1c !important;
+  border-color:#b91c1c !important;
+  color:#fff !important;
+}
+.btn-gm--danger:hover{
+  filter: brightness(.95);
+}
+
+.admin-section-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.admin-section-head h2{
+  margin:0;
+}
+
+.admin-small{
+  font-size:.85rem;
+}
+
+/* Participants as “chips” */
+.admin-chips-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap:10px;
+}
+
+.admin-chip{
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  padding:10px 12px;
+  background:#fff;
+}
+
+.admin-chip-name{
+  font-weight:800;
+}
+
+.admin-chip-meta{
+  font-size:.85rem;
+  margin-top:2px;
+}
+
+/* Matches list */
+.admin-round{
+  margin-top:14px;
+}
+
+.admin-round-title{
+  font-weight:900;
+  margin-bottom:8px;
+}
+
+.admin-matches{
+  display:grid;
+  gap:10px;
+}
+
+.admin-match{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  padding:12px;
+  text-decoration:none;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:16px;
+  background:#fff;
+}
+
+.admin-match:hover{
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+
+.admin-match-main{
+  min-width:0;
+}
+
+.admin-match-players{
+  font-weight:800;
+}
+
+.admin-match-meta{
+  font-size:.9rem;
+  margin-top:2px;
+}
+
+.admin-match-pos{
+  white-space:nowrap;
+}
+
+/* ===================================================================================== */
+/* ============================= ADMIN: TOURNAMENT MATCH ================================ */
+/* ===================================================================================== */
+
+.admin-match-head{
+  margin-top:10px;
+}
+
+.admin-match-title h1{
+  margin:0 0 6px 0;
+}
+
+.admin-match-title .muted{
+  margin:0;
+}
+
+/* Live link block */
+.admin-live-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.admin-live-left{
+  min-width:0;
+}
+
+.admin-live-label{
+  font-weight:900;
+}
+
+.admin-live-url{
+  margin-top:6px;
+  word-break: break-all;
+}
+
+.admin-live-anchor{
+  text-decoration:none;
+}
+
+/* Alert / closed match */
+.admin-alert-card{
+  border-color: rgba(185, 28, 28, .55) !important;
+  box-shadow: 0 6px 18px rgba(185, 28, 28, .08);
+}
+
+.admin-alert-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.admin-alert-left{
+  min-width:0;
+}
+
+.admin-alert-title{
+  font-weight:900;
+  color:#b91c1c;
+}
+
+.admin-alert-text{
+  margin-top:6px;
+}
+
+.admin-strong{
+  font-weight:900;
+  color: rgba(0,0,0,.85);
+}
+
+/* Narrow grid for match form */
+.admin-form-grid--narrow{
+  max-width:640px;
+}
+
+/* Danger outline button for reopen */
+.btn-gm--danger-outline{
+  background: transparent !important;
+  color:#b91c1c !important;
+  border: 1px solid rgba(185, 28, 28, .40) !important;
+}
+
+.btn-gm--danger-outline:hover{
+  background: rgba(185, 28, 28, .08) !important;
+}
+
+/* =====================================================*/
+/*               ADMIN TOURNAMENT MATCH                 */
+/* =====================================================*/
+
+/* ADMIN – holes grid */
+.admin-holes-grid{
+  display:grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap:10px;
+}
+
+@media (max-width: 760px){
+  .admin-holes-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.admin-hole{
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  padding:10px;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.admin-hole-n{
+  font-weight:900;
+  color: rgba(0,0,0,.65);
+  font-size:.85rem;
+}
+
+.admin-hole-v{
+  font-weight:900;
+  border-radius:10px;
+  padding:6px 10px;
+  border:1px solid rgba(0,0,0,.10);
+  min-width:44px;
+  text-align:center;
+}
+
+/* Simple semantic badges (no hace falta clavar colores ahora) */
+.admin-hole-v.is-a{ border-color: rgba(20,83,45,.25); }
+.admin-hole-v.is-b{ border-color: rgba(185,28,28,.25); }
+.admin-hole-v.is-as{ border-color: rgba(0,0,0,.18); }
 
 
 /* ============================================================================= */
@@ -5221,4 +5592,181 @@ body.gm-body h1.public-title{
   .public-header{ margin-bottom: 56px; }
   .public-logo{ height: 72px; top: -2px; }
   .public-back-wrap{ margin: -40px auto 16px auto; }
+}
+
+/* ===================================================================== */
+/*                           PUBLIC TOURNAMENT                           */
+/* ===================================================================== */
+
+
+.round-type-chip.individual{
+  background: rgba(20,83,45,.10);
+  color: #14532d;
+  border: 1px solid rgba(20,83,45,.22);
+  text-transform: uppercase;
+}
+.round-type-chip.team{
+  background: rgba(120,0,180,.10);
+  color: rgba(120,0,180,1);
+  border: 1px solid rgba(120,0,180,.22);
+  text-transform: uppercase;
+}
+
+.tournament-status{
+  margin-top:8px;
+}
+
+.badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.badge--live{
+  background: rgba(20,83,45,.12);
+  color: #14532d;
+  border:1px solid rgba(20,83,45,.20);
+}
+
+.badge--finished{
+  background: rgba(245,158,11,.16);
+  color: #92400e;
+  border:1px solid rgba(245,158,11,.25);
+}
+
+/* Layout base (desktop/tablet): avatar | info | status | chip */
+.round-item{
+  display:grid;
+  grid-template-columns: 64px 1fr auto auto;
+  align-items:center;
+  gap:14px;
+}
+
+/* Estado a la derecha */
+.round-status{
+  justify-self:end;
+  display:flex;
+  align-items:center;
+  max-width: 260px;            /* evita badges eternas en desktop */
+}
+
+.round-status .badge{
+  max-width: 260px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* ===== DESKTOP: más aire entre números y resultados ===== */
+@media (min-width: 521px){
+
+  /* separación entre filas de hoyos */
+  .ms-holes--nums{
+    margin-bottom: 6px;   /* prueba 6–8px */
+  }
+
+  .ms-holes--vals{
+    margin-top: 2px;
+  }
+}
+
+
+/* ====== COPAS LIST · MOBILE SIMPLE (sin recortes, sin líos) ====== */
+@media (max-width: 640px){
+
+  /* Layout: 2 columnas (avatar | contenido) */
+  .round-item{
+    display:grid;
+    grid-template-columns: 64px 1fr;
+    grid-template-areas:
+      "avatar info"
+      "avatar status"
+      "avatar chip";
+    align-items:start;
+    gap:10px 12px;
+  }
+
+  .round-course-avatar{ grid-area: avatar; }
+  .round-info{ grid-area: info; min-width:0; }
+  .round-status{ grid-area: status; min-width:0; }
+  .round-type-chip{
+    grid-area: chip;
+    justify-self:start;
+    align-self:start;
+    max-width: none;
+    white-space: nowrap;
+  }
+
+  /* FECHA: siempre una línea */
+  .round-date{
+    display:block;
+    white-space: nowrap;
+  }
+
+  /* ✅ NOMBRE + CAMPO: que se vean enteros (permitimos 2 líneas) */
+  .round-field,
+  .round-players{
+    display:-webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;   /* 2 líneas, sin ... por 1 línea */
+    overflow:hidden;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* Badge del estado: que no se corte */
+  .round-status .badge{
+    display:inline-block;
+    max-width:100%;
+    white-space: normal;     /* deja partir si es largo */
+    line-height:1.15;
+  }
+}
+@media (max-width: 640px){
+  .round-status .badge{
+    white-space: nowrap;     /* 1 línea */
+    overflow: hidden;
+    text-overflow: ellipsis; /* si no cabe, recorta bonito */
+    max-width: 100%;
+  }
+}
+/* ====== COPAS LIST · TUNING (solo móvil) ====== */
+@media (max-width: 640px){
+  :root{
+    /* Tipografías */
+    --cups-date: 0.80rem;
+    --cups-title: 0.90rem;
+    --cups-course: 0.80rem;
+
+    /* Badges / chips */
+    --cups-badge: 0.70rem;
+    --cups-chip: 0.60rem;
+
+    /* Alturas y espaciados */
+    --cups-gap-row: 10px;
+    --cups-gap-col: 12px;
+    --cups-badge-pad-y: 6px;
+    --cups-badge-pad-x: 10px;
+    --cups-chip-pad-y: 6px;
+    --cups-chip-pad-x: 12px;
+  }
+
+  .round-item{ gap: var(--cups-gap-row) var(--cups-gap-col); }
+
+  .round-date{ font-size: var(--cups-date); }
+  .round-field{ font-size: var(--cups-title); }
+  .round-players{ font-size: var(--cups-course); }
+
+  .round-status .badge{
+    font-size: var(--cups-badge);
+    padding: var(--cups-badge-pad-y) var(--cups-badge-pad-x);
+  }
+
+  .round-type-chip{
+    font-size: var(--cups-chip);
+    padding: var(--cups-chip-pad-y) var(--cups-chip-pad-x);
+  }
 }

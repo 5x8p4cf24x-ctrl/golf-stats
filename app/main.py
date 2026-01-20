@@ -41,6 +41,22 @@ def ensure_league_logo_column():
 
 ensure_league_logo_column()
 
+def ensure_tournament_image_column():
+    # Añade image_path si no existe (para SQLite). En Postgres lo ideal es migración,
+    # pero esto no rompe nada y en SQLite ayuda.
+    if engine.dialect.name == "sqlite":
+        with engine.connect() as conn:
+            try:
+                conn.execute(text("ALTER TABLE tournaments ADD COLUMN image_path VARCHAR"))
+            except Exception as e:
+                if "duplicate column name: image_path" in str(e):
+                    pass
+                else:
+                    raise
+
+ensure_tournament_image_column()
+
+
 
 app = FastAPI(title="Golf Stats")
 
@@ -52,11 +68,13 @@ UPLOAD_PLAYERS_DIR = UPLOAD_BASE_DIR / "players"
 UPLOAD_COURSES_DIR = UPLOAD_BASE_DIR / "courses"
 UPLOAD_LEAGUES_DIR = UPLOAD_BASE_DIR / "leagues"
 UPLOAD_NEWS_DIR = UPLOAD_BASE_DIR / "news"
+UPLOAD_TOURNAMENTS_DIR = UPLOAD_BASE_DIR / "tournaments"
 
 UPLOAD_PLAYERS_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_COURSES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_LEAGUES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_NEWS_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_TOURNAMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
@@ -904,40 +922,41 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
     # 4) Si todos tienen tarjeta cerrada -> cerrar vuelta + ganador
     rps = crud.get_round_players(db, round_id)
     if all(x.gross_total is not None for x in rps):
-        # cerramos y calculamos ganador
+        # cerramos y calculamos ganador (estable: stableford hcp en tu lógica)
         crud.close_round_and_set_winner(db, round_id)
 
-        # volvemos a cargar la ronda ya actualizada
+        # recargar datos ya actualizados
         r = crud.get_round(db, round_id)
         course = crud.get_course(db, r.course_id)
-
-        # intentamos sacar ganador de forma robusta
-        winner_name = None
-        winner_gross = None
-
-        for rp2 in rps:
-            # si tu modelo tiene winner_id en Round, lo usamos
-            if hasattr(r, "winner_id") and r.winner_id and rp2.player_id == r.winner_id:
-                winner_name = rp2.player.name if rp2.player else None
-                winner_gross = rp2.gross_total
-                break
-
-        # fallback: si no hay winner_id, pillamos el menor gross_total
-        if winner_name is None:
-            valid = [x for x in rps if x.gross_total is not None]
-            if valid:
-                best = min(valid, key=lambda x: x.gross_total)
-                winner_name = best.player.name if best.player else None
-                winner_gross = best.gross_total
+        rps = crud.get_round_players(db, round_id)  # ✅ recarga
 
         course_name = course.name if course else "Campo"
 
-        # texto corto
-        if winner_name and winner_gross is not None:
-            title = f"Ronda cerrada en {course_name}"
-            excerpt = f"Ganador: {winner_name} con {winner_gross} golpes. ¡GolfMode ON!"
+        winner_name = None
+        winner_pts = None
+
+        # ✅ 1) PRIORIDAD: winner_id fijado en la ronda
+        if getattr(r, "winner_id", None):
+            for rp in rps:
+                if rp.player_id == r.winner_id:
+                    winner_name = rp.player.name if rp.player else None
+                    winner_pts = rp.stableford_hcp_total
+                    break
+
+        # ✅ 2) FALLBACK seguro (si por cualquier motivo winner_id no existe):
+        # mejor stableford_hcp_total (más puntos gana). NUNCA gross.
+        if winner_name is None:
+            valid = [x for x in rps if x.stableford_hcp_total is not None]
+            if valid:
+                best = max(valid, key=lambda x: x.stableford_hcp_total)
+                winner_name = best.player.name if best.player else None
+                winner_pts = best.stableford_hcp_total
+
+        # noticia
+        title = f"Ronda cerrada en {course_name}"
+        if winner_name and winner_pts is not None:
+            excerpt = f"Ganador: {winner_name} con {winner_pts} puntos Stableford. ¡GolfMode ON!"
         else:
-            title = f"Ronda cerrada en {course_name}"
             excerpt = "Ronda cerrada y resultados actualizados."
 
         crud.create_news(
@@ -946,9 +965,8 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
             excerpt=excerpt,
             category="round",
             image_path="/static/uploads/news/default_round.jpg",
-            related_url=f"/public/rounds/{round_id}",  # ✅ correcto según tu main.py
+            related_url=f"/public/rounds/{round_id}",
         )
-
 
     return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=303)
 
@@ -1003,6 +1021,908 @@ async def admin_leagues_new(
 def admin_leagues_close(league_id: int, db: Session = Depends(get_db)):
     crud.close_league(db, league_id)
     return RedirectResponse("/admin/leagues", status_code=303)
+
+
+# =====================================================================================
+# ============================== ADMIN: TOURNAMENTS ===================================
+# =====================================================================================
+
+from uuid import uuid4
+from datetime import datetime
+from fastapi import Form, File, UploadFile, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.orm import Session
+
+# ---------- Helpers bracket ----------
+def _bracket_size(n: int) -> int:
+    # potencia de 2 mínima, cap a 16
+    if n <= 2:
+        return 2
+    if n <= 4:
+        return 4
+    if n <= 8:
+        return 8
+    return 16
+
+def _rounds_for_size(size: int) -> list[str]:
+    if size == 2:
+        return ["F"]
+    if size == 4:
+        return ["SF", "F"]
+    if size == 8:
+        return ["QF", "SF", "F"]
+    return ["R16", "QF", "SF", "F"]
+
+def _next_round(r: str) -> str | None:
+    return {"R16": "QF", "QF": "SF", "SF": "F", "F": None}.get(r)
+
+def _round_size(r: str) -> int:
+    return {"R16": 8, "QF": 4, "SF": 2, "F": 1}[r]
+
+
+@app.get("/admin/tournaments", response_class=HTMLResponse)
+def admin_tournaments_list(request: Request, db: Session = Depends(get_db)):
+    tournaments = db.query(models.Tournament).order_by(models.Tournament.date.desc()).all()
+    return templates.TemplateResponse(
+        "admin_tournaments_list.html",
+        {"request": request, "tournaments": tournaments},
+    )
+
+
+@app.get("/admin/tournaments/new", response_class=HTMLResponse)
+def admin_tournament_new_form(request: Request, db: Session = Depends(get_db)):
+    players = crud.get_players(db)
+    courses = crud.get_courses(db)
+    return templates.TemplateResponse(
+        "admin_tournament_new.html",
+        {"request": request, "players": players, "courses": courses},
+    )
+
+
+@app.post("/admin/tournaments/new")
+async def admin_tournament_new(
+    request: Request,
+    name: str = Form(...),
+    date: str = Form(...),
+    course_id: int = Form(...),
+    player_ids: list[int] = Form(...),
+    image: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    if len(player_ids) < 2 or len(player_ids) > 16:
+        raise HTTPException(status_code=400, detail="Número de jugadores inválido")
+
+    image_path = None
+    if image and image.filename:
+        filename = f"{uuid4().hex}_{image.filename}"
+        dest_path = UPLOAD_TOURNAMENTS_DIR / filename
+        with open(dest_path, "wb") as f:
+            f.write(await image.read())
+        image_path = f"/uploads/tournaments/{filename}"
+
+    t = models.Tournament(
+        name=name,
+        date=datetime.strptime(date, "%Y-%m-%d").date(),
+        course_id=course_id,
+        mode="individual",
+        status="draft",
+        image_path=image_path,
+    )
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+
+    for pid in player_ids:
+        db.add(models.TournamentParticipant(tournament_id=t.id, player_id=pid))
+    db.commit()
+
+    return RedirectResponse(f"/admin/tournaments/{t.id}", status_code=303)
+
+
+@app.post("/admin/tournaments/{tournament_id}/delete")
+def admin_tournament_delete(tournament_id: int, db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    if not t:
+        return RedirectResponse("/admin/tournaments", status_code=303)
+
+    image_path = getattr(t, "image_path", None)
+
+    # borrar hijos explícitamente
+    db.query(models.TournamentMatchHole).filter(
+        models.TournamentMatchHole.match_id.in_(
+            db.query(models.TournamentMatch.id).filter(models.TournamentMatch.tournament_id == tournament_id)
+        )
+    ).delete(synchronize_session=False)
+
+    db.query(models.TournamentMatch).filter(
+        models.TournamentMatch.tournament_id == tournament_id
+    ).delete(synchronize_session=False)
+
+    db.query(models.TournamentParticipant).filter(
+        models.TournamentParticipant.tournament_id == tournament_id
+    ).delete(synchronize_session=False)
+
+    # borrar torneo sin cascade
+    db.query(models.Tournament).filter(models.Tournament.id == tournament_id).delete(synchronize_session=False)
+
+    db.commit()
+
+    # borrar imagen del disco
+    try:
+        if image_path and isinstance(image_path, str) and image_path.startswith("/uploads/tournaments/"):
+            rel = image_path.replace("/uploads/", "")
+            file_path = UPLOAD_BASE_DIR / rel
+            if file_path.exists():
+                file_path.unlink()
+    except Exception:
+        pass
+
+    return RedirectResponse("/admin/tournaments", status_code=303)
+
+
+
+@app.get("/admin/tournaments/{tournament_id}", response_class=HTMLResponse)
+def admin_tournament_detail(tournament_id: int, request: Request, db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    if not t:
+        return HTMLResponse("Copa no encontrada", status_code=404)
+
+    participants = (
+        db.query(models.TournamentParticipant)
+        .filter(models.TournamentParticipant.tournament_id == tournament_id)
+        .all()
+    )
+
+    matches = (
+        db.query(models.TournamentMatch)
+        .filter(models.TournamentMatch.tournament_id == tournament_id)
+        .order_by(models.TournamentMatch.round, models.TournamentMatch.position)
+        .all()
+    )
+
+    matches_by_round: dict[str, list] = {}
+    for m in matches:
+        matches_by_round.setdefault(m.round, []).append(m)
+
+    return templates.TemplateResponse(
+        "admin_tournament_detail.html",
+        {
+            "request": request,
+            "tournament": t,
+            "participants": participants,
+            "matches_by_round": matches_by_round,
+            "matches_count": len(matches),
+        },
+    )
+
+
+@app.post("/admin/tournaments/{tournament_id}/generate")
+def admin_tournament_generate(tournament_id: int, db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    if not t:
+        return RedirectResponse("/admin/tournaments", status_code=303)
+
+    # si ya hay matches, no regeneramos
+    existing = (
+        db.query(models.TournamentMatch)
+        .filter(models.TournamentMatch.tournament_id == tournament_id)
+        .count()
+    )
+    if existing > 0:
+        return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
+
+    parts = (
+        db.query(models.TournamentParticipant)
+        .filter(models.TournamentParticipant.tournament_id == tournament_id)
+        .all()
+    )
+    player_ids = [p.player_id for p in parts]
+    n = len(player_ids)
+    if n < 2:
+        return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
+
+    import random
+    random.shuffle(player_ids)
+
+    size = _bracket_size(n)          # 2/4/8/16
+    rounds = _rounds_for_size(size)  # ej 4 jugadores -> ["SF","F"]
+
+    # rellenar SOLO hasta el tamaño del bracket
+    while len(player_ids) < size:
+        player_ids.append(None)
+    player_ids = player_ids[:size]
+
+    # crear matches SOLO de rondas necesarias
+    for r in rounds:
+        for pos in range(1, _round_size(r) + 1):
+            db.add(models.TournamentMatch(
+                tournament_id=tournament_id,
+                round=r,
+                position=pos,
+                player_a_id=None,
+                player_b_id=None,
+                winner_id=None,
+                result_text=None,
+                edit_token=uuid4().hex,
+            ))
+    db.commit()
+
+    # primera ronda real del bracket
+    first_round = rounds[0]
+    first_matches = (
+        db.query(models.TournamentMatch)
+        .filter(
+            models.TournamentMatch.tournament_id == tournament_id,
+            models.TournamentMatch.round == first_round
+        )
+        .order_by(models.TournamentMatch.position)
+        .all()
+    )
+
+    # asignar parejas (1v2, 3v4...)
+    idx = 0
+    for m in first_matches:
+        a = player_ids[idx]
+        b = player_ids[idx + 1]
+        idx += 2
+        m.player_a_id = a
+        m.player_b_id = b
+
+        # BYE auto-win solo si toca
+        if a is not None and b is None:
+            m.winner_id = a
+            m.result_text = "BYE"
+        elif a is None and b is not None:
+            m.winner_id = b
+            m.result_text = "BYE"
+
+    db.commit()
+
+    _tournament_propagate(db, tournament_id)
+    return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
+
+
+def _tournament_propagate(db: Session, tournament_id: int):
+    """
+    Propaga winners hacia adelante.
+    Regla:
+      match position N -> next position ceil(N/2)
+      impar -> slot A, par -> slot B
+    Auto-win en siguiente ronda SOLO si proviene de un BYE real.
+    """
+    order = ["R16", "QF", "SF"]  # si no existe una ronda, simplemente no habrá matches
+    for r in order:
+        next_r = _next_round(r)
+        if not next_r:
+            continue
+
+        ms = (
+            db.query(models.TournamentMatch)
+            .filter(models.TournamentMatch.tournament_id == tournament_id, models.TournamentMatch.round == r)
+            .order_by(models.TournamentMatch.position)
+            .all()
+        )
+
+        next_ms = (
+            db.query(models.TournamentMatch)
+            .filter(models.TournamentMatch.tournament_id == tournament_id, models.TournamentMatch.round == next_r)
+            .order_by(models.TournamentMatch.position)
+            .all()
+        )
+        if not ms or not next_ms:
+            continue
+
+        next_by_pos = {m.position: m for m in next_ms}
+
+        # 1) meter winners en la siguiente ronda
+        for m in ms:
+            if not m.winner_id:
+                continue
+
+            next_pos = (m.position + 1) // 2
+            slot_is_a = (m.position % 2 == 1)
+            nm = next_by_pos.get(next_pos)
+            if not nm:
+                continue
+
+            if slot_is_a:
+                if nm.player_a_id != m.winner_id:
+                    nm.player_a_id = m.winner_id
+            else:
+                if nm.player_b_id != m.winner_id:
+                    nm.player_b_id = m.winner_id
+
+        db.commit()
+
+        # 2) auto-win SOLO por BYE real
+        ms_by_pos = {m.position: m for m in ms}
+
+        def is_true_bye(feeder_match) -> bool:
+            if not feeder_match:
+                return False
+            if feeder_match.result_text == "BYE" and feeder_match.winner_id:
+                a = feeder_match.player_a_id
+                b = feeder_match.player_b_id
+                return (a is None) != (b is None)
+            if feeder_match.player_a_id is None and feeder_match.player_b_id is None:
+                return True
+            return False
+
+        for nm in next_ms:
+            if nm.winner_id:
+                continue
+
+            feeder_a = ms_by_pos.get(2 * nm.position - 1)
+            feeder_b = ms_by_pos.get(2 * nm.position)
+
+            if nm.player_a_id and not nm.player_b_id:
+                if is_true_bye(feeder_b):
+                    nm.winner_id = nm.player_a_id
+                    nm.result_text = "BYE"
+            elif nm.player_b_id and not nm.player_a_id:
+                if is_true_bye(feeder_a):
+                    nm.winner_id = nm.player_b_id
+                    nm.result_text = "BYE"
+
+        db.commit()
+
+
+@app.get("/admin/tournaments/{tournament_id}/matches/{match_id}", response_class=HTMLResponse)
+def admin_tournament_match_form(tournament_id: int, match_id: int, request: Request, db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    m = db.query(models.TournamentMatch).filter(
+        models.TournamentMatch.id == match_id,
+        models.TournamentMatch.tournament_id == tournament_id
+    ).first()
+    if not t or not m:
+        return HTMLResponse("No encontrado", status_code=404)
+
+    # ---- HOYO A HOYO (para pintar en admin) ----
+    holes = (
+        db.query(models.TournamentMatchHole)
+        .filter(models.TournamentMatchHole.match_id == match_id)
+        .all()
+    )
+    holes_by_hole = {h.hole_number: h.outcome for h in holes}
+
+    return templates.TemplateResponse(
+        "admin_tournament_match.html",
+        {
+            "request": request,
+            "tournament": t,
+            "match": m,
+            "holes_by_hole": holes_by_hole,
+        },
+    )
+
+
+
+
+# ---------- Matchplay compute ----------
+def _compute_matchplay_result(outcomes: dict[int, str]):
+    """
+    outcomes: {1:"A"/"B"/"AS", ...}
+
+    Devuelve:
+      winner_side: "A" | "B" | None
+      result_text: "AS" | "1 up" | "3&2" | None
+      finished: bool  -> SOLO True cuando el match está matemáticamente cerrado
+    """
+    up = 0
+    last_hole_played = 0
+
+    for h in sorted(outcomes.keys()):
+        o = outcomes[h]
+        if o == "A":
+            up += 1
+        elif o == "B":
+            up -= 1
+
+        last_hole_played = h
+        holes_remaining = 18 - h
+
+        if abs(up) > holes_remaining:
+            winner_side = "A" if up > 0 else "B"
+            result_text = f"{abs(up)}&{holes_remaining}"
+            return winner_side, result_text, True
+
+    if last_hole_played > 0:
+        if up == 0:
+            return None, "AS", False
+        return None, f"{abs(up)} up", False
+
+    return None, None, False
+
+@app.post("/admin/tournaments/{tournament_id}/matches/{match_id}/reopen")
+def admin_tournament_match_reopen(
+    tournament_id: int,
+    match_id: int,
+    db: Session = Depends(get_db),
+):
+    m = (
+        db.query(models.TournamentMatch)
+        .filter(
+            models.TournamentMatch.id == match_id,
+            models.TournamentMatch.tournament_id == tournament_id
+        )
+        .first()
+    )
+    if not m:
+        return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
+
+    # ✅ Reset SOLO de la rama de este partido (no toda la fase)
+    _tournament_reset_branch(db, tournament_id, m.round, m.position)
+
+    # ✅ Repropagar el cuadro (ya con la rama limpia)
+    _tournament_propagate(db, tournament_id)
+
+    return RedirectResponse(
+        f"/admin/tournaments/{tournament_id}/matches/{match_id}",
+        status_code=303
+    )
+
+
+def _tournament_reset_branch(db: Session, tournament_id: int, from_round: str, from_pos: int):
+    """
+    Resetea SOLO la rama del bracket que depende de (from_round, from_pos).
+
+    Qué hace:
+    1) Limpia el match origen:
+       - borra hoyo a hoyo
+       - winner_id = None
+       - result_text = None
+
+    2) Sube por el árbol hasta la final:
+       - localiza el match afectado en la ronda siguiente (position = ceil(pos/2))
+       - borra su hoyo a hoyo
+       - limpia winner_id y result_text (porque ya no es válido)
+       - limpia SOLO el slot (A/B) que viene de la rama afectada
+    """
+    order = ["R16", "QF", "SF", "F"]
+    if from_round not in order:
+        return
+
+    idx = order.index(from_round)
+
+    # --- 1) limpiar match origen (from_round/from_pos) ---
+    origin = (
+        db.query(models.TournamentMatch)
+        .filter(
+            models.TournamentMatch.tournament_id == tournament_id,
+            models.TournamentMatch.round == from_round,
+            models.TournamentMatch.position == from_pos,
+        )
+        .first()
+    )
+    if origin:
+        db.query(models.TournamentMatchHole).filter(
+            models.TournamentMatchHole.match_id == origin.id
+        ).delete(synchronize_session=False)
+
+        origin.winner_id = None
+        origin.result_text = None
+
+    # --- 2) limpiar downstream hasta la final (solo la rama) ---
+    cur_pos = from_pos  # posición del match en la ronda "actual" del bucle
+
+    for r in order[idx + 1:]:
+        # el match siguiente que recibe a este ganador
+        next_pos = (cur_pos + 1) // 2
+
+        # slot que ocupa en el match siguiente
+        # impar -> alimenta A, par -> alimenta B
+        slot_is_a = (cur_pos % 2 == 1)
+
+        nm = (
+            db.query(models.TournamentMatch)
+            .filter(
+                models.TournamentMatch.tournament_id == tournament_id,
+                models.TournamentMatch.round == r,
+                models.TournamentMatch.position == next_pos,
+            )
+            .first()
+        )
+        if not nm:
+            break
+
+        # borrar hoyo a hoyo del match downstream
+        db.query(models.TournamentMatchHole).filter(
+            models.TournamentMatchHole.match_id == nm.id
+        ).delete(synchronize_session=False)
+
+        # limpiar resultado downstream (ya no es confiable)
+        nm.winner_id = None
+        nm.result_text = None
+
+        # limpiar SOLO el slot afectado por esta rama
+        if slot_is_a:
+            nm.player_a_id = None
+        else:
+            nm.player_b_id = None
+
+        # avanzar: en la siguiente ronda, este nm ocupa "next_pos"
+        cur_pos = next_pos
+
+    db.commit()
+
+
+# (Opcional) Mantén esto solo si lo usas en otro lado.
+# Ya NO se usa en "reopen" para evitar borrar toda una fase.
+def _tournament_reset_from_round(db: Session, tournament_id: int, from_round: str):
+    """
+    Limpia TODAS las rondas siguientes (y la actual) desde from_round incluido:
+    - winner_id = NULL
+    - result_text = NULL
+    - en rondas siguientes, también limpia player_a_id / player_b_id porque dependen del bracket
+    """
+    order = ["R16", "QF", "SF", "F"]
+    if from_round not in order:
+        return
+
+    idx = order.index(from_round)
+    rounds_to_clear = order[idx:]  # desde esta ronda en adelante
+
+    for r in rounds_to_clear:
+        ms = (
+            db.query(models.TournamentMatch)
+            .filter(
+                models.TournamentMatch.tournament_id == tournament_id,
+                models.TournamentMatch.round == r
+            )
+            .all()
+        )
+
+        for match in ms:
+            match.winner_id = None
+            match.result_text = None
+
+            # en rondas posteriores a la primera afectada, limpiamos slots
+            if r != from_round:
+                match.player_a_id = None
+                match.player_b_id = None
+
+    db.commit()
+
+
+def _compute_matchplay_timeline(outcomes: dict[int, str]) -> list[dict]:
+    """
+    outcomes: {1:"A"/"B"/"AS", ...}
+
+    Devuelve una lista de 18 items:
+      [{"hole":1, "text":"1UP"/"AS"/"", "leader":"A"/"B"/"AS"/None}, ...]
+    """
+    timeline: list[dict] = []
+    up = 0
+
+    for h in range(1, 19):
+        o = outcomes.get(h)
+        if o is None:
+            timeline.append({"hole": h, "text": "", "leader": None})
+            continue
+
+        if o == "A":
+            up += 1
+        elif o == "B":
+            up -= 1
+        # AS: no cambia
+
+        if up == 0:
+            timeline.append({"hole": h, "text": "AS", "leader": "AS"})
+        elif up > 0:
+            timeline.append({"hole": h, "text": f"{abs(up)}UP", "leader": "A"})
+        else:
+            timeline.append({"hole": h, "text": f"{abs(up)}UP", "leader": "B"})
+
+    return timeline
+
+
+
+# ===========================================================================================
+# -------------------------------- PUBLIC: TOURNAMENTS --------------------------------------
+# ===========================================================================================
+
+@app.get("/public/tournaments", response_class=HTMLResponse)
+def public_tournaments_list(request: Request, db: Session = Depends(get_db)):
+    tournaments = (
+        db.query(models.Tournament)
+        .order_by(models.Tournament.date.desc(), models.Tournament.id.desc())
+        .all()
+    )
+
+    # status + campeón por torneo (sale de la final)
+    status_by_tournament: dict[int, dict] = {}
+
+    if tournaments:
+        tournament_ids = [t.id for t in tournaments]
+
+        finals = (
+            db.query(models.TournamentMatch)
+            .filter(
+                models.TournamentMatch.tournament_id.in_(tournament_ids),
+                models.TournamentMatch.round == "F",
+            )
+            .all()
+        )
+
+        final_by_tid = {m.tournament_id: m for m in finals}
+
+        for t in tournaments:
+            fm = final_by_tid.get(t.id)
+            if fm and fm.winner_id:
+                status_by_tournament[t.id] = {
+                    "finished": True,
+                    "champion": fm.winner.name if fm.winner else None,
+                }
+            else:
+                status_by_tournament[t.id] = {
+                    "finished": False,
+                    "champion": None,
+                }
+
+    return templates.TemplateResponse(
+        "public_tournaments.html",
+        {
+            "request": request,
+            "tournaments": tournaments,
+            "status_by_tournament": status_by_tournament,
+        },
+    )
+
+
+
+@app.get("/public/tournaments/{tournament_id}", response_class=HTMLResponse)
+def public_tournament_detail(tournament_id: int, request: Request, db: Session = Depends(get_db)):
+    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    if not t:
+        return HTMLResponse("Copa no encontrada", status_code=404)
+
+    matches = (
+        db.query(models.TournamentMatch)
+        .filter(models.TournamentMatch.tournament_id == tournament_id)
+        .order_by(models.TournamentMatch.round, models.TournamentMatch.position)
+        .all()
+    )
+
+    matches_by_round: dict[str, list] = {}
+    for m in matches:
+        matches_by_round.setdefault(m.round, []).append(m)
+
+    # campeón (ganador de la final)
+    champion = None
+    final_match = None
+    if matches_by_round.get("F"):
+        final_match = matches_by_round["F"][0]
+        if final_match.winner_id:
+            champion = final_match.winner
+    
+    # --- timeline hoyo a hoyo por partido ---
+    match_timelines: dict[int, list[dict]] = {}
+
+    for m in matches:
+        holes = (
+            db.query(models.TournamentMatchHole)
+            .filter(models.TournamentMatchHole.match_id == m.id)
+            .all()
+        )
+        outcomes = {h.hole_number: h.outcome for h in holes}
+        match_timelines[m.id] = _compute_matchplay_timeline(outcomes)
+
+    # Partidos finalizados (para listado "jugados")
+    finished_matches = [m for m in matches if m.winner_id is not None]
+
+    # Hoyo-a-hoyo SOLO para partidos finalizados (o si quieres también en juego, quita el filtro)
+    finished_ids = [m.id for m in finished_matches]
+    holes_by_match: dict[int, dict[int, str]] = {}
+
+    if finished_ids:
+        holes = (
+            db.query(models.TournamentMatchHole)
+            .filter(models.TournamentMatchHole.match_id.in_(finished_ids))
+            .all()
+        )
+        for h in holes:
+            holes_by_match.setdefault(h.match_id, {})[h.hole_number] = h.outcome
+
+    # Estado visible en public (en vigor / cerrada)
+    status_label = "Cerrada" if champion else "En vigor"
+
+    return templates.TemplateResponse(
+        "public_tournament_detail.html",
+        {
+            "request": request,
+            "tournament": t,
+            "matches_by_round": matches_by_round,
+            "champion": champion,
+            "final_match": final_match,
+            "status_label": status_label,
+            "finished_matches": finished_matches,
+            "holes_by_match": holes_by_match,
+            "match_timelines": match_timelines,
+        }
+    )
+
+
+
+@app.get("/public/tournaments/{tournament_id}/matches/{match_id}/live", response_class=HTMLResponse)
+def public_match_live_form(
+    tournament_id: int,
+    match_id: int,
+    token: str = "",
+    done: int = 0,
+    request: Request = None,
+    db: Session = Depends(get_db),
+):
+    m = (
+        db.query(models.TournamentMatch)
+        .filter(
+            models.TournamentMatch.id == match_id,
+            models.TournamentMatch.tournament_id == tournament_id,
+        )
+        .first()
+    )
+    if not m or token != m.edit_token:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    holes = (
+        db.query(models.TournamentMatchHole)
+        .filter(models.TournamentMatchHole.match_id == match_id)
+        .all()
+    )
+    by_hole = {h.hole_number: h.outcome for h in holes}
+
+    return templates.TemplateResponse(
+        "public_match_live.html",
+        {
+            "request": request,
+            "match": m,
+            "tournament_id": tournament_id,
+            "by_hole": by_hole,
+            "token": token,
+            "done": (done == 1),
+        },
+    )
+
+
+
+
+@app.post("/public/tournaments/{tournament_id}/matches/{match_id}/live")
+async def public_match_live_save(
+    tournament_id: int,
+    match_id: int,
+    request: Request,
+    token: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    m = db.query(models.TournamentMatch).filter(
+        models.TournamentMatch.id == match_id,
+        models.TournamentMatch.tournament_id == tournament_id,
+    ).first()
+    if not m or token != m.edit_token:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    # 🔒 BLOQUEO: partido cerrado = solo lectura
+    if m.winner_id is not None:
+        raise HTTPException(status_code=403, detail="Match already finished")
+
+    form = await request.form()
+
+    outcomes: dict[int, str] = {}
+    for i in range(1, 19):
+        v = (form.get(f"o_{i}") or "").strip()
+        if v in ("A", "B", "AS"):
+            outcomes[i] = v
+
+    # reset holes
+    db.query(models.TournamentMatchHole).filter(
+        models.TournamentMatchHole.match_id == match_id
+    ).delete(synchronize_session=False)
+
+    for h, o in outcomes.items():
+        db.add(models.TournamentMatchHole(match_id=match_id, hole_number=h, outcome=o))
+
+    winner_side, rt, finished = _compute_matchplay_result(outcomes)
+
+    m.result_text = rt
+
+    # winner SOLO si el match está terminado
+    if finished:
+        if winner_side == "A":
+            m.winner_id = m.player_a_id
+        elif winner_side == "B":
+            m.winner_id = m.player_b_id
+        else:
+            m.winner_id = None
+    else:
+        m.winner_id = None
+
+    db.commit()
+
+    # propagamos (si no hay winner, no hará nada)
+    _tournament_propagate(db, tournament_id)
+
+    suffix = "&done=1" if finished else ""
+    return RedirectResponse(
+        f"/public/tournaments/{tournament_id}/matches/{match_id}/live?token={token}{suffix}",
+        status_code=303
+    )
+
+from fastapi import Body
+
+@app.post("/public/tournaments/{tournament_id}/matches/{match_id}/live/json")
+def public_match_live_save_json(
+    tournament_id: int,
+    match_id: int,
+    payload: dict = Body(...),
+    db: Session = Depends(get_db),
+):
+    token = (payload.get("token") or "").strip()
+    outcomes = payload.get("outcomes") or {}
+
+    m = (
+        db.query(models.TournamentMatch)
+        .filter(
+            models.TournamentMatch.id == match_id,
+            models.TournamentMatch.tournament_id == tournament_id,
+        )
+        .first()
+    )
+    if not m or token != m.edit_token:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    # 🔒 BLOQUEO: si el partido ya está cerrado, desde public no se puede tocar
+    if m.winner_id is not None:
+        raise HTTPException(status_code=403, detail="Match already finished")
+
+    # outcomes viene como {"1":"A","2":"AS"...}
+    parsed: dict[int, str] = {}
+    for k, v in outcomes.items():
+        try:
+            hole = int(k)
+        except Exception:
+            continue
+        v = (v or "").strip()
+        if 1 <= hole <= 18 and v in ("A", "B", "AS"):
+            parsed[hole] = v
+
+    # Reset + insert (v1 robusta)
+    db.query(models.TournamentMatchHole).filter(
+        models.TournamentMatchHole.match_id == match_id
+    ).delete()
+
+    for h, o in parsed.items():
+        db.add(
+            models.TournamentMatchHole(
+                match_id=match_id,
+                hole_number=h,
+                outcome=o
+            )
+        )
+
+    winner_side, rt, finished = _compute_matchplay_result(parsed)
+
+    m.result_text = rt
+
+    if finished:
+        if winner_side == "A":
+            m.winner_id = m.player_a_id
+        elif winner_side == "B":
+            m.winner_id = m.player_b_id
+        else:
+            m.winner_id = None
+    else:
+        m.winner_id = None
+
+    db.commit()
+
+    if finished and m.winner_id:
+        _tournament_propagate(db, tournament_id)
+
+    return {
+        "ok": True,
+        "result_text": m.result_text or "—",
+        "finished": bool(finished and m.winner_id),
+        "winner_id": m.winner_id,
+    }
 
 
 # ===========================================================================================

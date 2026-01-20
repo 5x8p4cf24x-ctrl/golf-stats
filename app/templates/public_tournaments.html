@@ -1,0 +1,68 @@
+{% extends "public_base.html" %}
+
+{% block title %}Copas · Golf Mode{% endblock %}
+{% block container_class %}rounds-page{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Copas", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+  <header class="public-header">
+    <h1 class="public-title">Copas</h1>
+    <p class="public-subtitle">
+      Torneos cortos en matchplay. Cuadros eliminatorios hasta la final.
+    </p>
+  </header>
+
+  <section class="rounds-list">
+    {% for t in tournaments %}
+      {% set st = status_by_tournament.get(t.id, {"finished": False, "champion": None}) %}
+
+      <a href="/public/tournaments/{{ t.id }}" class="round-item">
+
+        <div class="round-course-avatar">
+          {% if t.image_path %}
+            <img src="{{ t.image_path }}">
+          {% elif t.course.logo_url %}
+            <img src="/uploads/{{ t.course.logo_url }}">
+          {% else %}
+            <span>🏆</span>
+          {% endif %}
+        </div>
+
+        <div class="round-info">
+          <div class="round-info-top">
+            <span class="round-date">{{ t.date }}</span>
+          </div>
+
+          <div class="round-field">{{ t.name }}</div>
+
+          <div class="round-players">
+            {{ t.course.name }}
+          </div>
+        </div>
+
+        {# 👉 AQUÍ VA EL ESTADO, YA FUERA DEL TEXTO #}
+        <div class="round-status">
+          {% if st.finished %}
+            <span class="badge badge--finished">🏆 Finalizada · {{ st.champion or "—" }}</span>
+          {% else %}
+            <span class="badge badge--live">🟢 En vigor</span>
+          {% endif %}
+        </div>
+
+        <div class="round-type-chip {{ t.mode }}">
+          {% if t.mode == "individual" %}individual{% else %}equipos{% endif %}
+        </div>
+
+      </a>
+    {% endfor %}
+  </section>
+
+{% endblock %}

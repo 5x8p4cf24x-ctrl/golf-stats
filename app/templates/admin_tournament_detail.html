@@ -1,0 +1,105 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ tournament.name }} · Copa{% endblock %}
+
+{% block content %}
+
+  <!-- HEADER -->
+  <section class="card admin-form-card">
+    <div class="admin-detail-head">
+      <div class="admin-detail-title">
+        <h1>{{ tournament.name }}</h1>
+        <p class="muted">
+          {{ tournament.date }} · {{ tournament.course.name }} · {{ "Individual" if tournament.mode=="individual" else "Equipos" }}
+        </p>
+      </div>
+
+      <div class="admin-detail-actions">
+        <a class="btn-gm btn-gm--outline" href="/admin/tournaments">Volver</a>
+
+        {% if matches_count == 0 %}
+          <form method="post" action="/admin/tournaments/{{ tournament.id }}/generate" style="margin:0;">
+            <button class="btn-gm" type="submit">Generar cuadro</button>
+          </form>
+        {% endif %}
+
+        <form method="post"
+              action="/admin/tournaments/{{ tournament.id }}/delete"
+              style="margin:0;"
+              onsubmit="return confirm('¿Eliminar la copa «{{ tournament.name }}»? Se borrarán participantes, cuadro y resultados.');">
+          <button class="btn-gm btn-gm--danger" type="submit">
+            Eliminar copa
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARTICIPANTS -->
+  <section class="card admin-form-card" style="margin-top:14px;">
+    <div class="admin-section-head">
+      <h2>Jugadores</h2>
+      <div class="muted admin-small">
+        {{ participants|length }} participantes
+      </div>
+    </div>
+
+    <div class="admin-chips-grid">
+      {% for tp in participants %}
+        <div class="admin-chip">
+          <div class="admin-chip-name">{{ tp.player.name }}</div>
+          <div class="muted admin-chip-meta">Seed: {{ tp.seed if tp.seed else "-" }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- MATCHES -->
+  <section class="card admin-form-card" style="margin-top:14px;">
+    <div class="admin-section-head">
+      <h2>Partidos</h2>
+      <div class="muted admin-small">
+        {% if matches_count == 0 %}Sin cuadro{% else %}{{ matches_count }} partidos{% endif %}
+      </div>
+    </div>
+
+    {% if matches_count == 0 %}
+      <p class="muted" style="margin:0;">Aún no hay cuadro generado.</p>
+    {% else %}
+      {% for r in ["R16","QF","SF","F"] %}
+        {% set ms = matches_by_round.get(r, []) %}
+        {% if ms|length > 0 %}
+          <div class="admin-round">
+            <div class="admin-round-title">
+              {% if r=="R16" %}Octavos{% elif r=="QF" %}Cuartos{% elif r=="SF" %}Semifinales{% else %}Final{% endif %}
+            </div>
+
+            <div class="admin-matches">
+              {% for m in ms %}
+                <a href="/admin/tournaments/{{ tournament.id }}/matches/{{ m.id }}" class="admin-match">
+                  <div class="admin-match-main">
+                    <div class="admin-match-players">
+                      {{ m.player_a.name if m.player_a else "-" }}
+                      <span class="muted">vs</span>
+                      {{ m.player_b.name if m.player_b else "-" }}
+                    </div>
+
+                    <div class="admin-match-meta muted">
+                      {% if m.winner %}
+                        Ganador: {{ m.winner.name }}{% if m.result_text %} · {{ m.result_text }}{% endif %}
+                      {% else %}
+                        Sin resultado
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="admin-match-pos muted">#{{ m.position }}</div>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </section>
+
+{% endblock %}
