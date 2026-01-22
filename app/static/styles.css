@@ -2849,7 +2849,11 @@ main.gm-wrap.player-profile-page{
 }
 .btn-gm:hover{ filter:brightness(1.05); }
 .btn-gm:disabled{ opacity:.45; cursor:not-allowed; }
-.btn-gm--ghost{ background:#fff; color:var(--gm-green); }
+.btn-gm--ghost{
+  background:#fff;
+  color:var(--gm-green);
+  border:1px solid var(--gm-green);
+}
 
 /* variante pequeña */
 .btn-gm--sm{
@@ -2954,6 +2958,15 @@ main.gm-wrap.player-profile-page{
   border-radius:10px;
   display:block;
 }
+/* =========================
+   FIX: botones ghost visibles
+   ========================= */
+.btn-gm--ghost{
+  background: #fff !important;
+  color: var(--gm-green) !important;
+  border: 1px solid var(--gm-green) !important;
+}
+
 
 /* ================== SELECCIONADOS ================== */
 
