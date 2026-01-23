@@ -429,7 +429,7 @@ def admin_assign_achievement_to_player(
             title=f"{player.name} desbloquea: {achievement.name}",
             excerpt=f"Nuevo logro para {player.name}: {achievement.name}. ¡GolfMode ON!",
             category="achievement",
-            image_path="/static/uploads/news/default_achievement.jpg",
+            image_path="news/default_achievement.jpg",
             related_url=f"/players/{player_id}",  # ✅ PERFIL REAL
         )
 
@@ -964,7 +964,7 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
             title=title,
             excerpt=excerpt,
             category="round",
-            image_path="/static/uploads/news/default_round.jpg",
+            image_path="news/default_round.jpg",
             related_url=f"/public/rounds/{round_id}",
         )
 
