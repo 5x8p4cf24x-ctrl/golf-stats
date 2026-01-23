@@ -79,7 +79,7 @@ UPLOAD_TOURNAMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_BASE_DIR)), name="uploads")
 
-STATIC_NEWS_DEFAULTS_DIR = Path(__file__).resolve().parent / "static" / "uploads" / "news"
+STATIC_NEWS_DEFAULTS_DIR = Path(__file__).resolve().parent / "static" / "news_defaults"
 
 DEFAULT_NEWS_FILES = [
     "default_league.jpg",
