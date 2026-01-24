@@ -58,6 +58,7 @@ ensure_tournament_image_column()
 
 
 
+
 app = FastAPI(title="Golf Stats")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -128,7 +129,15 @@ def require_admin(request: Request):
     # 3) Si no coincide -> fuera
     raise HTTPException(status_code=401, detail="Admin auth required")
 
+# ---------------------- Iconos para Apple ------------------------#
 
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+def apple_touch_icon():
+    return RedirectResponse(url="/static/apple-touch-icon.png?v=20260123")
+
+@app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
+def apple_touch_icon_precomposed():
+    return RedirectResponse(url="/static/apple-touch-icon.png?v=20260123")
 
 # ================================================================================
 # =============================== PASSWORD ADMIN =================================
