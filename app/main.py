@@ -133,11 +133,11 @@ def require_admin(request: Request):
 
 @app.get("/apple-touch-icon.png", include_in_schema=False)
 def apple_touch_icon():
-    return RedirectResponse(url="/static/apple-touch-icon.png?v=20260123")
+    return RedirectResponse(url="/static/apple-touch-icon-20260124.png")
 
 @app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
 def apple_touch_icon_precomposed():
-    return RedirectResponse(url="/static/apple-touch-icon.png?v=20260123")
+    return RedirectResponse(url="/static/apple-touch-icon-20260124.png")
 
 # ================================================================================
 # =============================== PASSWORD ADMIN =================================
