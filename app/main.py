@@ -139,6 +139,10 @@ def apple_touch_icon():
 def apple_touch_icon_precomposed():
     return RedirectResponse(url="/static/apple-touch-icon-20260124.png")
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return RedirectResponse(url="/static/favicon-20260124.png")
+
 # ================================================================================
 # =============================== PASSWORD ADMIN =================================
 # ================================================================================
