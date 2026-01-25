@@ -22,6 +22,10 @@ from fastapi.responses import PlainTextResponse
 import shutil
 from app.golf_calc import course_handicap, strokes_received_per_hole
 from fastapi import Query
+import secrets
+from fastapi.responses import JSONResponse
+
+
 
 
 Base.metadata.create_all(bind=engine)
@@ -885,6 +889,43 @@ def round_card_player_form(round_id: int, rp_id: int, request: Request, db: Sess
         }
     )
 
+def strokes_received_on_hole(course_hcp: int, stroke_index: int) -> int:
+    """
+    Golpes recibidos en un hoyo según stroke index (1..18).
+    Simplificación: si course_hcp <= 0 => 0 golpes recibidos.
+    """
+    if course_hcp <= 0:
+        return 0
+
+    base = course_hcp // 18
+    rem = course_hcp % 18
+    # Si rem=0 => no hay "extra" holes este ciclo
+    extra = 1 if rem != 0 and stroke_index <= rem else 0
+    return base + extra
+
+
+def max_allowed_strokes(par: int, course_hcp: int, stroke_index: int) -> int:
+    """
+    WHS Net Double Bogey cap:
+    max = par + golpes_recibidos + 2
+    """
+    return par + strokes_received_on_hole(course_hcp, stroke_index) + 2
+
+
+def parse_gross_input(raw: str | None) -> tuple[bool, int | None]:
+    """
+    Devuelve (is_x, strokes_int).
+    is_x True => X/vacío => usar cap.
+    """
+    s = (raw or "").strip().upper()
+    if s in ("", "X", "-", "—"):
+        return True, None
+    try:
+        return False, int(s)
+    except ValueError:
+        # cualquier cosa rara la tratamos como X (cap), para no petar el guardado
+        return True, None
+
 
 @app.post("/admin/rounds/{round_id}/player/{rp_id}/card")
 async def round_card_player_save(round_id: int, rp_id: int, request: Request, db: Session = Depends(get_db)):
@@ -904,25 +945,45 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
             # Si algo raro ocurre, simplemente ignoramos el cambio de HCP
             pass
 
-    # 2) Leer tarjeta hoyo a hoyo
+    # 2) Leer tarjeta hoyo a hoyo (GUARDAMOS BRUTO AJUSTADO COMO RESULTADO OFICIAL)
     gross_by_hole: dict[int, int] = {}
     putts_by_hole: dict[int, int | None] = {}
-    fir_by_hole: dict[int, bool] = {}
+    fir_by_hole: dict[int, bool | None] = {}  # 👈 aquí era el fallo: puede ser None
+
+    course_hcp = int(rp.course_handicap or 0)
 
     for h in holes:
         g_val = form.get(f"g_{h.number}")
         p_val = form.get(f"p_{h.number}")
         fir_val = form.get(f"fir_{h.number}")
 
-        # golpes brutos
-        gross_by_hole[h.number] = int(g_val) if g_val not in (None, "", " ") else 0
+        cap = max_allowed_strokes(h.par, course_hcp, h.stroke_index)
+
+        is_x, strokes_in = parse_gross_input(g_val)
+
+        if is_x:
+            strokes = cap
+        else:
+            # si meten 0 o negativo, lo tratamos como X (cap) para mantener consistencia
+            if strokes_in is None or strokes_in < 1:
+                strokes = cap
+            else:
+                strokes = min(strokes_in, cap)
+
+        gross_by_hole[h.number] = strokes
 
         # putts
-        putts_by_hole[h.number] = int(p_val) if p_val not in (None, "", " ") else None
+        if p_val not in (None, "", " "):
+            try:
+                putts_by_hole[h.number] = int(p_val)
+            except ValueError:
+                putts_by_hole[h.number] = None
+        else:
+            putts_by_hole[h.number] = None
 
         # FIR:
-        # - en par 3 no aplica -> None (no cuenta ni como acierto ni como posible)
-        # - en par 4/5 sí aplican -> True/False según checkbox
+        # - par 3: None (no aplica)
+        # - par 4/5: True/False según checkbox
         if h.par <= 3:
             fir_by_hole[h.number] = None
         else:
@@ -982,6 +1043,31 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
         )
 
     return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=303)
+
+@app.post("/admin/rounds/{round_id}/player/{rp_id}/token")
+async def admin_generate_roundplayer_token(round_id: int, rp_id: int, request: Request, db: Session = Depends(get_db)):
+    rp = crud.get_round_player(db, rp_id)
+
+    if (rp is None) or (rp.round_id != round_id):
+        return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=303)
+
+    # ✅ 1) Si viene course_handicap en el form, guardarlo (SOLO ESO)
+    form = await request.form()
+    ch_raw = form.get("course_handicap")
+    if ch_raw is not None and str(ch_raw).strip() != "":
+        try:
+            rp.course_handicap = int(ch_raw)
+        except ValueError:
+            pass
+
+    # ✅ 2) Generar token
+    rp.edit_token = secrets.token_urlsafe(24)
+    rp.token_created_at = datetime.utcnow()
+    rp.player_card_locked = False
+
+    db.commit()
+
+    return RedirectResponse(f"/admin/rounds/{round_id}/player/{rp_id}/card", status_code=303)
 
 
 # ===========================================================================================
@@ -3229,6 +3315,213 @@ def public_round_summary(
         }
     )
 
+#===================================================================================================
+#                                   Public Live Round Stableford
+#===================================================================================================
+
+
+# ========= helpers token =========
+def get_rp_by_token(db: Session, token: str) -> models.RoundPlayer | None:
+    if not token:
+        return None
+    return db.query(models.RoundPlayer).filter(models.RoundPlayer.edit_token == token).first()
+
+
+# ========= (A) PAGE: móvil =========
+@app.get("/public/live/round/{round_id}/card", response_class=HTMLResponse)
+def public_live_round_card(round_id: int, token: str, request: Request, db: Session = Depends(get_db)):
+    rp = get_rp_by_token(db, token)
+    if rp is None:
+        raise HTTPException(status_code=403, detail="Token inválido")
+
+    if rp.round_id != round_id:
+        raise HTTPException(status_code=403, detail="Token no corresponde a esta ronda")
+
+    r = crud.get_round(db, round_id)
+    course = crud.get_course(db, r.course_id)
+    holes = crud.get_holes_for_course(db, r.course_id)
+    player = crud.get_player(db, rp.player_id)
+
+    existing_scores = {hs.hole_number: hs for hs in rp.hole_scores}
+
+    return templates.TemplateResponse(
+        "public_live_round_card.html",
+        {
+            "request": request,
+            "round": r,
+            "course": course,
+            "holes": holes,
+            "rp": rp,
+            "player": player,
+            "existing": existing_scores,
+            "token": token,  # importante para JS
+        },
+    )
+
+
+# ========= (B) API: autoguardado por hoyo =========
+@app.post("/public/live/api/round/{round_id}/hole/{hole_number}")
+async def public_live_save_hole(round_id: int, hole_number: int, request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    token = (data.get("token") or "").strip()
+
+    rp = get_rp_by_token(db, token)
+    if rp is None or rp.round_id != round_id:
+        return JSONResponse({"ok": False, "error": "Token inválido"}, status_code=403)
+
+    if rp.player_card_locked:
+        return JSONResponse({"ok": False, "error": "Tarjeta cerrada"}, status_code=403)
+
+    r = crud.get_round(db, round_id)
+    holes = crud.get_holes_for_course(db, r.course_id)
+
+    # localizar hoyo
+    hole = next((h for h in holes if h.number == hole_number), None)
+    if hole is None:
+        return JSONResponse({"ok": False, "error": "Hoyo inválido"}, status_code=400)
+
+    # inputs
+    gross_raw = data.get("gross")  # puede ser "X" o "10"
+    putts_raw = data.get("putts")  # puede ser null
+    fir_raw = data.get("fir")      # bool
+
+    # cap (Net Double Bogey)
+    course_hcp = int(rp.course_handicap or 0)
+    cap = max_allowed_strokes(hole.par, course_hcp, hole.stroke_index)
+
+    # parse gross
+    is_x, strokes_in = parse_gross_input(str(gross_raw) if gross_raw is not None else None)
+
+    if is_x or strokes_in is None or strokes_in < 1:
+        strokes = cap
+    else:
+        strokes = min(strokes_in, cap)
+
+    # putts
+    putts = None
+    try:
+        if putts_raw not in (None, "", " "):
+            putts = int(putts_raw)
+            if putts < 0:
+                putts = None
+    except Exception:
+        putts = None
+
+    # FIR solo par4/5
+    fir = None
+    if hole.par >= 4:
+        fir = bool(fir_raw)
+
+    # GIR (si hay putts)
+    gir = None
+    if putts is not None:
+        gir = (strokes - putts) <= (hole.par - 2)
+
+    # net/puntos (opcional en vivo, pero lo rellenamos para consistencia)
+    received = crud.strokes_received_per_hole(course_hcp, holes)
+    net = strokes - received[hole.number]
+
+    # ✅ puntos en vivo (stableford HCP) - robusto
+    if hasattr(crud, "stableford_points"):
+        pts = crud.stableford_points(net, hole.par)
+    else:
+        pts = stableford_points(net, hole.par)
+
+
+    # si stableford_points es función global y no crud, ajusta a stableford_points(net, hole.par)
+
+    # UPSERT hole_score
+    hs = (
+        db.query(models.HoleScore)
+        .filter(and_(models.HoleScore.round_player_id == rp.id, models.HoleScore.hole_number == hole.number))
+        .first()
+    )
+    if hs is None:
+        hs = models.HoleScore(
+            round_player_id=rp.id,
+            hole_number=hole.number,
+            gross_strokes=strokes,
+            putts=putts,
+            fir=fir,
+            gir=gir,
+            net_strokes=net,
+            stableford_points=pts,
+        )
+        db.add(hs)
+    else:
+        hs.gross_strokes = strokes
+        hs.putts = putts
+        hs.fir = fir
+        hs.gir = gir
+        hs.net_strokes = net
+        hs.stableford_points = pts
+
+    db.commit()
+
+    return {
+    "ok": True,
+    "hole": hole.number,
+    "gross_saved": strokes,
+    "cap": cap,
+    "received": received[hole.number],
+    "net": net,
+    "pts_saved": pts,
+    "locked": rp.player_card_locked,
+}
+
+
+# ========= (C) API: terminar (bloquear + recalcular totales) =========
+@app.post("/public/live/api/round/{round_id}/finish")
+async def public_live_finish(round_id: int, request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    token = (data.get("token") or "").strip()
+
+    rp = get_rp_by_token(db, token)
+    if rp is None or rp.round_id != round_id:
+        return JSONResponse({"ok": False, "error": "Token inválido"}, status_code=403)
+
+    if rp.player_card_locked:
+        return {"ok": True, "locked": True}
+
+    r = crud.get_round(db, round_id)
+    holes = crud.get_holes_for_course(db, r.course_id)
+
+    # comprobar que hay 18 hoyos con gross
+    existing_scores = {hs.hole_number: hs for hs in rp.hole_scores}
+    missing = [h.number for h in holes if h.number not in existing_scores or existing_scores[h.number].gross_strokes is None]
+    if missing:
+        return JSONResponse({"ok": False, "error": f"Faltan hoyos por completar: {missing}"}, status_code=400)
+
+    # construir dicts desde DB y recalcular con tu método "oficial"
+    gross_by_hole = {h.number: int(existing_scores[h.number].gross_strokes) for h in holes}
+    putts_by_hole = {h.number: existing_scores[h.number].putts for h in holes}
+    fir_by_hole = {h.number: existing_scores[h.number].fir for h in holes}
+
+    crud.save_card_for_round_player(db, rp, holes, gross_by_hole, putts_by_hole, fir_by_hole)
+
+    rp.player_card_locked = True
+    db.commit()
+
+    # ¿están todos los jugadores con tarjeta cerrada?
+    rps = crud.get_round_players(db, round_id)
+    all_done = all(x.player_card_locked for x in rps)
+
+    # si están todos, cerramos la ronda y ganador (si no lo haces ya aquí)
+    if all_done:
+        crud.close_round_and_set_winner(db, round_id)
+
+    return {"ok": True, "locked": True, "all_done": all_done}
+
+@app.get("/public/live/api/round/{round_id}/status")
+def public_live_round_status(round_id: int, token: str, db: Session = Depends(get_db)):
+    rp = get_rp_by_token(db, token)
+    if rp is None or rp.round_id != round_id:
+        return JSONResponse({"ok": False, "error": "Token inválido"}, status_code=403)
+
+    rps = crud.get_round_players(db, round_id)
+    all_done = all(x.player_card_locked for x in rps)
+    return {"ok": True, "all_done": all_done}
+    
 
 
 

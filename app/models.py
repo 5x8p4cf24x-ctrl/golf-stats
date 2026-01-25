@@ -87,6 +87,10 @@ class RoundPlayer(Base):
 
     result = Column(String, nullable=True)  # win/tie/loss
 
+    edit_token = Column(String(128), nullable=True, index=True)
+    token_created_at = Column(DateTime, nullable=True)
+    player_card_locked = Column(Boolean, nullable=False, default=False)
+
     round = relationship("Round", back_populates="round_players")
     player = relationship("Player", back_populates="rounds")
 

@@ -17,6 +17,51 @@
     </div>
   </div>
 
+  <!-- LINK JUGADOR (MÓVIL / LIVE) -->
+  <section class="card" style="margin-bottom:16px;">
+    <h2>Link para el jugador (móvil)</h2>
+
+    <p style="margin:4px 0; color:var(--muted);">
+      Estado:
+      {% if rp.player_card_locked %}
+        <strong style="color:var(--text);">CERRADA</strong>
+        · Solo el administrador puede modificar
+      {% else %}
+        <strong style="color:var(--text);">ABIERTA</strong>
+        · El jugador puede anotar en vivo
+      {% endif %}
+    </p>
+
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+
+      <!-- generar / regenerar token (SIN FORM ANIDADO) -->
+      <button class="btn-secondary"
+              type="submit"
+              formmethod="post"
+              formaction="/admin/rounds/{{ round.id }}/player/{{ rp.id }}/token">
+        {% if rp.edit_token %}Regenerar link{% else %}Generar link{% endif %}
+      </button>
+
+      {% if rp.edit_token %}
+        <input id="playerLink"
+              type="text"
+              readonly
+              value="{{ request.base_url }}public/live/round/{{ round.id }}/card?token={{ rp.edit_token }}"
+              style="min-width:340px; flex:1; padding:10px 12px;
+                      border:1px solid var(--border); border-radius:10px;
+                      font-size:13px;">
+        <button class="btn-primary" type="button" onclick="copyPlayerLink()">
+          Copiar
+        </button>
+      {% else %}
+        <span style="color:var(--muted); font-size:13px;">
+          Genera el link para compartirlo con el jugador.
+        </span>
+      {% endif %}
+    </div>
+  </section>
+
+
   <!-- BLOQUE HCP -->
   <section class="card" style="margin-bottom:16px;">
     <h2>Handicap de la vuelta</h2>
@@ -79,18 +124,20 @@
           <!-- Separación -->
           <tr class="score-sep"><td colspan="{{ holes|length + 1 }}"></td></tr>
 
-          <!-- 4) Golpes -->
+          <!-- 4) Golpes (acepta número o X) -->
           <tr>
             <th class="score-label">Golpes</th>
             {% for h in holes %}
               {% set hs = existing.get(h.number) %}
               <td class="score-cell">
                 <input class="score-input score-input--g"
-                       type="number"
-                       min="1"
-                       name="g_{{ h.number }}"
-                       value="{{ hs.gross_strokes if hs else '' }}"
-                       required>
+                      type="text"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      name="g_{{ h.number }}"
+                      value="{{ hs.gross_strokes if hs else '' }}"
+                      placeholder="X"
+                      aria-label="Golpes hoyo {{ h.number }}">
               </td>
             {% endfor %}
           </tr>
@@ -216,6 +263,20 @@
       }
     }
   });
+</script>
+<script>
+  function copyPlayerLink(){
+    const el = document.getElementById("playerLink");
+    if (!el) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(el.value);
+    } else {
+      el.select();
+      el.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+    }
+  }
 </script>
 
 {% endblock %}
