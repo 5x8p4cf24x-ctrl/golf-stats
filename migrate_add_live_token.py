@@ -1,21 +1,29 @@
+import os
 from sqlalchemy import create_engine, text
 
-# ajusta la ruta si tu db está en otra carpeta
-engine = create_engine("sqlite:///golf_stats.db", future=True)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-statements = [
-    "ALTER TABLE round_players ADD COLUMN edit_token VARCHAR(128)",
-    "ALTER TABLE round_players ADD COLUMN token_created_at DATETIME",
-    "ALTER TABLE round_players ADD COLUMN player_card_locked BOOLEAN NOT NULL DEFAULT 0",
-    "CREATE INDEX IF NOT EXISTS ix_round_players_edit_token ON round_players (edit_token)",
-]
+if not DATABASE_URL:
+    raise SystemExit("ERROR: DATABASE_URL no está definido (Render lo define en producción).")
 
-with engine.begin() as conn:
-    for stmt in statements:
-        try:
-            conn.execute(text(stmt))
-            print("OK:", stmt)
-        except Exception as e:
-            print("SKIP / ERROR:", stmt, "->", e)
+engine = create_engine(DATABASE_URL)
+
+def try_run(label: str, sql: str):
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(sql))
+        print(f"OK: {label}")
+    except Exception as e:
+        print(f"SKIP/ERR: {label} -> {e}")
+
+# Postgres-safe
+try_run("ADD edit_token",
+        "ALTER TABLE round_players ADD COLUMN IF NOT EXISTS edit_token VARCHAR(128)")
+try_run("ADD token_created_at",
+        "ALTER TABLE round_players ADD COLUMN IF NOT EXISTS token_created_at TIMESTAMP NULL")
+try_run("ADD player_card_locked",
+        "ALTER TABLE round_players ADD COLUMN IF NOT EXISTS player_card_locked BOOLEAN NOT NULL DEFAULT FALSE")
+try_run("INDEX edit_token",
+        "CREATE INDEX IF NOT EXISTS ix_round_players_edit_token ON round_players (edit_token)")
 
 print("Migración terminada")
