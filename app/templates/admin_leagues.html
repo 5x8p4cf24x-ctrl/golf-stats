@@ -2,7 +2,7 @@
 
 {% block title %}Admin · Ligas{% endblock %}
 {% block header_title %}Ligas{% endblock %}
-{% block header_subtitle %}Crear ligas, ver estado y finalizarlas.{% endblock %}
+{% block header_subtitle %}Crear ligas, ver estado, finalizarlas y eliminarlas.{% endblock %}
 
 {% block content %}
 
@@ -69,7 +69,6 @@
           <td class="text-left">{{ l.rounds|length }}</td>
 
           <td class="text-left" style="white-space:nowrap;">
-            <!-- Si quieres mantener el link público, aquí es el sitio -->
             <a class="link-gm" href="/public/leagues/{{ l.id }}">Ver público</a>
 
             {% if not l.is_closed %}
@@ -84,6 +83,17 @@
                 </button>
               </form>
             {% endif %}
+
+            <span style="color:#cbd5e1;"> | </span>
+            <form method="post"
+                  action="/admin/leagues/{{ l.id }}/delete"
+                  style="display:inline;"
+                  onsubmit="return confirm('¿Eliminar esta liga? Solo se puede si no tiene rondas asociadas.');">
+              <button type="submit"
+                      style="border:none; background:none; color:#dc2626; cursor:pointer; padding:0; font-weight:800;">
+                Eliminar
+              </button>
+            </form>
           </td>
         </tr>
         {% endfor %}
@@ -93,4 +103,3 @@
 </section>
 
 {% endblock %}
-

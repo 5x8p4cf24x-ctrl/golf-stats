@@ -1,0 +1,47 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin — Asignación de logros{% endblock %}
+
+{% block content %}
+
+<section class="card block">
+  <h1 class="block-title">Asignación de logros</h1>
+  <div style="display:flex; gap:12px; align-items:center; margin: 10px 0 18px;">
+    <a class="btn-gm" href="/admin/achievements">← Volver a Logros</a>
+  </div>
+  <p class="muted" style="margin-top:-6px;">
+    Gestiona logros por jugador (manual). Los automáticos se calcularán al cerrar rondas.
+  </p>
+
+
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Jugador</th>
+          <th>HCP</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in players %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td>
+            {% if p.hcp_exact and p.hcp_exact > 0 %}
+                {{ "%.1f"|format(p.hcp_exact) }}
+            {% else %}
+                -
+            {% endif %}
+          </td>
+
+          <td style="text-align:right;">
+            <a class="btn-link" href="/admin/players/{{ p.id }}/achievements">Gestionar logros</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -162,7 +162,12 @@ class PlayerAchievement(Base):
     id = Column(Integer, primary_key=True, index=True)
     player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
     achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
+
     unlocked = Column(Boolean, default=False, nullable=False)
+    unlocked_at = Column(DateTime, nullable=True)
+
+    source = Column(String(16), default="manual", nullable=False)        # "manual" | "auto"
+    locked_by_admin = Column(Boolean, default=False, nullable=False)     # si True, el motor no toca
 
     player = relationship("Player", back_populates="achievements")
     achievement = relationship("Achievement", back_populates="players")

@@ -2,13 +2,30 @@
 
 {% block title %}Admin · Logros{% endblock %}
 {% block header_title %}Logros{% endblock %}
-{% block header_subtitle %}Crear, editar y eliminar logros del sistema.{% endblock %}
+{% block header_subtitle %}Catálogo y gestión de asignación.{% endblock %}
 
 {% block content %}
 
+<!-- HUB: accesos principales -->
+<section class="card" style="margin-bottom:16px;">
+  <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <a href="/admin/achievements/assignment" class="btn-primary" style="text-decoration:none;">
+      👥 Asignación por jugador
+    </a>
+
+    <a href="#new-achievement" class="btn-primary" style="background:#fff; color:var(--gm-green); text-decoration:none;">
+      ➕ Crear logro
+    </a>
+
+    <a class="link-gm" href="/admin" style="margin-left:auto;">
+      ← Volver al panel admin
+    </a>
+  </div>
+</section>
+
 <!-- CREAR NUEVO LOGRO -->
 <section class="card" style="margin-bottom:16px;">
-  <h2 style="margin-bottom:10px;">Nuevo logro</h2>
+  <h2 id="new-achievement" style="margin-bottom:10px;">Nuevo logro</h2>
 
   <form method="post"
         action="/admin/achievements/new"
@@ -19,10 +36,6 @@
     <input name="icon" placeholder="iconos/logro1.png">
 
     <button class="btn-primary" type="submit">Crear</button>
-
-    <a class="link-gm" href="/admin" style="margin-left:auto;">
-      ← Volver al panel admin
-    </a>
   </form>
 </section>
 

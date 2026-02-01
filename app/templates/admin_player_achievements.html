@@ -1,72 +1,132 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>Admin — Logros {{ player.name }}</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-<main class="container">
+{% extends "admin_base.html" %}
+{% block title %}Admin · Logros · {{ player.name }}{% endblock %}
+{% block header_title %}Logros{% endblock %}
+{% block header_subtitle %}{{ player.name }} · Gestión manual y motor automático{% endblock %}
 
-  <h1>Logros de {{ player.name }}</h1>
+{% block content %}
 
-  <p><a href="/admin/players">← Volver a jugadores</a></p>
+<section class="card" style="margin-bottom:16px;">
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <a class="link-gm" href="/admin/achievements/assignment">← Volver a Asignación</a>
 
-  <section class="card">
-    <h2>Asignar logro</h2>
+    <span style="margin-left:auto; display:flex; gap:10px; align-items:center;">
+      <form method="post"
+            action="/admin/players/{{ player.id }}/achievements/recalc-auto"
+            style="display:inline;"
+            onsubmit="return confirm('Esto borrará los logros AUTO (no manuales bloqueados) y recalculará desde las rondas cerradas. ¿Continuar?');">
+        <button type="submit" class="btn-primary" style="padding:8px 12px;">
+          🔄 Reset AUTO + Recalcular
+        </button>
+      </form>
+    </span>
+  </div>
 
-    <form method="post" action="/admin/players/{{ player.id }}/achievements/add" style="display:flex; gap:8px;">
-      <select name="achievement_id">
-        {% for a in all_achievements %}
-          {% if a.id not in owned_ids %}
-            <option value="{{ a.id }}">{{ a.name }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-      <button type="submit">Asignar</button>
-    </form>
-  </section>
+  <p class="muted" style="margin-top:10px;">
+    Reglas:
+    <strong>AUTO</strong> solo desbloquea (no revoca).
+    <strong>Manual</strong> puede quedar bloqueado para que el motor no lo toque.
+  </p>
+</section>
 
-  <section class="card">
-    <h2>Logros actuales</h2>
+<section class="card" style="margin-bottom:16px;">
+  <h2 style="margin-bottom:10px;">Asignar logro (manual)</h2>
 
-    {% if owned_ids|length == 0 %}
-      <p>Este jugador no tiene logros.</p>
-    {% else %}
-      <table>
+  <form method="post"
+        action="/admin/players/{{ player.id }}/achievements/add"
+        style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+
+    <select name="achievement_id" required style="min-width:260px;">
+      {% for a in all_achievements %}
+        {% if a.id not in owned_ids %}
+          <option value="{{ a.id }}">{{ a.name }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+
+    <button class="btn-primary" type="submit">Asignar</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2 style="margin-bottom:10px;">Logros actuales</h2>
+
+  {% if (owned | selectattr("unlocked") | list) | length == 0 %}
+    <p class="muted">Este jugador no tiene logros.</p>
+  {% else %}
+
+    <div class="table-wrap">
+      <table class="admin-table">
         <thead>
           <tr>
-            <th>Logro</th>
-            <th>Descripción</th>
-            <th>Icono</th>
-            <th></th>
+            <th class="text-left">Logro</th>
+            <th class="text-left">Descripción</th>
+            <th class="text-left">Icono</th>
+            <th class="text-left">Origen</th>
+            <th class="text-left">Bloqueado</th>
+            <th class="text-left">Fecha</th>
+            <th class="text-left">Acciones</th>
           </tr>
         </thead>
+
         <tbody>
-          {% for a in all_achievements %}
-            {% if a.id in owned_ids %}
-            <tr>
-              <td>{{ a.name }}</td>
-              <td>{{ a.description }}</td>
-              <td>
-                {% if a.icon %}
-                  <img src="/static/{{ a.icon }}" style="width:32px; height:32px;">
-                {% endif %}
-              </td>
-              <td>
-                <form method="post" action="/admin/players/{{ player.id }}/achievements/remove">
-                  <input type="hidden" name="achievement_id" value="{{ a.id }}">
-                  <button type="submit" style="background:#dc2626; color:white;">Quitar</button>
-                </form>
-              </td>
-            </tr>
-            {% endif %}
+          {% for pa in owned if pa.unlocked %}
+          <tr>
+            <td class="text-left"><strong>{{ pa.achievement.name }}</strong></td>
+            <td class="text-left">{{ pa.achievement.description or "-" }}</td>
+
+            <td class="text-left">
+              {% if pa.achievement.icon %}
+                <img src="/static/{{ pa.achievement.icon }}"
+                     alt=""
+                     style="width:32px; height:32px; object-fit:contain;">
+              {% else %}
+                <span style="color:#9ca3af;">-</span>
+              {% endif %}
+            </td>
+
+            <td class="text-left">
+              {% if pa.source == "auto" %}
+                <span class="badge win">AUTO</span>
+              {% else %}
+                <span class="badge loss">MANUAL</span>
+              {% endif %}
+            </td>
+
+            <td class="text-left">
+              {% if pa.locked_by_admin %}
+                <span class="badge loss">Sí</span>
+              {% else %}
+                <span class="badge win">No</span>
+              {% endif %}
+            </td>
+
+            <td class="text-left">
+              {% if pa.unlocked_at %}
+                {{ pa.unlocked_at }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+
+            <td class="text-left" style="white-space:nowrap;">
+              <form method="post"
+                    action="/admin/players/{{ player.id }}/achievements/remove"
+                    style="display:inline;"
+                    onsubmit="return confirm('¿Quitar este logro?');">
+                <input type="hidden" name="achievement_id" value="{{ pa.achievement_id }}">
+                <button type="submit"
+                        style="border:none; background:none; color:#dc2626; font-weight:800; cursor:pointer;">
+                  Quitar
+                </button>
+              </form>
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
-    {% endif %}
-  </section>
+    </div>
 
-</main>
-</body>
-</html>
+  {% endif %}
+</section>
+
+{% endblock %}

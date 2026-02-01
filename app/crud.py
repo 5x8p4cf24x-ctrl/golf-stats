@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 from collections import defaultdict
 from .models import News
+from datetime import datetime
 
 
 
@@ -186,8 +187,9 @@ def compute_league_standings(db: Session, league, rounds):
     - Clasificación por golpes netos (media)
     - Clasificación por puntos scratch (suma)
     - Tabla ampliada por jugador para la liga (como en tu Excel)
-    Y determina campeones cuando la liga está cerrada.
+    Y devuelve campeones SI la liga está cerrada (PERO NO otorga logros aquí).
     """
+    
 
     # stats por jugador dentro de esta liga
     stats = defaultdict(lambda: {
@@ -205,7 +207,7 @@ def compute_league_standings(db: Session, league, rounds):
         "net_count": 0,
 
         "scratch_sum": 0,
-        "stableford_sum": 0,  # ✅ suma de puntos Stableford HCP en la liga
+        "stableford_sum": 0,  # suma puntos Stableford HCP
 
         "level_hcp_sum": 0.0,
         "level_hcp_count": 0,
@@ -214,8 +216,7 @@ def compute_league_standings(db: Session, league, rounds):
     # --- RECORRER TODAS LAS RONDAS DE LA LIGA ---
     for r in rounds:
         rps = [rp for rp in r.round_players if rp.gross_total is not None]
-        n = len(rps)
-        if n == 0:
+        if not rps:
             continue
 
         # ordenar por puntos Stableford HCP (desc) para F1
@@ -233,7 +234,6 @@ def compute_league_standings(db: Session, league, rounds):
 
             s["rounds"] += 1
 
-            # resultado win/tie desde RoundPlayer.result
             if rp.result == "win":
                 s["wins"] += 1
             elif rp.result == "tie":
@@ -246,7 +246,7 @@ def compute_league_standings(db: Session, league, rounds):
                 if s["best_gross"] is None or rp.gross_total < s["best_gross"]:
                     s["best_gross"] = rp.gross_total
 
-                # nivel de juego para esta vuelta
+                # nivel de juego vuelta
                 course = r.course
                 if course and course.slope_yellow and course.rating_yellow is not None:
                     level_hcp = ((rp.gross_total - course.rating_yellow) * 113) / course.slope_yellow
@@ -262,31 +262,19 @@ def compute_league_standings(db: Session, league, rounds):
             if rp.stableford_scratch_total is not None:
                 s["scratch_sum"] += rp.stableford_scratch_total
 
-            # puntos Stableford HCP (netos)
+            # puntos Stableford HCP
             if rp.stableford_hcp_total is not None:
                 s["stableford_sum"] += rp.stableford_hcp_total
 
-
-        # --- PUNTOS DE LIGA POR JORNADA ---
-        # Regla: se reparten (n - 1) puntos entre los empatados en 1ª posición,
-        # donde n es el nº de jugadores con resultado en esta vuelta.
-
-        # Jugadores con puntos Stableford HCP válidos
+        # --- PUNTOS DE LIGA POR JORNADA (F1) ---
         valid_rps = [rp for rp in rps_sorted if rp.stableford_hcp_total is not None]
         n_valid = len(valid_rps)
         if n_valid == 0:
             continue
 
-        # Mejor resultado de la jornada
         best_points = valid_rps[0].stableford_hcp_total
+        winners = [rp for rp in valid_rps if rp.stableford_hcp_total == best_points]
 
-        # Empatados en primera posición
-        winners = [
-            rp for rp in valid_rps
-            if rp.stableford_hcp_total == best_points
-        ]
-
-        # Puntos totales a repartir en esta vuelta
         total_points_round = float(n_valid - 1)
         if total_points_round < 0:
             total_points_round = 0.0
@@ -296,9 +284,7 @@ def compute_league_standings(db: Session, league, rounds):
         for rp in winners:
             stats[rp.player_id]["f1_points"] += points_per_winner
 
-
     # --- CONSTRUIR TABLAS ---
-
     main_rows = []
     net_rows = []
     scratch_rows = []
@@ -308,14 +294,12 @@ def compute_league_standings(db: Session, league, rounds):
         p = s["player"]
         rounds_played = s["rounds"]
 
-        # principal F1
         main_rows.append({
             "player": p,
             "points": s["f1_points"],
             "rounds": rounds_played,
         })
 
-        # netos
         if s["net_count"] > 0:
             avg_net = s["net_sum"] / s["net_count"]
             net_rows.append({
@@ -324,7 +308,6 @@ def compute_league_standings(db: Session, league, rounds):
                 "rounds": rounds_played,
             })
 
-        # scratch
         if s["scratch_sum"] > 0:
             scratch_rows.append({
                 "player": p,
@@ -332,7 +315,6 @@ def compute_league_standings(db: Session, league, rounds):
                 "rounds": rounds_played,
             })
 
-        # tabla ampliada por jugador
         avg_gross = (s["gross_sum"] / s["gross_count"]) if s["gross_count"] > 0 else None
         level_hcp = (s["level_hcp_sum"] / s["level_hcp_count"]) if s["level_hcp_count"] > 0 else None
 
@@ -343,7 +325,7 @@ def compute_league_standings(db: Session, league, rounds):
             "ties": s["ties"],
             "gross_total": s["gross_sum"],
             "net_total": s["net_sum"],
-            "stableford_total": s["stableford_sum"],  # ✅ ahora sí: suma de puntos Stableford HCP
+            "stableford_total": s["stableford_sum"],
             "scratch_total": s["scratch_sum"],
             "avg_gross": avg_gross,
             "level_hcp": level_hcp,
@@ -351,58 +333,30 @@ def compute_league_standings(db: Session, league, rounds):
             "f1_points": s["f1_points"],
         })
 
-    # ordenar clasificaciones
-    main_rows = sorted(
-        main_rows,
-        key=lambda row: (-row["points"], -row["rounds"], row["player"].name)
-    )
+    # ordenar
+    main_rows = sorted(main_rows, key=lambda row: (-row["points"], -row["rounds"], row["player"].name))
+    net_rows = sorted(net_rows, key=lambda row: (row["avg_net"], -row["rounds"], row["player"].name))
+    scratch_rows = sorted(scratch_rows, key=lambda row: (-row["total_scratch"], -row["rounds"], row["player"].name))
+    players_table = sorted(players_table, key=lambda row: (-row["f1_points"], row["player"].name))
 
-    net_rows = sorted(
-        net_rows,
-        key=lambda row: (row["avg_net"], -row["rounds"], row["player"].name)
-    )
-
-    scratch_rows = sorted(
-        scratch_rows,
-        key=lambda row: (-row["total_scratch"], -row["rounds"], row["player"].name)
-    )
-
-    # tabla grande ordenada por puntos de liga (F1)
-    players_table = sorted(
-        players_table,
-        key=lambda row: (-row["f1_points"], row["player"].name)
-    )
-
-    # --- DETERMINAR CAMPEONES (solo si liga cerrada) ---
+    # --- CAMPEONES (solo calcular, NO escribir en DB aquí) ---
     main_champions = []
     net_champions = []
     scratch_champions = []
 
     if getattr(league, "is_closed", False):
-        # 🏆 Campeones (puntos de liga)
         if main_rows:
-            best_points = main_rows[0]["points"]
-            main_champions = [
-                row["player"] for row in main_rows
-                if row["points"] == best_points
-            ]
+            best = main_rows[0]["points"]
+            main_champions = [row["player"] for row in main_rows if row["points"] == best]
 
-        # 🏆 Campeones por golpes netos (mínimo 5 vueltas)
         eligible_net = [row for row in net_rows if row["rounds"] >= 5]
         if eligible_net:
-            best_avg_net = eligible_net[0]["avg_net"]
-            net_champions = [
-                row["player"] for row in eligible_net
-                if row["avg_net"] == best_avg_net
-            ]
+            best = eligible_net[0]["avg_net"]
+            net_champions = [row["player"] for row in eligible_net if row["avg_net"] == best]
 
-        # 🏆 Campeones por puntos scratch
         if scratch_rows:
-            best_scratch = scratch_rows[0]["total_scratch"]
-            scratch_champions = [
-                row["player"] for row in scratch_rows
-                if row["total_scratch"] == best_scratch
-            ]
+            best = scratch_rows[0]["total_scratch"]
+            scratch_champions = [row["player"] for row in scratch_rows if row["total_scratch"] == best]
 
     return {
         "main": main_rows,
@@ -415,6 +369,30 @@ def compute_league_standings(db: Session, league, rounds):
             "scratch_players": [p.id for p in scratch_champions],
         }
     }
+
+def delete_league(db: Session, league_id: int) -> bool:
+    """
+    Borra una liga SOLO si no tiene rondas asociadas.
+    Devuelve True si borrada, False si no se puede (porque tiene rondas o no existe).
+    """
+    league = get_league(db, league_id)
+    if not league:
+        return False
+
+    # Si hay rondas asociadas, no permitimos borrar (seguro)
+    has_rounds = (
+        db.query(models.Round.id)
+        .filter(models.Round.league_id == league_id)
+        .first()
+        is not None
+    )
+    if has_rounds:
+        return False
+
+    db.delete(league)
+    db.commit()
+    return True
+
 
 
 def get_round(db, round_id: int):
@@ -712,10 +690,13 @@ def delete_achievement(db: Session, achievement_id: int):
 
 # ------------------------ RELACIÓN PLAYER <-> ACHIEVEMENT -----------------------------
 
+from datetime import datetime
 
 def get_player_achievements(db: Session, player_id: int):
     """
-    Devuelve todos los logros asociados a un jugador.
+    Devuelve TODAS las filas PlayerAchievement del jugador (unlocked True/False).
+    Esto es clave para admin/debug porque una fila manual con unlocked=False y locked_by_admin=True
+    sigue existiendo y bloquea el AUTO.
     """
     return (
         db.query(models.PlayerAchievement)
@@ -724,15 +705,28 @@ def get_player_achievements(db: Session, player_id: int):
     )
 
 
-def assign_achievement_to_player(
-    db: Session,
-    player_id: int,
-    achievement_id: int,
-    unlocked: bool = True,
-):
+def get_player_owned_achievement_ids(db: Session, player_id: int) -> set[int]:
     """
-    Asigna (o actualiza) un logro a un jugador.
-    Si ya existía, solo se actualiza el estado.
+    Devuelve SOLO los achievement_id que el jugador tiene desbloqueados (unlocked=True).
+    Ideal para el template.
+    """
+    rows = (
+        db.query(models.PlayerAchievement.achievement_id)
+        .filter(
+            models.PlayerAchievement.player_id == player_id,
+            models.PlayerAchievement.unlocked == True,
+        )
+        .all()
+    )
+    return {aid for (aid,) in rows}
+
+
+def assign_achievement_to_player(db: Session, player_id: int, achievement_id: int):
+    """
+    Asignación MANUAL:
+    - unlocked=True
+    - source='manual'
+    - locked_by_admin=True (el motor AUTO no toca)
     """
     pa = (
         db.query(models.PlayerAchievement)
@@ -746,15 +740,18 @@ def assign_achievement_to_player(
     now = datetime.utcnow()
 
     if pa:
-        pa.unlocked = unlocked
-        if unlocked:
-            pa.unlocked_at = now
+        pa.unlocked = True
+        pa.unlocked_at = now
+        pa.source = "manual"
+        pa.locked_by_admin = True
     else:
         pa = models.PlayerAchievement(
             player_id=player_id,
             achievement_id=achievement_id,
-            unlocked=unlocked,
-            unlocked_at=now if unlocked else None,
+            unlocked=True,
+            unlocked_at=now,
+            source="manual",
+            locked_by_admin=True,
         )
         db.add(pa)
 
@@ -763,13 +760,13 @@ def assign_achievement_to_player(
     return pa
 
 
-def revoke_achievement_from_player(
-    db: Session,
-    player_id: int,
-    achievement_id: int,
-):
+def remove_achievement_from_player(db: Session, player_id: int, achievement_id: int):
     """
-    Quita un logro a un jugador (borra la fila de PlayerAchievement).
+    “Quitar” MANUAL:
+    - NO borra la fila (así queda constancia)
+    - unlocked=False
+    - source='manual'
+    - locked_by_admin=True (bloquea el AUTO; para volver a AUTO usas el botón Reset/Recalc)
     """
     pa = (
         db.query(models.PlayerAchievement)
@@ -780,54 +777,31 @@ def revoke_achievement_from_player(
         .first()
     )
 
-    if not pa:
-        return
+    now = datetime.utcnow()
 
-    db.delete(pa)
-    db.commit()
+    if pa:
+        pa.unlocked = False
+        pa.unlocked_at = now  # si prefieres, lo podemos poner a None
+        pa.source = "manual"
+        pa.locked_by_admin = True
+        db.commit()
+        db.refresh(pa)
+        return pa
 
-from .models import PlayerAchievement
-
-# Obtener logros asignados a un jugador
-def get_player_achievements(db, player_id: int):
-    return (
-        db.query(PlayerAchievement)
-        .filter(PlayerAchievement.player_id == player_id)
-        .all()
+    # Si no existe fila y “quitamos”, creamos una fila manual bloqueada en falso
+    # para que el AUTO NO lo vuelva a activar.
+    pa = models.PlayerAchievement(
+        player_id=player_id,
+        achievement_id=achievement_id,
+        unlocked=False,
+        unlocked_at=now,
+        source="manual",
+        locked_by_admin=True,
     )
-
-# Asignar logro al jugador (si no existe ya)
-def assign_achievement_to_player(db, player_id: int, achievement_id: int):
-    existing = (
-        db.query(PlayerAchievement)
-        .filter(
-            PlayerAchievement.player_id == player_id,
-            PlayerAchievement.achievement_id == achievement_id
-        )
-        .first()
-    )
-    if existing:
-        return existing
-
-    pa = PlayerAchievement(player_id=player_id, achievement_id=achievement_id)
     db.add(pa)
     db.commit()
     db.refresh(pa)
     return pa
-
-# Eliminar logro del jugador
-def remove_achievement_from_player(db, player_id: int, achievement_id: int):
-    pa = (
-        db.query(PlayerAchievement)
-        .filter(
-            PlayerAchievement.player_id == player_id,
-            PlayerAchievement.achievement_id == achievement_id
-        )
-        .first()
-    )
-    if pa:
-        db.delete(pa)
-        db.commit()
 
 
 # ==============================================================================

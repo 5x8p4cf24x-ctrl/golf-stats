@@ -24,6 +24,7 @@ from app.golf_calc import course_handicap, strokes_received_per_hole
 from fastapi import Query
 import secrets
 from fastapi.responses import JSONResponse
+from app.achievements_engine import evaluate_achievements_on_round_close
 
 
 
@@ -402,9 +403,22 @@ def admin_delete_achievement(achievement_id: int, db: Session = Depends(get_db))
     crud.delete_achievement(db, achievement_id)
     return RedirectResponse("/admin/achievements", status_code=303)
 
+@app.get("/admin/achievements/assignment", response_class=HTMLResponse, name="admin_achievements_assignment")
+def admin_achievements_assignment(request: Request, db: Session = Depends(get_db)):
+    players = crud.get_players(db)  # si tu función se llama distinto, dime el nombre y lo ajusto
+    return templates.TemplateResponse(
+        "admin_achievements_assignment.html",
+        {"request": request, "players": players}
+    )
+
+
 # =======================================================================================
 # =========================== ADMIN: ASIGNACIÓN DE LOGROS ===============================
 # =======================================================================================
+
+
+from .achievements_engine import reset_player_auto_achievements, recalculate_player_auto_achievements
+
 
 @app.get("/admin/players/{player_id}/achievements", response_class=HTMLResponse)
 def admin_player_achievements(player_id: int, request: Request, db: Session = Depends(get_db)):
@@ -413,8 +427,18 @@ def admin_player_achievements(player_id: int, request: Request, db: Session = De
         return HTMLResponse("Jugador no encontrado", status_code=404)
 
     all_achievements = crud.get_achievements(db)
-    owned = crud.get_player_achievements(db, player_id)
-    owned_ids = {a.achievement_id for a in owned}
+
+    # ✅ owned = lista de PlayerAchievement (para mostrar source/lock/fecha)
+    owned = (
+        db.query(models.PlayerAchievement)
+        .filter(
+            models.PlayerAchievement.player_id == player_id,
+            models.PlayerAchievement.unlocked == True,
+        )
+        .all()
+    )
+
+    owned_ids = {pa.achievement_id for pa in owned}
 
     return templates.TemplateResponse(
         "admin_player_achievements.html",
@@ -423,6 +447,7 @@ def admin_player_achievements(player_id: int, request: Request, db: Session = De
             "player": player,
             "all_achievements": all_achievements,
             "owned_ids": owned_ids,
+            "owned": owned,
         }
     )
 
@@ -431,12 +456,19 @@ def admin_player_achievements(player_id: int, request: Request, db: Session = De
 def admin_assign_achievement_to_player(
     player_id: int,
     achievement_id: int = Form(...),
-    db: Session = Depends(get_db)
+    lock: str | None = Form(None),  # checkbox opcional
+    db: Session = Depends(get_db),
 ):
-    # 1) asigna logro
-    crud.assign_achievement_to_player(db, player_id, achievement_id)
+    # 1) asigna logro en modo manual (tu crud ya lo deja unlocked=True)
+    pa = crud.assign_achievement_to_player(db, player_id, achievement_id)
 
-    # 2) crea noticia
+    # 2) aplica bloqueo según checkbox (si no hay check, lo dejamos NO bloqueado)
+    should_lock = (lock == "1")
+    if pa:
+        pa.locked_by_admin = should_lock
+        db.commit()
+
+    # 3) crea noticia (manual)
     player = crud.get_player(db, player_id)
     achievement = crud.get_achievement(db, achievement_id)
 
@@ -447,10 +479,8 @@ def admin_assign_achievement_to_player(
             excerpt=f"Nuevo logro para {player.name}: {achievement.name}. ¡GolfMode ON!",
             category="achievement",
             image_path="news/default_achievement.jpg",
-            related_url=f"/players/{player_id}",  # ✅ PERFIL REAL
+            related_url=f"/players/{player_id}",
         )
-
-
 
     return RedirectResponse(f"/admin/players/{player_id}/achievements", status_code=303)
 
@@ -459,10 +489,20 @@ def admin_assign_achievement_to_player(
 def admin_remove_achievement_from_player(
     player_id: int,
     achievement_id: int = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     crud.remove_achievement_from_player(db, player_id, achievement_id)
     return RedirectResponse(f"/admin/players/{player_id}/achievements", status_code=303)
+
+
+@app.post("/admin/players/{player_id}/achievements/recalc-auto")
+def admin_player_achievements_recalc_auto(player_id: int, db: Session = Depends(get_db)):
+    # ✅ Borra AUTO no bloqueados + recalcula desde rondas cerradas
+    reset_player_auto_achievements(db, player_id)
+    recalculate_player_auto_achievements(db, player_id)
+    return RedirectResponse(f"/admin/players/{player_id}/achievements", status_code=303)
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -998,6 +1038,12 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
     if all(x.gross_total is not None for x in rps):
         # cerramos y calculamos ganador (estable: stableford hcp en tu lógica)
         crud.close_round_and_set_winner(db, round_id)
+        # Normalización final de datos (SIEMPRE)
+        crud.normalize_round_hole_data(db, round_id)
+
+        # ✅ Logros automáticos (apagado por defecto)
+        if os.getenv("ACHIEVEMENTS_AUTO", "0") == "1":
+            evaluate_achievements_on_round_close(db, round_id)
 
         # recargar datos ya actualizados
         r = crud.get_round(db, round_id)
@@ -1113,13 +1159,26 @@ async def admin_leagues_new(
 
     return RedirectResponse("/admin/leagues", status_code=303)
 
+@app.post("/admin/leagues/{league_id}/delete")
+def admin_league_delete(league_id: int, db: Session = Depends(get_db)):
+    ok = crud.delete_league(db, league_id)
+    # Si no se pudo borrar (tiene rondas), volvemos igualmente
+    # (si quieres, luego le metemos un mensaje flash)
+    return RedirectResponse("/admin/leagues", status_code=303)
 
 
+
+from app.achievements_engine import evaluate_achievements_on_league_close
 
 @app.post("/admin/leagues/{league_id}/close")
 def admin_leagues_close(league_id: int, db: Session = Depends(get_db)):
     crud.close_league(db, league_id)
+
+    # ✅ Otorga 01/02/03 aquí (evento real)
+    evaluate_achievements_on_league_close(db, league_id)
+
     return RedirectResponse("/admin/leagues", status_code=303)
+
 
 
 # =====================================================================================

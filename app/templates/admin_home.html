@@ -11,7 +11,7 @@
     <p>Crear una ronda nueva</p>
   </a>
 
-  <a href="/admin/achievements" class="admin-action">
+  <a href="/admin/achievements/assignment" class="admin-action">
     <h3>Asignación de logros</h3>
     <p>Gestionar logros por jugador</p>
   </a>
@@ -41,33 +41,6 @@
     <h3>Ligas</h3>
   </a>
 
-</section>
-
-<section class="admin-card" style="margin-top:24px;">
-  <h3>Logros por jugador</h3>
-
-  <table class="admin-table">
-    <thead>
-      <tr>
-        <th class="text-left">Jugador</th>
-        <th>HCP</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for p in players %}
-      <tr>
-        <td class="text-left">{{ p.name }}</td>
-        <td>{{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }}</td>
-        <td>
-          <a href="/admin/players/{{ p.id }}/achievements" class="link-gm">
-            Gestionar logros
-          </a>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
 </section>
 
 {% endblock %}
