@@ -762,11 +762,11 @@ def assign_achievement_to_player(db: Session, player_id: int, achievement_id: in
 
 def remove_achievement_from_player(db: Session, player_id: int, achievement_id: int):
     """
-    “Quitar” MANUAL:
-    - NO borra la fila (así queda constancia)
-    - unlocked=False
-    - source='manual'
-    - locked_by_admin=True (bloquea el AUTO; para volver a AUTO usas el botón Reset/Recalc)
+    “Quitar” TEMPORAL:
+    - Deja de mostrarlo (unlocked=False)
+    - NO bloquea el AUTO (locked_by_admin=False)
+    - Reset AUTO + Recalcular lo puede recuperar
+    - No crea filas nuevas si no existía el logro
     """
     pa = (
         db.query(models.PlayerAchievement)
@@ -777,31 +777,17 @@ def remove_achievement_from_player(db: Session, player_id: int, achievement_id: 
         .first()
     )
 
-    now = datetime.utcnow()
+    if not pa:
+        return None  # no había nada que quitar
 
-    if pa:
-        pa.unlocked = False
-        pa.unlocked_at = now  # si prefieres, lo podemos poner a None
-        pa.source = "manual"
-        pa.locked_by_admin = True
-        db.commit()
-        db.refresh(pa)
-        return pa
-
-    # Si no existe fila y “quitamos”, creamos una fila manual bloqueada en falso
-    # para que el AUTO NO lo vuelva a activar.
-    pa = models.PlayerAchievement(
-        player_id=player_id,
-        achievement_id=achievement_id,
-        unlocked=False,
-        unlocked_at=now,
-        source="manual",
-        locked_by_admin=True,
-    )
-    db.add(pa)
+    pa.unlocked = False
+    pa.unlocked_at = None
+    pa.locked_by_admin = False
+    # pa.source = pa.source  # no hace falta tocarlo
     db.commit()
     db.refresh(pa)
     return pa
+
 
 
 # ==============================================================================

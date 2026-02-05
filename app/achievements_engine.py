@@ -228,8 +228,15 @@ def eval_round_flags(stats_rows) -> dict:
         }
 
     desde_fuera = any((putts is not None and putts == 0) for _, _, _, _, putts, _ in stats_rows)
-    hole_in_one = any(gross == 1 for _, _, _, _, _, gross in stats_rows)
-    eagle = any(gross == (par - 2) for _, par, _, _, _, gross in stats_rows)
+    hole_in_one = any(
+        gross == 1
+        for _, _, _, _, _, gross in stats_rows
+    )
+
+    eagle = any(
+        (gross == par - 2) and (gross != 1)
+        for _, par, _, _, _, gross in stats_rows
+    )
 
     # triple bogey o peor => gross >= par+3, así que "no triple bogey" => gross <= par+2
     no_triple_bogey = all(gross <= (par + 2) for _, par, _, _, _, gross in stats_rows)
@@ -582,8 +589,9 @@ from sqlalchemy import func  # arriba del archivo si no lo tienes
 
 def reset_player_auto_achievements(db: Session, player_id: int) -> None:
     """
-    Borra SOLO logros AUTO del jugador (y que NO estén bloqueados).
-    No toca manual, ni nada locked_by_admin=True.
+    Reset total del estado AUTO del jugador:
+    - Borra TODO PlayerAchievement del jugador que NO sea un bloqueo manual "positivo".
+    - Como tú quieres que Reset recupere, borramos también los bloqueos manuales (unlocked=False).
     """
     rows = (
         db.query(models.PlayerAchievement)
@@ -592,10 +600,12 @@ def reset_player_auto_achievements(db: Session, player_id: int) -> None:
     )
 
     for pa in rows:
-        if pa.locked_by_admin:
+        # Si algún día quieres "bloqueo permanente", este sería el único que conservarías.
+        # Pero ahora mismo, tu regla es: reset recupera -> así que solo conservaríamos manual unlocked=True.
+        if pa.source == "manual" and pa.unlocked is True and pa.locked_by_admin:
             continue
-        if pa.source == "auto":
-            db.delete(pa)
+
+        db.delete(pa)
 
     db.commit()
 
@@ -617,3 +627,18 @@ def recalculate_player_auto_achievements(db: Session, player_id: int) -> None:
 
     for rid in round_ids:
         evaluate_achievements_on_round_close(db, rid)
+
+    # ✅ NUEVO: recalcular logros de ligas cerradas donde participa el jugador
+    league_ids = (
+        db.query(models.League.id)
+        .join(models.Round, models.Round.league_id == models.League.id)
+        .join(models.RoundPlayer, models.RoundPlayer.round_id == models.Round.id)
+        .filter(models.RoundPlayer.player_id == player_id)
+        .filter(models.League.is_closed.is_(True))
+        .distinct()
+        .all()
+    )
+    league_ids = [lid for (lid,) in league_ids]
+
+    for lid in league_ids:
+        evaluate_achievements_on_league_close(db, lid)

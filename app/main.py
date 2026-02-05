@@ -2426,8 +2426,7 @@ def player_profile(
     # LOGROS DEL JUGADOR
     # -------------------------
     all_achievements = crud.get_achievements(db)
-    player_achievements = crud.get_player_achievements(db, player_id)
-    owned_ids = {pa.achievement_id for pa in player_achievements}
+    owned_ids = crud.get_player_owned_achievement_ids(db, player_id)
 
     achievements_data = []
     for a in all_achievements:
