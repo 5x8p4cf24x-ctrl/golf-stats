@@ -1038,9 +1038,7 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
     if all(x.gross_total is not None for x in rps):
         # cerramos y calculamos ganador (estable: stableford hcp en tu lógica)
         crud.close_round_and_set_winner(db, round_id)
-        # Normalización final de datos (SIEMPRE)
-        crud.normalize_round_hole_data(db, round_id)
-
+        
         # ✅ Logros automáticos (apagado por defecto)
         if os.getenv("ACHIEVEMENTS_AUTO", "0") == "1":
             evaluate_achievements_on_round_close(db, round_id)
