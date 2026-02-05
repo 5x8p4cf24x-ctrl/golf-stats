@@ -1041,7 +1041,7 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
         
         # ✅ Logros automáticos (apagado por defecto)
         if os.getenv("ACHIEVEMENTS_AUTO", "0") == "1":
-            evaluate_achievements_on_round_close(db, round_id)
+            evaluate_achievements_on_round_close(db, round_id, emit_news=True)
 
         # recargar datos ya actualizados
         r = crud.get_round(db, round_id)
@@ -1170,12 +1170,15 @@ from app.achievements_engine import evaluate_achievements_on_league_close
 
 @app.post("/admin/leagues/{league_id}/close")
 def admin_leagues_close(league_id: int, db: Session = Depends(get_db)):
+    # Cerrar liga (estado)
     crud.close_league(db, league_id)
 
-    # ✅ Otorga 01/02/03 aquí (evento real)
-    evaluate_achievements_on_league_close(db, league_id)
+    # ✅ Logros + News por cierre real de liga
+    if os.getenv("ACHIEVEMENTS_AUTO", "0") == "1":
+        evaluate_achievements_on_league_close(db, league_id, emit_news=True)
 
     return RedirectResponse("/admin/leagues", status_code=303)
+
 
 
 

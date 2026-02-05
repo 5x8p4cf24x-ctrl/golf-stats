@@ -30,14 +30,15 @@ def find_achievement_id_by_number(db: Session, number: int) -> int | None:
     return ach.id if ach else None
 
 
-def set_achievement_auto(db: Session, player_id: int, achievement_id: int, achieved: bool) -> None:
+def set_achievement_auto(db: Session, player_id: int, achievement_id: int, achieved: bool) -> bool:
     """
     AUTO = solo desbloquea.
     - achieved=False: NO revoca (no apaga).
     - Respeta locked_by_admin.
+    Devuelve True SOLO si acaba de desbloquear (nuevo unlock).
     """
     if not achieved:
-        return
+        return False
 
     pa = (
         db.query(models.PlayerAchievement)
@@ -52,23 +53,27 @@ def set_achievement_auto(db: Session, player_id: int, achievement_id: int, achie
 
     if pa:
         if pa.locked_by_admin:
-            return
-        if not pa.unlocked:
-            pa.unlocked = True
-            pa.unlocked_at = now
-            pa.source = "auto"
-    else:
-        pa = models.PlayerAchievement(
-            player_id=player_id,
-            achievement_id=achievement_id,
-            unlocked=True,
-            unlocked_at=now,
-            source="auto",
-            locked_by_admin=False,
-        )
-        db.add(pa)
+            return False
+        if pa.unlocked:
+            return False
 
+        pa.unlocked = True
+        pa.unlocked_at = now
+        pa.source = "auto"
+        db.commit()
+        return True
+
+    pa = models.PlayerAchievement(
+        player_id=player_id,
+        achievement_id=achievement_id,
+        unlocked=True,
+        unlocked_at=now,
+        source="auto",
+        locked_by_admin=False,
+    )
+    db.add(pa)
     db.commit()
+    return True
 
 
 def get_round_hole_stats(db: Session, round_id: int, player_id: int):
@@ -350,10 +355,20 @@ def eval_streak_and_par_achievements(stats_rows) -> dict:
 # Entry points
 # ============================================================
 
-def evaluate_achievements_on_round_close(db: Session, round_id: int) -> None:
+def evaluate_achievements_on_round_close(db: Session, round_id: int, emit_news: bool = True) -> None:
     """
     Se llama al cerrar ronda. Evalúa logros automáticos.
+    Crea news SOLO cuando un logro pasa de locked/unlocked=False -> True (did_unlock=True)
+    y SOLO si emit_news=True.
     """
+
+    def set_and_news(player_id: int, achievement_id: int | None, achieved: bool) -> None:
+        if not achievement_id:
+            return
+        did = set_achievement_auto(db, player_id, achievement_id, achieved)
+        if did and emit_news:
+            emit_achievement_news(db, player_id, achievement_id)
+
     # IDs logros (score bruto)
     ach_100 = find_achievement_id_by_number(db, 4)
     ach_90  = find_achievement_id_by_number(db, 5)
@@ -393,8 +408,9 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int) -> None:
         ach_out, ach_no3, ach_3pf, ach_hio, ach_eag,
         ach_fir70, ach_gir50, ach_par3g,
         ach_bbb, ach_par3, ach_par5, ach_streak5,
-        ach_hcp18, 
+        ach_hcp18,
         ach_addict100,
+        ach_all,
     ]):
         return
 
@@ -414,43 +430,36 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int) -> None:
         # 04/05/06 (bruto)
         if rp.gross_total is not None:
             gross = rp.gross_total
-            if ach_100:
-                set_achievement_auto(db, player_id, ach_100, gross < 100)
-            if ach_90:
-                set_achievement_auto(db, player_id, ach_90, gross < 90)
-            if ach_80:
-                set_achievement_auto(db, player_id, ach_80, gross < 80)
+            set_and_news(player_id, ach_100, gross < 100)
+            set_and_news(player_id, ach_90,  gross < 90)
+            set_and_news(player_id, ach_80,  gross < 80)
 
-        # Birdies globales (una vez por jugador)
+        # Birdies globales / adicto / todos (una vez por jugador)
         if player_id not in processed_players:
             processed_players.add(player_id)
+
             if any([ach_b10, ach_b25, ach_b50]):
                 birdies_total = count_player_birdies(db, player_id)
-                if ach_b10:
-                    set_achievement_auto(db, player_id, ach_b10, birdies_total >= 10)
-                if ach_b25:
-                    set_achievement_auto(db, player_id, ach_b25, birdies_total >= 25)
-                if ach_b50:
-                    set_achievement_auto(db, player_id, ach_b50, birdies_total >= 50)
+                set_and_news(player_id, ach_b10, birdies_total >= 10)
+                set_and_news(player_id, ach_b25, birdies_total >= 25)
+                set_and_news(player_id, ach_b50, birdies_total >= 50)
 
-        # 20) Adicto al juego (100 rondas cerradas)
+            # 20) Adicto al juego (100 rondas cerradas)
             if ach_addict100:
                 rounds_closed = count_player_closed_rounds(db, player_id)
-                set_achievement_auto(db, player_id, ach_addict100, rounds_closed >= 100)
+                set_and_news(player_id, ach_addict100, rounds_closed >= 100)
 
-        # 24) Todos los logros (global)
+            # 24) Todos los logros (global)
             if ach_all:
                 if player_has_all_achievements(db, player_id, ach_all):
-                    set_achievement_auto(db, player_id, ach_all, True)
+                    set_and_news(player_id, ach_all, True)
 
-
-        # Datos hoyo-a-hoyo (una sola query) para el resto
+        # Datos hoyo-a-hoyo para el resto
         needs_rows = any([
             ach_out, ach_no3, ach_3pf, ach_hio, ach_eag,
             ach_fir70, ach_gir50, ach_par3g,
             ach_bbb, ach_par3, ach_par5, ach_streak5
         ])
-
         if not needs_rows:
             continue
 
@@ -459,44 +468,32 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int) -> None:
         # 07/11/12/16/17
         if any([ach_out, ach_no3, ach_3pf, ach_hio, ach_eag]):
             flags = eval_round_flags(stats_rows)
-            if ach_out:
-                set_achievement_auto(db, player_id, ach_out, flags["desde_fuera"])
-            if ach_no3:
-                set_achievement_auto(db, player_id, ach_no3, flags["no_triple_bogey"])
-            if ach_3pf:
-                set_achievement_auto(db, player_id, ach_3pf, flags["tripateo_free"])
-            if ach_hio:
-                set_achievement_auto(db, player_id, ach_hio, flags["hole_in_one"])
-            if ach_eag:
-                set_achievement_auto(db, player_id, ach_eag, flags["eagle"])
+            set_and_news(player_id, ach_out, flags["desde_fuera"])
+            set_and_news(player_id, ach_no3, flags["no_triple_bogey"])
+            set_and_news(player_id, ach_3pf, flags["tripateo_free"])
+            set_and_news(player_id, ach_hio, flags["hole_in_one"])
+            set_and_news(player_id, ach_eag, flags["eagle"])
 
         # 09/10/19
         if any([ach_fir70, ach_gir50, ach_par3g]):
             fg = eval_fir_gir_achievements(stats_rows)
-            if ach_fir70:
-                set_achievement_auto(db, player_id, ach_fir70, fg["fir_70"])
-            if ach_gir50:
-                set_achievement_auto(db, player_id, ach_gir50, fg["gir_50"])
-            if ach_par3g:
-                set_achievement_auto(db, player_id, ach_par3g, fg["par3_all_gir"])
+            set_and_news(player_id, ach_fir70, fg["fir_70"])
+            set_and_news(player_id, ach_gir50, fg["gir_50"])
+            set_and_news(player_id, ach_par3g, fg["par3_all_gir"])
 
         # 18/21/22/23
         if any([ach_bbb, ach_par3, ach_par5, ach_streak5]):
             sp = eval_streak_and_par_achievements(stats_rows)
-            if ach_bbb:
-                set_achievement_auto(db, player_id, ach_bbb, sp["birdie3plus_in_round"])
-            if ach_par3:
-                set_achievement_auto(db, player_id, ach_par3, sp["par3_all_par_or_better"])
-            if ach_par5:
-                set_achievement_auto(db, player_id, ach_par5, sp["par5_all_par_or_better"])
-            if ach_streak5:
-                set_achievement_auto(db, player_id, ach_streak5, sp["five_par_or_better_streak"])
-        
+            set_and_news(player_id, ach_bbb, sp["birdie3plus_in_round"])
+            set_and_news(player_id, ach_par3, sp["par3_all_par_or_better"])
+            set_and_news(player_id, ach_par5, sp["par5_all_par_or_better"])
+            set_and_news(player_id, ach_streak5, sp["five_par_or_better_streak"])
+
         # 08 HCP 18 (nivel juego real de esa ronda)
         if ach_hcp18:
             level_hcp = compute_level_hcp_for_round_player(db, rp)
             if level_hcp is not None:
-                set_achievement_auto(db, player_id, ach_hcp18, level_hcp <= 18.0)
+                set_and_news(player_id, ach_hcp18, level_hcp <= 18.0)
 
 
 # ============================================================
@@ -508,10 +505,19 @@ def award_league_champion_achievements(
     main_champions: list[models.Player],
     net_champions: list[models.Player],
     scratch_champions: list[models.Player],
+    emit_news: bool = True,
 ) -> None:
     """
     Otorga logros de liga (01/02/03) a los campeones calculados al cerrar la liga.
+    Emite news SOLO si hay nuevo unlock y emit_news=True.
     """
+    def set_and_news(player_id: int, achievement_id: int | None, achieved: bool) -> None:
+        if not achievement_id:
+            return
+        did = set_achievement_auto(db, player_id, achievement_id, achieved)
+        if did and emit_news:
+            emit_achievement_news(db, player_id, achievement_id)
+
     ach_01 = find_achievement_id_by_number(db, 1)  # 01. Campeón Liga
     ach_02 = find_achievement_id_by_number(db, 2)  # 02. Campeón Golpes
     ach_03 = find_achievement_id_by_number(db, 3)  # 03. Campeón Puntos
@@ -519,28 +525,26 @@ def award_league_champion_achievements(
     if ach_01:
         for p in (main_champions or []):
             if p and getattr(p, "id", None):
-                set_achievement_auto(db, p.id, ach_01, True)
+                set_and_news(p.id, ach_01, True)
 
     if ach_02:
         for p in (net_champions or []):
             if p and getattr(p, "id", None):
-                set_achievement_auto(db, p.id, ach_02, True)
+                set_and_news(p.id, ach_02, True)
 
     if ach_03:
         for p in (scratch_champions or []):
             if p and getattr(p, "id", None):
-                set_achievement_auto(db, p.id, ach_03, True)
+                set_and_news(p.id, ach_03, True)
 
     # 24) Todos los logros (re-evaluación tras otorgar logros de liga)
     ach_all = find_achievement_id_by_number(db, 24)
     if ach_all:
-        # revisa candidatos de esta liga (los campeones que acabas de premiar)
-        candidates = []
+        candidates: list[models.Player] = []
         candidates.extend(main_champions or [])
         candidates.extend(net_champions or [])
         candidates.extend(scratch_champions or [])
 
-        # evitar duplicados por id
         seen: set[int] = set()
         for p in candidates:
             if not p or not getattr(p, "id", None):
@@ -550,10 +554,10 @@ def award_league_champion_achievements(
             seen.add(p.id)
 
             if player_has_all_achievements(db, p.id, ach_all):
-                set_achievement_auto(db, p.id, ach_all, True)
+                set_and_news(p.id, ach_all, True)
 
 
-def evaluate_achievements_on_league_close(db: Session, league_id: int) -> None:
+def evaluate_achievements_on_league_close(db: Session, league_id: int, emit_news: bool = True) -> None:
     """
     Se llama cuando cierras la liga. Calcula campeones desde standings y otorga 01/02/03.
     """
@@ -582,7 +586,9 @@ def evaluate_achievements_on_league_close(db: Session, league_id: int) -> None:
         main_champions=main_players,
         net_champions=net_players,
         scratch_champions=scratch_players,
+        emit_news=emit_news,
     )
+
 
 from sqlalchemy import func  # arriba del archivo si no lo tienes
 
@@ -626,7 +632,7 @@ def recalculate_player_auto_achievements(db: Session, player_id: int) -> None:
     round_ids = [rid for (rid,) in round_ids]
 
     for rid in round_ids:
-        evaluate_achievements_on_round_close(db, rid)
+        evaluate_achievements_on_round_close(db, rid, emit_news=False)
 
     # ✅ NUEVO: recalcular logros de ligas cerradas donde participa el jugador
     league_ids = (
@@ -641,4 +647,21 @@ def recalculate_player_auto_achievements(db: Session, player_id: int) -> None:
     league_ids = [lid for (lid,) in league_ids]
 
     for lid in league_ids:
-        evaluate_achievements_on_league_close(db, lid)
+        evaluate_achievements_on_league_close(db, lid, emit_news=False)
+
+def emit_achievement_news(db: Session, player_id: int, achievement_id: int) -> None:
+    from . import crud
+
+    player = crud.get_player(db, player_id)
+    achievement = crud.get_achievement(db, achievement_id)
+    if not player or not achievement:
+        return
+
+    crud.create_news(
+        db,
+        title=f"{player.name} desbloquea: {achievement.name}",
+        excerpt=f"Nuevo logro para {player.name}: {achievement.name}. ¡GolfMode ON!",
+        category="achievement",
+        image_path="news_defaults/default_achievement.jpg",
+        related_url=f"/players/{player_id}",
+    )

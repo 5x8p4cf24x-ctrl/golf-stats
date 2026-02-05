@@ -7,21 +7,37 @@
   <div class="news-img">
     {% set p = item.image_path or '' %}
 
-    {# Normaliza rutas antiguas guardadas como /static/uploads/... #}
+    {# Normaliza rutas antiguas guardadas como /static/uploads/... -> /uploads/... #}
     {% if p.startswith('/static/uploads/') %}
-      {% set p = p.replace('/static/uploads/', '') %}
+      {% set p = p.replace('/static/uploads/', '/uploads/') %}
     {% endif %}
 
-    {# Si es ruta relativa (news/xxx.jpg), la servimos desde /uploads #}
-    {% if p and not p.startswith('/') and not p.startswith('http') %}
-      {% set p = '/uploads/' ~ p %}
+    {# Fallback por categoría (si no hay image_path o si falla la carga) #}
+    {% set fallback = 'news_defaults/default_round.jpg' %}
+    {% if item.category == 'league' %}
+      {% set fallback = 'news_defaults/default_league.jpg' %}
+    {% elif item.category == 'achievement' %}
+      {% set fallback = 'news_defaults/default_achievement.jpg' %}
+    {% endif %}
+
+    {# 1) Si ya es absoluta o URL, se usa tal cual #}
+    {% if p.startswith('http') or p.startswith('/static/') or p.startswith('/uploads/') %}
+      {% set src = p %}
+
+    {# 2) Si es relativa, asumimos STATIC (para AUTO: news_defaults/, icons/, etc.) #}
+    {% elif p %}
+      {% set src = url_for('static', path=p) %}
+
+    {# 3) Si no hay imagen, usamos fallback por categoría #}
+    {% else %}
+      {% set src = url_for('static', path=fallback) %}
     {% endif %}
 
     <img
-      src="{{ p if p else '/static/news_placeholder.jpg' }}"
+      src="{{ src }}"
       alt="{{ item.title }}"
       loading="lazy"
-      onerror="this.onerror=null;this.src='/static/news_placeholder.jpg';"
+      onerror="this.onerror=null;this.src='{{ url_for('static', path=fallback) }}';"
     >
 
     <span class="news-badge cat-{{ item.category }}">
@@ -32,7 +48,6 @@
       {% if item.category not in ["league","achievement","record","round"] %}GolfMode{% endif %}
     </span>
 
-    <!-- Botón compartir (solo visible en móvil por CSS) -->
     <button
       type="button"
       class="news-share"
