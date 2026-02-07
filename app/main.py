@@ -363,7 +363,7 @@ async def player_edit(
     crud.update_player(db, player_id, data)
     return RedirectResponse("/admin/players", status_code=303)
 
-from datetime import datetime
+
 
 @app.post("/admin/players/{player_id}/handicap/refresh")
 def admin_player_refresh_handicap(player_id: int, db: Session = Depends(get_db)):
