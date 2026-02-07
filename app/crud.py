@@ -38,6 +38,15 @@ def update_player(db: Session, player_id: int, data: schemas.PlayerUpdate):
     db.refresh(p)
     return p
 
+def update_player_hcp(db: Session, player_id: int, hcp_exact: float):
+    p = get_player(db, player_id)
+    if not p:
+        return None
+    p.hcp_exact = hcp_exact
+    db.commit()
+    db.refresh(p)
+    return p
+
 def delete_player(db: Session, player_id: int):
     p = get_player(db, player_id)
     if not p:

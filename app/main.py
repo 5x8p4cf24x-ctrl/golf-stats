@@ -25,11 +25,13 @@ from fastapi import Query
 import secrets
 from fastapi.responses import JSONResponse
 from app.achievements_engine import evaluate_achievements_on_round_close
+from app.services.handicap_rfeg import fetch_rfeg_handicap
 
 
 
 
 Base.metadata.create_all(bind=engine)
+
 
 def ensure_league_logo_column():
     # Añade la columna logo_url si no existe (solo SQLite)
@@ -44,7 +46,9 @@ def ensure_league_logo_column():
                 else:
                     raise
 
+
 ensure_league_logo_column()
+
 
 def ensure_tournament_image_column():
     # Añade image_path si no existe (para SQLite). En Postgres lo ideal es migración,
@@ -59,7 +63,28 @@ def ensure_tournament_image_column():
                 else:
                     raise
 
+
 ensure_tournament_image_column()
+
+
+# 🟢 👉 AÑADE ESTO AQUÍ (NUEVO)
+def ensure_player_hcp_updated_at_column():
+    # Añade hcp_updated_at si no existe (solo SQLite)
+    if engine.dialect.name == "sqlite":
+        with engine.connect() as conn:
+            try:
+                conn.execute(
+                    text("ALTER TABLE players ADD COLUMN hcp_updated_at DATETIME")
+                )
+            except Exception as e:
+                if "duplicate column name: hcp_updated_at" in str(e):
+                    pass
+                else:
+                    raise
+
+
+ensure_player_hcp_updated_at_column()
+
 
 
 
@@ -338,6 +363,35 @@ async def player_edit(
     crud.update_player(db, player_id, data)
     return RedirectResponse("/admin/players", status_code=303)
 
+from datetime import datetime
+
+@app.post("/admin/players/{player_id}/handicap/refresh")
+def admin_player_refresh_handicap(player_id: int, db: Session = Depends(get_db)):
+    player = crud.get_player(db, player_id)
+    if not player:
+        return JSONResponse({"ok": False, "error": "Jugador no existe"}, status_code=404)
+
+    if not player.license_number:
+        return JSONResponse({"ok": False, "error": "Jugador sin licencia_number"}, status_code=400)
+
+    try:
+        data = fetch_rfeg_handicap(player.license_number)
+        new_hcp = float(data["handicap"])
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": f"No se pudo consultar RFEG: {e}"}, status_code=502)
+
+    player.hcp_exact = new_hcp
+    player.hcp_updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(player)
+
+    return {
+        "ok": True,
+        "player_id": player_id,
+        "license": data["license"],
+        "hcp_exact": player.hcp_exact,
+        "hcp_updated_at": player.hcp_updated_at.isoformat() if player.hcp_updated_at else None
+    }
 
 # ---- ELIMINAR JUGADOR ----
 @app.get("/admin/players/{player_id}/delete")

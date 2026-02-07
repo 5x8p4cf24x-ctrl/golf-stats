@@ -1611,6 +1611,11 @@ main.gm-wrap.player-profile-page{
   text-decoration: underline;
 }
 
+.player-hcp-updated{
+  margin-top: 4px;
+  font-size: 10px;
+  opacity: 0.75;
+}
 
 /* =============================================================================
    PERFIL DE JUGADOR (PUBLIC / PROFILE)

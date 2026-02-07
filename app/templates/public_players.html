@@ -43,6 +43,12 @@
           <div class="player-hcp">
             HCP {{ "%.1f"|format(p.hcp_exact) }}
           </div>
+
+          {% if p.hcp_updated_at %}
+            <div class="player-hcp-updated">
+              Última actualización RFEG: {{ p.hcp_updated_at.strftime("%d/%m/%Y") }}
+            </div>
+          {% endif %}
         </div>
       </a>
     {% endfor %}

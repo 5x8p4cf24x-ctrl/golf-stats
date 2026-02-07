@@ -13,6 +13,7 @@ class Player(Base):
     name = Column(String, nullable=False, index=True)
     nickname = Column(String, nullable=True)
     hcp_exact = Column(Float, nullable=False, default=0.0)
+    hcp_updated_at = Column(DateTime, nullable=True)
     active = Column(Boolean, default=True)
     license_number = Column(String, nullable=True)
 
