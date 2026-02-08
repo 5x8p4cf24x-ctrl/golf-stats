@@ -26,6 +26,7 @@ import secrets
 from fastapi.responses import JSONResponse
 from app.achievements_engine import evaluate_achievements_on_round_close
 from app.services.handicap_rfeg import fetch_rfeg_handicap
+from app.utils.email import send_admin_email
 
 
 
@@ -3614,6 +3615,23 @@ async def public_live_finish(round_id: int, request: Request, db: Session = Depe
 
     rp.player_card_locked = True
     db.commit()
+
+    # ✅ email aquí
+    try:
+        admin_url = f"https://golfmode.es/admin/rounds/{round_id}/summary"
+        send_admin_email(
+            subject="🏁 Tarjeta LIVE cerrada",
+            body=(
+                f"Un jugador ha cerrado su tarjeta LIVE.\n\n"
+                f"Round ID: {round_id}\n"
+                f"RoundPlayer ID: {rp.id}\n"
+                f"Player ID: {rp.player_id}\n\n"
+                f"Revisar en admin:\n{admin_url}\n"
+            ),
+        )
+    except Exception as e:
+        print("ERROR email admin:", e)
+
 
     # ¿están todos los jugadores con tarjeta cerrada?
     rps = crud.get_round_players(db, round_id)
