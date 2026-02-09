@@ -4,11 +4,19 @@ from email.message import EmailMessage
 
 
 def send_admin_email(subject: str, body: str) -> None:
-    host = os.environ["SMTP_HOST"]
-    port = int(os.environ.get("SMTP_PORT", "587"))
-    user = os.environ["SMTP_USER"]
-    password = os.environ["SMTP_PASS"]
-    to_email = os.environ["ADMIN_EMAIL"]
+    host = os.environ.get("SMTP_HOST")
+    port = os.environ.get("SMTP_PORT")
+    user = os.environ.get("SMTP_USER")
+    password = os.environ.get("SMTP_PASS", "")
+    to_email = os.environ.get("ADMIN_EMAIL")
+
+    print("EMAIL DEBUG host:", host)
+    print("EMAIL DEBUG port env:", port)
+    print("EMAIL DEBUG user:", user)
+    print("EMAIL DEBUG pass_len:", len(password))
+    print("EMAIL DEBUG pass_head_tail:", (password[:2] + "***" + password[-2:]) if password else "EMPTY")
+    print("EMAIL DEBUG to:", to_email)
+
 
     msg = EmailMessage()
     msg["From"] = user
@@ -16,7 +24,8 @@ def send_admin_email(subject: str, body: str) -> None:
     msg["Subject"] = subject
     msg.set_content(body)
 
-    with smtplib.SMTP(host, port) as server:
-        server.starttls()
+    # ✅ SMTP SSL (NO starttls)
+    with smtplib.SMTP_SSL(host, 465) as server:
         server.login(user, password)
         server.send_message(msg)
+        
