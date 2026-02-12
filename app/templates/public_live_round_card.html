@@ -404,29 +404,30 @@
   <!-- HOLE -->
   <section class="card live-card" style="padding:16px; margin-top:14px;">
     <div class="nav">
-      <button class="btn-primary" type="button" onclick="prevHole()">◀</button>
+      <button class="btn-primary navbtn" type="button" data-nav="-1">◀</button>
       <div>
         <div class="hole-title">Hoyo <span id="holeNum">1</span></div>
         <div class="hole-meta">Par <span id="holePar">-</span> · HCP <span id="holeSI">-</span></div>
       </div>
-      <button class="btn-primary" type="button" onclick="nextHole()">▶</button>
+      <button class="btn-primary navbtn" type="button" data-nav="1">▶</button>
     </div>
 
     <div class="hole-inputs">
       <div class="live-row">
         <label>Golpes</label>
-        <button class="stepbtn" type="button" onclick="step('gross',-1)">−</button>
+        <button class="stepbtn" type="button" data-field="gross" data-delta="-1">−</button>
         <input id="grossInput" class="num" type="text" inputmode="numeric">
-        <button class="stepbtn" type="button" onclick="step('gross',1)">+</button>
+        <button class="stepbtn" type="button" data-field="gross" data-delta="1">+</button>
       </div>
 
       <div class="live-row">
         <label>Putts</label>
-        <button class="stepbtn" type="button" onclick="step('putts',-1)">−</button>
+        <button class="stepbtn" type="button" data-field="putts" data-delta="-1">−</button>
         <input id="puttsInput" class="num" type="text" inputmode="numeric">
-        <button class="stepbtn" type="button" onclick="step('putts',1)">+</button>
+        <button class="stepbtn" type="button" data-field="putts" data-delta="1">+</button>
       </div>
     </div>
+
 
     <div class="mini-metrics mini-metrics--row">
       <span class="mini-chip mini-chip--hidden">Guardado: <b id="grossSaved">-</b></span>
@@ -482,7 +483,8 @@
   ];
 
   let idx = 0;
-  let dirty = false; // ✅ cambios pendientes en el hoyo actual
+  let dirty = false; // cambios pendientes en el hoyo actual
+  let uiTick = null; // throttle UI
 
   const liveWrap  = document.querySelector(".live-wrap");
   const holeNum   = document.getElementById("holeNum");
@@ -505,10 +507,17 @@
   const finishBtn  = document.getElementById("finishBtn");
   const finishHint = document.getElementById("finishHint");
 
-  // Si quieres cambiar también el badge ABIERTA/CERRADA visualmente:
   const rightPill = document.querySelector(".right-pill");
 
   function setStatus(t){ if (statusEl) statusEl.textContent = t || ""; }
+
+  function normalizeInt(v){
+    const s = String(v || "").trim();
+    if (!s) return null;
+    const n = parseInt(s, 10);
+    if (isNaN(n)) return null;
+    return n;
+  }
 
   function recalcSummary(){
     let gSum = 0, gCount = 0;
@@ -522,6 +531,19 @@
     if (sumPtsEl)   sumPtsEl.textContent   = (pCount ? pSum : "-");
   }
 
+  // ✅ Conteo único: hoyos guardados + hoyo actual si está rellenado pero aún no guardado
+  function countDoneWithCurrent(){
+    let done = HOLES.filter(h => h.saved.gross !== null).length;
+
+    const current = HOLES[idx];
+    const currentEntered = normalizeInt(grossInput?.value) !== null;
+
+    if (current && current.saved.gross === null && currentEntered) {
+      done += 1;
+    }
+    return done;
+  }
+
   function updateFinishState(){
     if (!finishBtn || !finishHint) return;
 
@@ -533,7 +555,7 @@
       return;
     }
 
-    const done = HOLES.filter(h => h.saved.gross !== null).length;
+    const done = countDoneWithCurrent();
 
     if (done >= 18){
       finishBtn.disabled = false;
@@ -548,14 +570,6 @@
     }
   }
 
-  function normalizeInt(v){
-    const s = String(v || "").trim();
-    if (!s) return null;
-    const n = parseInt(s, 10);
-    if (isNaN(n)) return null;
-    return n;
-  }
-
   // ✅ Modo lectura: bloquea inputs/+/-/FIR, deja nav
   function setLockedUI(locked){
     const lock = !!locked;
@@ -566,20 +580,17 @@
 
     document.querySelectorAll(".stepbtn").forEach(b => b.disabled = lock);
 
-    // Solo lectura visual (no afecta nav)
     document.querySelectorAll(".hole-inputs, .mini-metrics").forEach(el => {
       el.style.opacity = lock ? "0.55" : "1";
       el.style.pointerEvents = lock ? "none" : "auto";
       el.style.filter = lock ? "grayscale(0.15)" : "none";
     });
 
-    // Añade clase para que puedas estilizar en CSS si quieres
     if (liveWrap){
       if (lock) liveWrap.classList.add("is-locked");
       else liveWrap.classList.remove("is-locked");
     }
 
-    // Badge arriba (ABIERTA/CERRADA)
     if (rightPill){
       if (lock){
         rightPill.textContent = "CERRADA";
@@ -599,7 +610,6 @@
     if (grossInput) grossInput.value = (h.saved.gross === null ? "" : String(h.saved.gross));
     if (puttsInput) puttsInput.value = (h.saved.putts === null ? "" : String(h.saved.putts));
 
-    // FIR solo par4/5
     if (firRow && firInput){
       if (h.par >= 4){
         firRow.style.display = "inline-flex";
@@ -617,7 +627,6 @@
     recalcSummary();
     setLockedUI(IS_LOCKED);
 
-    // ✅ al renderizar un hoyo, estamos "sin cambios pendientes" en UI
     dirty = false;
 
     if (IS_LOCKED){
@@ -629,12 +638,13 @@
     updateFinishState();
   }
 
-  // ✅ guarda si hay cambios pendientes ANTES de navegar de hoyo
   async function maybeSaveBeforeNav(){
     if (IS_LOCKED) return;
     if (!dirty) return;
     await saveNow();
-    dirty = false;
+    // si save falla, saveNow deja dirty=true; si va bien, nosotros lo bajamos
+    if (!dirty) return;
+    // Si sigue dirty, no forzamos a false aquí.
   }
 
   async function prevHole(){
@@ -651,18 +661,21 @@
     renderHole();
   }
 
-  // ✅ ahora "scheduleSave" NO guarda; solo marca pendiente
+  // ✅ Marca pendiente + throttle UI
   function scheduleSave(){
     if (IS_LOCKED) return;
-    if (!dirty) setStatus("Pendiente de guardar…"); // solo 1 vez
+
+    const wasDirty = dirty;
     dirty = true;
+
+    if (!wasDirty) setStatus("Pendiente de guardar…");
+
+    if (uiTick) return;
+    uiTick = requestAnimationFrame(() => {
+      uiTick = null;
+      updateFinishState();
+    });
   }
-
-
-  // Si el usuario teclea o cambia FIR, lo marcamos como pendiente
-  grossInput?.addEventListener("input", scheduleSave);
-  puttsInput?.addEventListener("input", scheduleSave);
-  firInput?.addEventListener("change", scheduleSave);
 
   function step(field, delta){
     if (IS_LOCKED) return;
@@ -678,8 +691,39 @@
     if (field === "gross" && n === 0) el.value = "";
     else el.value = String(n);
 
-    scheduleSave(); // ✅ solo marca "pendiente"
+    scheduleSave();
   }
+
+  // ✅ taps instantáneos (iOS Safari)
+  function bindInstantTaps(){
+    document.querySelectorAll(".stepbtn").forEach(btn => {
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (IS_LOCKED) return;
+
+        const field = btn.dataset.field;
+        const delta = Number(btn.dataset.delta || "0");
+        step(field, delta);
+      }, { passive: false });
+    });
+
+    document.querySelectorAll(".navbtn").forEach(btn => {
+      btn.addEventListener("pointerdown", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const dir = Number(btn.dataset.nav || "0");
+        if (dir < 0) await prevHole();
+        if (dir > 0) await nextHole();
+      }, { passive: false });
+    });
+  }
+
+  // Teclado / FIR -> pendiente
+  grossInput?.addEventListener("input", scheduleSave);
+  puttsInput?.addEventListener("input", scheduleSave);
+  firInput?.addEventListener("change", scheduleSave);
 
   async function saveNow(){
     if (IS_LOCKED) return;
@@ -708,7 +752,6 @@
 
       if(!res.ok || !out.ok){
         setStatus(out.error || "Error al guardar");
-        // mantenemos dirty=true para que vuelva a intentar al navegar
         dirty = true;
         return;
       }
@@ -722,6 +765,7 @@
       if (capVal)     capVal.textContent     = out.cap;
       if (ptsVal)     ptsVal.textContent     = h.saved.pts === null ? "-" : h.saved.pts;
 
+      dirty = false;
       setStatus("✅ Guardado");
       recalcSummary();
       updateFinishState();
@@ -732,7 +776,6 @@
     }
   }
 
-  // Polling: si ya está locked, preguntamos cada 10s si todos han terminado
   async function pollAllDone(){
     try{
       const url = `${BASE_URL}public/live/api/round/${ROUND_ID}/status?token=${encodeURIComponent(TOKEN)}`;
@@ -743,26 +786,29 @@
         window.location.href = `/public/rounds/${ROUND_ID}`;
       }
     }catch(e){
-      // silencioso: si falla red, reintentará en la siguiente vuelta
+      // silencioso
     }
   }
 
   function startPollingIfLocked(){
     if (!IS_LOCKED) return;
     if (statusPollTimer) return;
-    // primera comprobación rápida, luego cada 10s
     pollAllDone();
     statusPollTimer = setInterval(pollAllDone, 10000);
   }
 
   async function finishRound(){
-    // ✅ si quedan cambios pendientes en el hoyo actual, guarda antes de terminar
+    // si hay cambios pendientes, guarda antes
     if (!IS_LOCKED && dirty){
       await saveNow();
-      dirty = false;
+      // si falla el save, no seguimos
+      if (dirty){
+        setStatus("⚠️ No se pudo guardar el último hoyo. Reintenta.");
+        return;
+      }
     }
 
-    const done = HOLES.filter(h => h.saved.gross !== null).length;
+    const done = countDoneWithCurrent();
     if (done < 18){
       setStatus(`Aún faltan hoyos por completar. (${done}/18)`);
       updateFinishState();
@@ -789,17 +835,14 @@
         return;
       }
 
-      // bloquea local
       IS_LOCKED = true;
       setLockedUI(true);
 
-      // si ya estaban todos, redirige
       if (out.all_done){
         window.location.href = `/public/rounds/${ROUND_ID}`;
         return;
       }
 
-      // si no, queda en espera + polling para que redirija cuando termine el último
       setStatus("✅ Tarjeta enviada. Esperando al resto de jugadores…");
       if (finishHint) finishHint.textContent = "Esperando a que finalicen el resto de jugadores de la ronda.";
       updateFinishState();
@@ -812,28 +855,12 @@
 
   finishBtn?.addEventListener("click", finishRound);
 
+  bindInstantTaps();
   renderHole();
   startPollingIfLocked();
 </script>
 
-<script>
-  // ===================== LIVE: anti double-tap zoom (iOS Safari) =====================
-  (function () {
-    const live = document.querySelector(".live-wrap");
-    if (!live) return;
 
-    let lastTouchEnd = 0;
-
-    live.addEventListener("touchend", function (e) {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) {
-        // evita el "double-tap to zoom"
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, { passive: false });
-  })();
-</script>
 
 
 {% endblock %}
