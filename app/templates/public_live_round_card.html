@@ -157,7 +157,6 @@
         box-sizing:border-box;
     }
 
-
     .stepbtn{
         height:42px;
         border-radius:12px;
@@ -302,7 +301,6 @@
         border-radius:14px !important;
     }
 
-
     /* evita que algún pseudo-elemento / outline haga “crecer” */
     .nav .navbtn::before,
     .nav .navbtn::after{
@@ -370,8 +368,6 @@
       -webkit-user-select: none;
       user-select: none;
     }
-
-
 </style>
 
 <div class="live-wrap">
@@ -486,7 +482,7 @@
   ];
 
   let idx = 0;
-  let saveTimer = null;
+  let dirty = false; // ✅ cambios pendientes en el hoyo actual
 
   const liveWrap  = document.querySelector(".live-wrap");
   const holeNum   = document.getElementById("holeNum");
@@ -621,6 +617,9 @@
     recalcSummary();
     setLockedUI(IS_LOCKED);
 
+    // ✅ al renderizar un hoyo, estamos "sin cambios pendientes" en UI
+    dirty = false;
+
     if (IS_LOCKED){
       setStatus("✅ Tarjeta enviada. Esperando al resto de jugadores…");
     } else {
@@ -630,15 +629,36 @@
     updateFinishState();
   }
 
-  function prevHole(){ if(idx>0){ idx--; renderHole(); } }
-  function nextHole(){ if(idx<HOLES.length-1){ idx++; renderHole(); } }
-
-  function scheduleSave(){
+  // ✅ guarda si hay cambios pendientes ANTES de navegar de hoyo
+  async function maybeSaveBeforeNav(){
     if (IS_LOCKED) return;
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => saveNow(), 300);
+    if (!dirty) return;
+    await saveNow();
+    dirty = false;
   }
 
+  async function prevHole(){
+    if (idx <= 0) return;
+    await maybeSaveBeforeNav();
+    idx--;
+    renderHole();
+  }
+
+  async function nextHole(){
+    if (idx >= HOLES.length - 1) return;
+    await maybeSaveBeforeNav();
+    idx++;
+    renderHole();
+  }
+
+  // ✅ ahora "scheduleSave" NO guarda; solo marca pendiente
+  function scheduleSave(){
+    if (IS_LOCKED) return;
+    dirty = true;
+    setStatus("Pendiente de guardar…");
+  }
+
+  // Si el usuario teclea o cambia FIR, lo marcamos como pendiente
   grossInput?.addEventListener("input", scheduleSave);
   puttsInput?.addEventListener("input", scheduleSave);
   firInput?.addEventListener("change", scheduleSave);
@@ -657,7 +677,7 @@
     if (field === "gross" && n === 0) el.value = "";
     else el.value = String(n);
 
-    scheduleSave();
+    scheduleSave(); // ✅ solo marca "pendiente"
   }
 
   async function saveNow(){
@@ -687,6 +707,8 @@
 
       if(!res.ok || !out.ok){
         setStatus(out.error || "Error al guardar");
+        // mantenemos dirty=true para que vuelva a intentar al navegar
+        dirty = true;
         return;
       }
 
@@ -702,8 +724,10 @@
       setStatus("✅ Guardado");
       recalcSummary();
       updateFinishState();
+
     }catch(e){
       setStatus("Error de conexión");
+      dirty = true;
     }
   }
 
@@ -731,6 +755,12 @@
   }
 
   async function finishRound(){
+    // ✅ si quedan cambios pendientes en el hoyo actual, guarda antes de terminar
+    if (!IS_LOCKED && dirty){
+      await saveNow();
+      dirty = false;
+    }
+
     const done = HOLES.filter(h => h.saved.gross !== null).length;
     if (done < 18){
       setStatus(`Aún faltan hoyos por completar. (${done}/18)`);
@@ -784,6 +814,7 @@
   renderHole();
   startPollingIfLocked();
 </script>
+
 <script>
   // ===================== LIVE: anti double-tap zoom (iOS Safari) =====================
   (function () {
