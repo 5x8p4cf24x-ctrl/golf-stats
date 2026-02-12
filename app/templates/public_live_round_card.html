@@ -355,6 +355,23 @@
         max-width: 100%;
     }
 
+    /* ===================== LIVE: NO ZOOM por doble-tap ===================== */
+    /* Evita el double-tap zoom en iOS en controles interactivos */
+    .live-wrap button,
+    .live-wrap .stepbtn,
+    .live-wrap .btn-primary,
+    .live-wrap a {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* (Opcional) si algún botón queda con selección rara */
+    .live-wrap button {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+
 </style>
 
 <div class="live-wrap">
@@ -766,6 +783,24 @@
 
   renderHole();
   startPollingIfLocked();
+</script>
+<script>
+  // ===================== LIVE: anti double-tap zoom (iOS Safari) =====================
+  (function () {
+    const live = document.querySelector(".live-wrap");
+    if (!live) return;
+
+    let lastTouchEnd = 0;
+
+    live.addEventListener("touchend", function (e) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        // evita el "double-tap to zoom"
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+  })();
 </script>
 
 
