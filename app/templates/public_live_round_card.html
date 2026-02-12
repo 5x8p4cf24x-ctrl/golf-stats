@@ -404,27 +404,27 @@
   <!-- HOLE -->
   <section class="card live-card" style="padding:16px; margin-top:14px;">
     <div class="nav">
-      <button class="btn-primary" onclick="prevHole()">◀</button>
+      <button class="btn-primary" type="button" onclick="prevHole()">◀</button>
       <div>
         <div class="hole-title">Hoyo <span id="holeNum">1</span></div>
         <div class="hole-meta">Par <span id="holePar">-</span> · HCP <span id="holeSI">-</span></div>
       </div>
-      <button class="btn-primary" onclick="nextHole()">▶</button>
+      <button class="btn-primary" type="button" onclick="nextHole()">▶</button>
     </div>
 
     <div class="hole-inputs">
       <div class="live-row">
         <label>Golpes</label>
-        <button class="stepbtn" onclick="step('gross',-1)">−</button>
+        <button class="stepbtn" type="button" onclick="step('gross',-1)">−</button>
         <input id="grossInput" class="num" type="text" inputmode="numeric">
-        <button class="stepbtn" onclick="step('gross',1)">+</button>
+        <button class="stepbtn" type="button" onclick="step('gross',1)">+</button>
       </div>
 
       <div class="live-row">
         <label>Putts</label>
-        <button class="stepbtn" onclick="step('putts',-1)">−</button>
+        <button class="stepbtn" type="button" onclick="step('putts',-1)">−</button>
         <input id="puttsInput" class="num" type="text" inputmode="numeric">
-        <button class="stepbtn" onclick="step('putts',1)">+</button>
+        <button class="stepbtn" type="button" onclick="step('putts',1)">+</button>
       </div>
     </div>
 
@@ -654,9 +654,10 @@
   // ✅ ahora "scheduleSave" NO guarda; solo marca pendiente
   function scheduleSave(){
     if (IS_LOCKED) return;
+    if (!dirty) setStatus("Pendiente de guardar…"); // solo 1 vez
     dirty = true;
-    setStatus("Pendiente de guardar…");
   }
+
 
   // Si el usuario teclea o cambia FIR, lo marcamos como pendiente
   grossInput?.addEventListener("input", scheduleSave);
