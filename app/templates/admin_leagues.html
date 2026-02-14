@@ -1,105 +1,269 @@
 {% extends "admin_base.html" %}
 
 {% block title %}Admin · Ligas{% endblock %}
-{% block header_title %}Ligas{% endblock %}
-{% block header_subtitle %}Crear ligas, ver estado, finalizarlas y eliminarlas.{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Ligas</h1>
+    <p class="admin-subtitle">Crear ligas, ver estado, finalizarlas y eliminarlas.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Ligas", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
 <!-- NUEVA LIGA -->
-<section class="card" style="margin-bottom:16px;">
-  <h2 style="margin-bottom:10px;">Nueva liga</h2>
+<section class="card card--spaced">
+  <h2 style="margin:0 0 10px 0;">Nueva liga</h2>
 
   <form method="post"
         action="/admin/leagues/new"
         enctype="multipart/form-data"
-        style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        class="league-new-form">
 
-    <input name="name" placeholder="Liga 2025" required>
+    <div class="field">
+      <label class="field-label">Nombre</label>
+      <input class="gm-input" name="name" placeholder="Liga 2026" required>
+    </div>
 
-    <input type="file" name="logo" accept="image/*">
+    <div class="field">
+      <label class="field-label">Logo (opcional)</label>
+      <input class="gm-input" type="file" name="logo" accept="image/*">
+    </div>
 
     <button class="btn-primary" type="submit">Crear</button>
-
-    <a class="link-gm" href="/admin" style="margin-left:auto;">← Volver al panel admin</a>
   </form>
 </section>
 
 <!-- LIGAS EXISTENTES -->
-<section class="card">
-  <h2 style="margin-bottom:10px;">Ligas existentes</h2>
+<section class="card card--spaced">
+  <h2 style="margin:0 0 10px 0;">Ligas existentes</h2>
 
   {% if leagues|length == 0 %}
-    <p>No hay ligas todavía.</p>
+    <p class="muted" style="margin:0;">No hay ligas todavía.</p>
   {% else %}
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th class="text-left">Nombre</th>
-          <th class="text-left">Logo</th>
-          <th class="text-left">Estado</th>
-          <th class="text-left">Rondas</th>
-          <th class="text-left">Acciones</th>
-        </tr>
-      </thead>
 
-      <tbody>
-        {% for l in leagues %}
-        <tr>
-          <td class="text-left"><strong>{{ l.name }}</strong></td>
+    <!-- Desktop -->
+    <div class="table-scroll leagues-desktop">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th class="text-left">Nombre</th>
+            <th class="text-left">Logo</th>
+            <th class="text-left">Estado</th>
+            <th class="text-left">Rondas</th>
+            <th class="text-left">Acciones</th>
+          </tr>
+        </thead>
 
-          <td class="text-left">
-            {% if l.logo_url %}
-              <img src="/uploads/{{ l.logo_url }}"
-                   alt="Logo {{ l.name }}"
-                   style="width:40px; height:40px; object-fit:cover; border-radius:8px;">
-            {% else %}
-              <span style="color:#9ca3af;">-</span>
-            {% endif %}
-          </td>
+        <tbody>
+          {% for l in leagues %}
+          <tr>
+            <td class="text-left"><strong>{{ l.name }}</strong></td>
 
-          <td class="text-left">
-            {% if l.is_closed %}
-              <span class="badge loss">Cerrada</span>
-            {% else %}
-              <span class="badge win">En vigor</span>
-            {% endif %}
-          </td>
+            <td class="text-left">
+              {% if l.logo_url %}
+                <img src="/uploads/{{ l.logo_url }}" alt="Logo {{ l.name }}" class="league-logo">
+              {% else %}
+                <span style="color:#9ca3af;">-</span>
+              {% endif %}
+            </td>
 
-          <td class="text-left">{{ l.rounds|length }}</td>
+            <td class="text-left">
+              {% if l.is_closed %}
+                <span class="badge loss">Cerrada</span>
+              {% else %}
+                <span class="badge win">En vigor</span>
+              {% endif %}
+            </td>
 
-          <td class="text-left" style="white-space:nowrap;">
-            <a class="link-gm" href="/public/leagues/{{ l.id }}">Ver público</a>
+            <td class="text-left">{{ l.rounds|length }}</td>
 
-            {% if not l.is_closed %}
-              <span style="color:#cbd5e1;"> | </span>
+            <td class="text-left" style="white-space:nowrap;">
+
+              {% if not l.is_closed %}
+                <form method="post"
+                      action="/admin/leagues/{{ l.id }}/close"
+                      style="display:inline;"
+                      onsubmit="return confirm('¿Finalizar esta liga?');">
+                  <button type="submit" class="btn-link">Finalizar</button>
+                </form>
+
+                <span style="color:#cbd5e1;"> | </span>
+              {% endif %}
+
               <form method="post"
-                    action="/admin/leagues/{{ l.id }}/close"
+                    action="/admin/leagues/{{ l.id }}/delete"
                     style="display:inline;"
+                    onsubmit="return confirm('¿Eliminar esta liga? Solo se puede si no tiene rondas asociadas.');">
+                <button type="submit" class="btn-link-danger">Eliminar</button>
+              </form>
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile cards -->
+    <div class="leagues-mobile">
+      {% for l in leagues %}
+        <div class="league-card">
+          <div class="league-head">
+            <div class="league-left">
+              <div class="league-name">{{ l.name }}</div>
+              <div class="muted" style="margin-top:2px;">Rondas: <strong>{{ l.rounds|length }}</strong></div>
+
+              <div style="margin-top:8px;">
+                {% if l.is_closed %}
+                  <span class="badge loss">Cerrada</span>
+                {% else %}
+                  <span class="badge win">En vigor</span>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if l.logo_url %}
+              <img src="/uploads/{{ l.logo_url }}" alt="Logo {{ l.name }}" class="league-logo league-logo--big">
+            {% else %}
+              <div class="league-logo league-logo--big" style="display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.35);">
+                🏆
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="league-actions">
+            
+            {% if not l.is_closed %}
+              <form method="post" action="/admin/leagues/{{ l.id }}/close"
                     onsubmit="return confirm('¿Finalizar esta liga?');">
-                <button type="submit"
-                        style="border:none; background:none; color:#14532d; cursor:pointer; padding:0; font-weight:800;">
-                  Finalizar liga
-                </button>
+                <button class="btn-secondary btn-compact" type="submit">Finalizar</button>
               </form>
             {% endif %}
 
-            <span style="color:#cbd5e1;"> | </span>
-            <form method="post"
-                  action="/admin/leagues/{{ l.id }}/delete"
-                  style="display:inline;"
+            <form method="post" action="/admin/leagues/{{ l.id }}/delete"
                   onsubmit="return confirm('¿Eliminar esta liga? Solo se puede si no tiene rondas asociadas.');">
-              <button type="submit"
-                      style="border:none; background:none; color:#dc2626; cursor:pointer; padding:0; font-weight:800;">
-                Eliminar
-              </button>
+              <button class="btn-danger-outline btn-compact" type="submit">Eliminar</button>
             </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
   {% endif %}
 </section>
+
+<style>
+  .card--spaced{ margin-top:18px; }
+  .muted{ color: var(--muted); }
+
+  .league-new-form{
+    display:flex;
+    gap:12px;
+    align-items:end;
+    flex-wrap:wrap;
+  }
+  .field{ display:flex; flex-direction:column; gap:8px; min-width:240px; flex:1; }
+  .field-label{ font-weight:800; color: var(--text); }
+  .gm-input{ width:100%; }
+
+  .btn-link{
+    border:none; background:none; padding:0;
+    color: var(--gm-green);
+    font-weight:900; cursor:pointer;
+  }
+  .btn-link-danger{
+    border:none; background:none; padding:0;
+    color:#dc2626;
+    font-weight:900; cursor:pointer;
+  }
+
+  .league-logo{
+    width:40px; height:40px;
+    object-fit:cover;
+    border-radius:10px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+  }
+  .league-logo--big{
+    width:64px; height:64px;
+    object-fit:contain;
+    padding:4px;
+  }
+
+  .leagues-mobile{ display:none; }
+
+  .league-card{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:12px;
+    margin-bottom:14px;
+    background:#fff;
+  }
+  .league-head{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:flex-start;
+  }
+  .league-name{
+    font-weight:900;
+    color: var(--gm-green);
+    font-size:1rem;
+    line-height:1.2;
+  }
+
+  /* ✅ BOTONES EN UNA SOLA FILA SIEMPRE */
+  .league-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:nowrap;
+    border-top:1px solid rgba(0,0,0,.06);
+    margin-top:12px;
+    padding-top:10px;
+  }
+  .league-actions > a,
+  .league-actions > form{
+    flex:1;
+  }
+  .league-actions a,
+  .league-actions button{
+    width:100%;
+    text-align:center;
+  }
+
+  .btn-compact{
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:900;
+    border-radius:10px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#f8fafc;
+    color: var(--gm-green);
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .btn-compact:hover{ background: rgba(20,83,45,.06); }
+
+  .btn-danger-outline{
+    background:transparent;
+    border:1px solid #ef4444;
+    color:#ef4444;
+  }
+  .btn-danger-outline:hover{ background:#ef4444; color:#fff; }
+
+  @media (max-width: 860px){
+    .leagues-desktop{ display:none; }
+    .leagues-mobile{ display:block; }
+  }
+</style>
 
 {% endblock %}

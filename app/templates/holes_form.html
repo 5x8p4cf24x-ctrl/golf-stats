@@ -1,123 +1,232 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>Editar hoyos - {{ course.name }}</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-  <style>
-    .holes-grid { width:100%; border-collapse: collapse; }
-    .holes-grid th, .holes-grid td { border: 1px solid rgba(0,0,0,.12); padding: 8px; text-align: center; }
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Hoyos — {{ course.name }}{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">{{ course.name }}</h1>
+    <p class="admin-subtitle">Editar hoyos (Par, HCP hoyo y metros amarillas).</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Campos", "url":"/admin/courses"},
+    {"label":"Hoyo a hoyo", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+<form method="post" class="page-has-sticky-actions">
+
+  <section class="card card--spaced">
+    <div class="hint">
+      Tip: puedes copiar 18 celdas desde Excel y pegarlas empezando en el hoyo 1 de la fila correspondiente (Par / HCP / Metros).
+    </div>
+
+    <div class="table-scroll" style="margin-top:12px;">
+      <table class="holes-grid">
+        <thead>
+          <tr>
+            <th></th>
+            {% for i in range(1, 19) %}
+              <th class="hole-num">{{ i }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- PAR -->
+          <tr>
+            <th>Par</th>
+            {% for i in range(1, 19) %}
+              {% set existing = holes_map.get(i) %}
+              <td>
+                <input class="cell" type="number" name="par_{{ i }}" min="3" max="5"
+                      value="{{ existing.par if existing else 4 }}" required>
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- HCP (stroke index) -->
+          <tr>
+            <th>HCP hoyo</th>
+            {% for i in range(1, 19) %}
+              {% set existing = holes_map.get(i) %}
+              <td>
+                <input class="cell" type="number" name="si_{{ i }}" min="1" max="18"
+                      value="{{ existing.stroke_index if existing else i }}" required>
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- METROS -->
+          <tr>
+            <th>Metros (Amarillas)</th>
+            {% for i in range(1, 19) %}
+              {% set existing = holes_map.get(i) %}
+              <td>
+                <input class="cell" type="number" name="m_{{ i }}" min="0"
+                      value="{{ existing.meters_yellow if existing else '' }}">
+              </td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Barra acciones tipo app -->
+  <div class="action-bar action-bar--sticky">
+    <a class="action-btn action-btn--ghost" href="/admin/courses">Volver</a>
+    <button class="action-btn action-btn--primary" type="submit">Guardar hoyos</button>
+  </div>
+
+</form>
+
+<style>
+  .card--spaced{ margin-top: 18px; }
+
+  .hint{
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  .holes-grid{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background:#fff;
+  }
+
+  .holes-grid th,
+  .holes-grid td{
+    border: 1px solid rgba(0,0,0,.10);
+    padding: 8px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .holes-grid thead th:first-child,
+  .holes-grid tbody th{
+    text-align: left;
+    width: 140px;
+    font-weight: 900;
+    color: var(--text);
+    background: #f8fafc;
+  }
+
+  .holes-grid .hole-num{
+    font-weight: 900;
+    color: rgba(15,23,42,.85);
+  }
+
+  .holes-grid input.cell{
+    width: 46px;
+    padding: 6px 4px;
+    text-align: center;
+    border: 1px solid rgba(0,0,0,.18);
+    border-radius: 10px;
+    background:#fff;
+  }
+
+  /* Barra acciones (igual que el resto) */
+  .action-bar{
+    margin-top: 14px;
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+
+  .action-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 900;
+    text-decoration: none;
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: none;
+    cursor: pointer;
+  }
+
+  .action-btn--ghost{
+    background:#fff;
+    color: var(--gm-green);
+  }
+
+  .action-btn--primary{
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border-color: rgba(0,0,0,.06);
+  }
+
+  @media (max-width: 560px){
+    .page-has-sticky-actions{ padding-bottom: 92px; }
+
+    .action-bar--sticky{
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 9998;
+      margin-top: 0;
+
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.14);
+
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+    }
+    .action-bar--sticky .action-btn{ flex:1; }
+
+    /* Inputs un pelín más estrechos en móvil */
+    .holes-grid input.cell{ width: 42px; }
     .holes-grid thead th:first-child,
-    .holes-grid tbody th { text-align: left; width: 110px; }
-    .holes-grid input.cell {
-      width: 42px;
-      padding: 6px 4px;
-      text-align: center;
-      border: 1px solid rgba(0,0,0,.18);
-      border-radius: 8px;
+    .holes-grid tbody th{ width: 120px; }
+  }
+</style>
+
+<script>
+  function parseClipboard(text) {
+    // Excel → TSV (tabuladores) y saltos de línea
+    return text.trim().split(/\r?\n/).map(r => r.split('\t'));
+  }
+
+  document.addEventListener('paste', (e) => {
+    const active = document.activeElement;
+    if (!active || !active.classList.contains('cell')) return;
+
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!text) return;
+
+    const grid = parseClipboard(text);
+    if (!grid.length) return;
+
+    e.preventDefault();
+
+    const row = active.closest('tr');
+    const cells = Array.from(row.querySelectorAll('input.cell'));
+    const startIndex = cells.indexOf(active);
+    if (startIndex < 0) return;
+
+    const values = grid.flat().map(v => v.trim()).filter(v => v !== "");
+    for (let i = 0; i < values.length; i++) {
+      const target = cells[startIndex + i];
+      if (!target) break;
+      target.value = values[i];
     }
-    .holes-grid .hole-num { font-weight: 600; opacity: .9; }
-    .hint { font-size: 13px; opacity: .8; margin-top: 6px; }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <h1>Editar hoyos — {{ course.name }}</h1>
-    <p>Rellena los 18 hoyos (Par, HCP hoyo y metros amarillas).</p>
-    <p class="hint">Tip: puedes copiar 18 celdas desde Excel y pegarlas en la casilla del hoyo 1 de la fila correspondiente (Par / HCP / Metros).</p>
+  });
+</script>
 
-    <section class="card">
-      <form method="post">
-        <div class="table-scroll">
-          <table class="holes-grid">
-            <thead>
-              <tr>
-                <th></th>
-                {% for i in range(1, 19) %}
-                  <th class="hole-num">{{ i }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-
-            <tbody>
-              <!-- PAR -->
-              <tr>
-                <th>Par</th>
-                {% for i in range(1, 19) %}
-                  {% set existing = holes_map.get(i) %}
-                  <td>
-                    <input class="cell" type="number" name="par_{{ i }}" min="3" max="5"
-                          value="{{ existing.par if existing else 4 }}" required>
-                  </td>
-                {% endfor %}
-              </tr>
-
-              <!-- HCP (stroke index) -->
-              <tr>
-                <th>HCP hoyo</th>
-                {% for i in range(1, 19) %}
-                  {% set existing = holes_map.get(i) %}
-                  <td>
-                    <input class="cell" type="number" name="si_{{ i }}" min="1" max="18"
-                          value="{{ existing.stroke_index if existing else i }}" required>
-                  </td>
-                {% endfor %}
-              </tr>
-
-              <!-- METROS -->
-              <tr>
-                <th>Metros (Amarillas)</th>
-                {% for i in range(1, 19) %}
-                  {% set existing = holes_map.get(i) %}
-                  <td>
-                    <input class="cell" type="number" name="m_{{ i }}" min="0"
-                          value="{{ existing.meters_yellow if existing else '' }}">
-                  </td>
-                {% endfor %}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <br/>
-        <button type="submit">Guardar hoyos</button>
-      </form>
-    </section>
-
-    <p><a href="/admin/courses">Volver a campos</a></p>
-  </main>
-
-  <script>
-    function parseClipboard(text) {
-      // Excel → TSV (tabuladores) y saltos de línea
-      return text.trim().split(/\r?\n/).map(r => r.split('\t'));
-    }
-
-    document.addEventListener('paste', (e) => {
-      const active = document.activeElement;
-      if (!active || !active.classList.contains('cell')) return;
-
-      const text = (e.clipboardData || window.clipboardData).getData('text');
-      if (!text) return;
-
-      const grid = parseClipboard(text);
-      if (!grid.length) return;
-
-      e.preventDefault();
-
-      // Solo rellenamos dentro de la misma fila (Par o HCP o Metros)
-      const row = active.closest('tr');
-      const cells = Array.from(row.querySelectorAll('input.cell'));
-      const startIndex = cells.indexOf(active);
-      if (startIndex < 0) return;
-
-      // Soporta 1x18 (fila) o 18x1 (columna)
-      const values = grid.flat().map(v => v.trim()).filter(v => v !== "");
-      for (let i = 0; i < values.length; i++) {
-        const target = cells[startIndex + i];
-        if (!target) break;
-        target.value = values[i];
-      }
-    });
-  </script>
-</body>
-</html>
+{% endblock %}

@@ -1,36 +1,51 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>Resumen vuelta</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-<main class="container">
-<h1>Resumen vuelta — {{ course.name }}</h1>
-<p>Fecha: {{ round.date }} | Tee: {{ round.tee }} | Tipo: {{ round.type }}</p>
+{% extends "admin_base.html" %}
+
+{% block title %}Admin · Resumen vuelta{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">{{ course.name }}</h1>
+    <p class="admin-subtitle">Fecha: {{ round.date }} · Tee: {{ round.tee }} · Tipo: {{ round.type }}</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Rondas", "url":"/admin/rounds"},
+    {"label":"Resumen", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
 
 
 {% if winner_names and winner_names|length > 0 %}
   <section class="card">
     {% if winner_names|length == 1 %}
-      <h2>🏆 Ganador</h2>
+      <h2 style="margin:0 0 6px 0;">🏆 Ganador</h2>
     {% else %}
-      <h2>🤝 Empate en primera posición</h2>
+      <h2 style="margin:0 0 6px 0;">🤝 Empate en primera posición</h2>
     {% endif %}
-
-    <p>{{ winner_names | join(", ") }}</p>
+    <p style="margin:0;">{{ winner_names | join(", ") }}</p>
   </section>
 {% endif %}
 
+<section class="card">
+  <div class="card-head">
+    <h2 style="margin:0;">Estadísticas completas</h2>
+    <div class="muted" style="font-size:.9rem;">
+      Desliza horizontalmente para ver todas las columnas
+    </div>
+  </div>
 
-  <section class="card">
-    <h2>Estadísticas completas</h2>
-
-    <table style="width:100%; text-align:center; border-collapse: collapse;">
+  <div class="table-scroll">
+    <table class="admin-table admin-table--summary">
       <thead>
         <tr>
-          <th style="text-align:left;">Jugador</th>
+          <th class="text-left">Jugador</th>
           <th>CH</th>
           <th>Gross</th>
           <th>Neto</th>
@@ -49,13 +64,14 @@
           <th>Bogey</th>
           <th>Dbl</th>
           <th>+Dbl</th>
-          <th>Acciones</th>
+          <th class="text-left">Acciones</th>
         </tr>
       </thead>
+
       <tbody>
         {% for s in results %}
         <tr>
-          <td style="text-align:left;">
+          <td class="text-left">
             <a href="/players/{{ s.player.id }}">{{ s.player.name }}</a>
           </td>
 
@@ -71,11 +87,11 @@
 
           <td>
             {{ s.fir }} / {{ s.fir_possible }}
-            <br>({{ "%.0f"|format(s.fir_pct) if s.fir_pct else "-" }}%)
+            <div class="muted">({{ "%.0f"|format(s.fir_pct) if s.fir_pct else "-" }}%)</div>
           </td>
           <td>
             {{ s.gir }} / {{ s.gir_possible }}
-            <br>({{ "%.0f"|format(s.gir_pct) if s.gir_pct else "-" }}%)
+            <div class="muted">({{ "%.0f"|format(s.gir_pct) if s.gir_pct else "-" }}%)</div>
           </td>
 
           <td>{{ s.hio }}</td>
@@ -86,20 +102,76 @@
           <td>{{ s.bogeys }}</td>
           <td>{{ s.dbl }}</td>
           <td>{{ s.overdbl }}</td>
-          <td>
-            <a href="/admin/rounds/{{ round.id }}/player/{{ s.rp_id }}/card">
-              Editar tarjeta
-            </a>
+
+          <td class="text-left" style="white-space:nowrap;">
+            <a class="link-gm" href="/admin/rounds/{{ round.id }}/player/{{ s.rp_id }}/card">Editar tarjeta</a>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-  </section>
+  </div>
+</section>
 
-  <p><a href="/admin/rounds/new">+ Nueva vuelta</a></p>
-  <p><a href="/admin/rounds">Volver a gestionar vueltas</a></p>
+<style>
+  .admin-toolbar{
+    margin: 8px 0 12px 0;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
 
-</main>
-</body>
-</html>
+  .muted{ color: var(--muted); }
+
+  .card-head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom: 10px;
+    flex-wrap:wrap;
+  }
+
+  .table-scroll{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    background:#fff;
+  }
+
+  /* Esta tabla necesita mínimo grande sí o sí (muchas columnas) */
+  .admin-table--summary{
+    min-width: 1400px;
+    text-align:center;
+  }
+  .admin-table--summary td,
+  .admin-table--summary th{
+    white-space: nowrap;
+  }
+  .admin-table--summary td.text-left,
+  .admin-table--summary th.text-left{
+    text-align:left;
+  }
+
+  .admin-title{
+    margin:0;
+    font-weight:800;
+    font-size:1.15rem;   /* antes 1.35rem */
+    line-height:1.25;
+  }
+  .admin-subtitle{
+    margin:1;
+    font-weight:400;
+    font-size:0.85rem;   /* antes 1.35rem */
+    
+  }
+
+  .admin-main .card{
+    margin-top: 40px;   /* antes estaba en 14px */
+  }
+</style>
+
+{% endblock %}

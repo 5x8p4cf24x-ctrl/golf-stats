@@ -1,63 +1,337 @@
 {% extends "admin_base.html" %}
 
 {% block title %}Admin · Jugadores{% endblock %}
-{% block header_title %}Jugadores{% endblock %}
-{% block header_subtitle %}Alta, edición y estado de jugadores.{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Jugadores</h1>
+    <p class="admin-subtitle">Alta, edición y estado de jugadores.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Jugadores", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-<div style="margin: 10px 0 14px 0;">
+<div class="admin-toolbar">
   <a class="btn-primary" href="/admin/players/new">+ Nuevo jugador</a>
 </div>
 
 <section class="card">
-  <table class="admin-table">
-    <thead>
-      <tr>
-        <th class="text-left">Foto</th>
-        <th class="text-left">Nombre</th>
-        <th class="text-left">Apodo</th>
-        <th class="text-left">Licencia</th>
-        <th class="text-left">HCP</th>
-        <th class="text-left">Activo</th>
-        <th class="text-left">Acciones</th>
-      </tr>
-    </thead>
+  {% if players|length == 0 %}
+    <p>No hay jugadores registrados.</p>
+  {% else %}
+    <div class="table-scroll">
+      <table class="admin-table admin-table--players">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th class="text-left">Nombre</th>
+            <th class="text-left">Apodo</th>
+            <th class="text-left">Licencia</th>
+            <th class="text-left">HCP</th>
+            <th class="text-left">Activo</th>
+            <th class="text-left">Acciones</th>
+          </tr>
+        </thead>
 
-    <tbody>
-      {% for p in players %}
-      <tr>
-        <td>
-          {% if p.photo_url %}
-            <img src="/uploads/{{ p.photo_url }}" alt="Foto"
-                 style="width:40px; height:40px; object-fit:cover; border-radius:50%;">
-          {% else %}
-            <span style="color:#aaa;">-</span>
-          {% endif %}
-        </td>
+        <tbody>
+          {% for p in players %}
+          <tr>
 
-        <!-- OJO: el link de nombre iba al público (/players/{id}). En admin mejor NO salir -->
-        <td class="text-left"><strong>{{ p.name }}</strong></td>
+            <td>
+              {% if p.photo_url %}
+                <img src="/uploads/{{ p.photo_url }}"
+                     alt="Foto"
+                     class="player-avatar">
+              {% else %}
+                <div class="player-avatar player-avatar--empty">–</div>
+              {% endif %}
+            </td>
 
-        <td class="text-left">{{ p.nickname or "" }}</td>
-        <td class="text-left">{{ p.license_number or "-" }}</td>
-        <td class="text-left">{{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }}</td>
-        <td class="text-left">{{ "Sí" if p.active else "No" }}</td>
+            <td class="text-left">
+              <strong>{{ p.name }}</strong>
+            </td>
 
-        <td class="text-left">
-          <a class="link-gm" href="/admin/players/{{ p.id }}/edit">Editar</a>
-          <span style="color:#cbd5e1;"> | </span>
-          <a class="link-gm" href="/admin/players/{{ p.id }}/delete"
-             onclick="return confirm('¿Eliminar jugador?')">Borrar</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+            <td class="text-left">{{ p.nickname or "-" }}</td>
+            <td class="text-left">{{ p.license_number or "-" }}</td>
+
+            <td class="text-left">
+              {{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }}
+            </td>
+
+            <td class="text-left">
+              {% if p.active %}
+                <span class="status-pill status-pill--open">Activo</span>
+              {% else %}
+                <span class="status-pill status-pill--closed">Inactivo</span>
+              {% endif %}
+            </td>
+
+            <td class="text-left td-actions">
+              <a class="link-gm" href="/admin/players/{{ p.id }}/edit">Editar</a>
+
+              <a class="btn-link-danger"
+                 href="/admin/players/{{ p.id }}/delete"
+                 onclick="return confirm('¿Eliminar jugador?')">
+                Borrar
+              </a>
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 </section>
 
-<div style="margin-top:14px;">
-  <a class="link-gm" href="/admin">← Volver al panel admin</a>
-</div>
+<style>
+  .admin-toolbar{
+    margin: 8px 0 12px 0;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .table-scroll{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    background:#fff;
+  }
+
+  .admin-table--players{
+    min-width: 760px;
+  }
+
+  .player-avatar{
+    width:40px;
+    height:40px;
+    object-fit:cover;
+    border-radius:50%;
+    border:1px solid rgba(0,0,0,.06);
+  }
+
+  .player-avatar--empty{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#f3f4f6;
+    color:#94a3b8;
+    font-weight:700;
+  }
+
+  .td-actions{
+    white-space:nowrap;
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+
+  .btn-link-danger{
+    border:none;
+    background:none;
+    color:#ef4444;
+    cursor:pointer;
+    font-weight:800;
+    padding:0;
+  }
+
+  .btn-link-danger:hover{
+    text-decoration: underline;
+  }
+
+  /* Reutiliza los pills si ya los tienes */
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    padding:2px 10px;
+    border-radius:999px;
+    font-weight:800;
+    font-size:12px;
+    border:1px solid rgba(0,0,0,.08);
+  }
+
+  .status-pill--open{
+    background: rgba(34,197,94,.10);
+    color: var(--gm-green);
+    border-color: rgba(34,197,94,.25);
+  }
+
+  .status-pill--closed{
+    background: rgba(239,68,68,.10);
+    color: #b91c1c;
+    border-color: rgba(239,68,68,.25);
+  }
+
+  
+
+  /* ============================= */
+  /* PLAYERS → MODO TARJETA MÓVIL   */
+  /* Compacto + foto grande         */
+  /* ============================= */
+
+  @media (max-width: 640px){
+
+    .admin-table--players{ min-width: unset; }
+    .admin-table--players thead{ display:none; }
+
+    .admin-table--players,
+    .admin-table--players tbody{
+      display:block;
+      width:100%;
+    }
+
+    .admin-table--players tr{
+      display:grid;
+      grid-template-columns: 64px 1fr;
+      grid-template-areas:
+        "avatar name"
+        "avatar nickname"
+        "lic    lic"
+        "hcp    hcp"
+        "status status"
+        "actions actions";
+      gap: 6px 12px;
+
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:16px;
+      padding:14px;
+      margin-bottom:14px;
+      box-shadow: 0 6px 16px rgba(15,23,42,0.06);
+    }
+
+    .admin-table--players td{
+      border:none;
+      padding:0;
+    }
+
+    /* 1) Avatar */
+    .admin-table--players td:nth-child(1){
+      grid-area: avatar;
+      display:flex;
+      align-items:flex-start;
+    }
+    .admin-table--players .player-avatar{
+      width:56px;
+      height:56px;
+    }
+
+    /* 2) Nombre */
+    .admin-table--players td:nth-child(2){
+      grid-area: name;
+      display:flex;
+      align-items:center;
+      font-size:1.02rem;
+      font-weight:900;
+      line-height:1.15;
+      padding-top:2px;
+    }
+
+    /* 3) Apodo (si viene "-") lo dejamos discreto */
+    .admin-table--players td:nth-child(3){
+      grid-area: nickname;
+      color: var(--muted);
+      font-size:.9rem;
+      margin-top:-2px;
+    }
+
+    /* 4) Licencia */
+    .admin-table--players td:nth-child(4){
+      grid-area: lic;
+      color: var(--muted);
+      font-size:.9rem;
+      line-height: 1.2;
+    }
+    .admin-table--players td:nth-child(4)::before{
+      content:"Lic: ";
+      font-weight:800;
+      color: var(--text);
+      opacity:.75;
+    }
+
+    /* 5) HCP */
+    .admin-table--players td:nth-child(5){
+      grid-area: hcp;
+      color: var(--muted);
+      font-size:.9rem;
+      line-height: 1.2;
+    }
+    .admin-table--players td:nth-child(5)::before{
+      content:"HCP: ";
+      font-weight:800;
+      color: var(--text);
+      opacity:.75;
+    }
+
+
+    /* 6) Estado */
+    .admin-table--players td:nth-child(6){
+      grid-area: status;
+      margin-top:2px;
+    }
+
+    /* 7) Acciones abajo */
+    .admin-table--players td:nth-child(7){
+      grid-area: actions;
+      display:flex;
+      gap:18px;
+      align-items:center;
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top:1px solid rgba(0,0,0,.06);
+      white-space:nowrap;
+    }
+  }
+  /* Asegura que el nombre no pisa */
+  .admin-table--players td:nth-child(2){
+    min-width: 0;
+  }
+  .admin-table--players td:nth-child(2) strong{
+    display:block;
+    max-width: 100%;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* ===== FIX DESALINEADO EN DESKTOP (tabla jugadores) ===== */
+  @media (min-width: 641px){
+
+    /* 6) Activo centrado */
+    .admin-table--players th:nth-child(6),
+    .admin-table--players td:nth-child(6){
+      text-align:center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    /* 7) Acciones: NO flex (esto arregla el “descuadre” de columnas) */
+    .admin-table--players th:nth-child(7),
+    .admin-table--players td:nth-child(7){
+      text-align:right;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .admin-table--players td:nth-child(7).td-actions{
+      display: table-cell !important; /* <- clave */
+    }
+
+    .admin-table--players td:nth-child(7).td-actions a + a{
+      margin-left: 14px; /* separación entre Editar / Borrar */
+    }
+  }
+</style>
 
 {% endblock %}

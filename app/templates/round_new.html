@@ -1,109 +1,303 @@
 {% extends "admin_base.html" %}
 
 {% block title %}Admin · Nueva vuelta{% endblock %}
-{% block header_title %}Nueva vuelta{% endblock %}
-{% block header_subtitle %}Crea una vuelta amistosa o de liga y añade jugadores.{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Nueva vuelta</h1>
+    <p class="admin-subtitle">Crea una vuelta amistosa o de liga y añade jugadores.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Rondas", "url":"/admin/rounds"},
+    {"label":"Nueva vuelta", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
 
 {% block content %}
 
 <section class="card">
   <form method="post">
 
-    <!-- FECHA -->
-    <label style="font-weight:700;">Fecha</label><br/>
-    <input type="date" name="date" required><br/><br/>
+    <!-- GRID CAMPOS (móvil friendly) -->
+    <div class="gm-form-grid">
+      <!-- FECHA -->
+      <div class="gm-field">
+        <label class="gm-label">Fecha</label>
+        <input class="gm-input" type="date" name="date" required>
+      </div>
 
-    <!-- CAMPO -->
-    <label style="font-weight:700;">Campo</label><br/>
-    <select name="course_id" required>
-      {% for c in courses %}
-        <option value="{{ c.id }}">{{ c.name }}</option>
-      {% endfor %}
-    </select><br/><br/>
+      <!-- CAMPO -->
+      <div class="gm-field">
+        <label class="gm-label">Campo</label>
+        <select class="gm-select" name="course_id" required>
+          {% for c in courses %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-    <!-- TEE -->
-    <label style="font-weight:700;">Tee</label><br/>
-    <select name="tee">
-      <option value="yellow">Amarillas</option>
-      <option value="white">Blancas</option>
-      <option value="red">Rojas</option>
-    </select><br/><br/>
+      <!-- TEE -->
+      <div class="gm-field">
+        <label class="gm-label">Tee</label>
+        <select class="gm-select" name="tee">
+          <option value="yellow">Amarillas</option>
+          <option value="white">Blancas</option>
+          <option value="red">Rojas</option>
+        </select>
+      </div>
 
-    <!-- TIPO DE PARTIDO -->
-    <label style="font-weight:700;">Tipo de partido</label><br/>
-    <select name="match_type">
-      <option value="">Partido amistoso</option>
-      {% for l in leagues %}
-        <option value="{{ l.id }}">Liga: {{ l.name }}</option>
-      {% endfor %}
-    </select>
-    <br/><br/>
+      <!-- TIPO DE PARTIDO -->
+      <div class="gm-field">
+        <label class="gm-label">Tipo de partido</label>
+        <select class="gm-select" name="match_type">
+          <option value="">Partido amistoso</option>
+          {% for l in leagues %}
+            <option value="{{ l.id }}">Liga: {{ l.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
 
     <!-- JUGADORES -->
-    <label style="font-weight:700;">Jugadores</label><br/>
-    <p style="font-size:0.9rem; color:#6b7280; margin-top:6px;">
-      Añade todos los jugadores que participan en esta vuelta.
-    </p>
+    <div class="gm-section">
+      <div class="gm-section-head">
+        <div>
+          <div class="gm-section-title">Jugadores</div>
+          <p class="gm-hint">Añade todos los jugadores que participan en esta vuelta.</p>
+        </div>
 
-    <table class="admin-table" style="margin-top:8px;">
-      <thead>
-        <tr>
-          <th class="text-left">Jugador</th>
-          <th style="width:80px;"></th>
-        </tr>
-      </thead>
+        <button type="button" class="gm-btn-add" onclick="addPlayerRow()">+ Add</button>
+      </div>
 
-      <tbody id="players-tbody">
-        <tr>
-          <td class="text-left">
-            <select name="player_ids" required>
-              <option value="">- Selecciona jugador -</option>
-              {% for p in players %}
-                <option value="{{ p.id }}">{{ p.name }} ({{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }})</option>
-              {% endfor %}
-            </select>
-          </td>
+      <div class="players-list" id="players-tbody">
+        <div class="player-row">
+          <select class="gm-select" name="player_ids" required>
+            <option value="">- Selecciona jugador -</option>
+            {% for p in players %}
+              <option value="{{ p.id }}">{{ p.name }} ({{ p.hcp_exact is not none and "%.1f"|format(p.hcp_exact) or "-" }})</option>
+            {% endfor %}
+          </select>
 
-          <td style="text-align:right;">
-            <button type="button" onclick="removeRow(this)" title="Eliminar fila">🗑</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          <button type="button" class="gm-iconbtn gm-iconbtn--trash" onclick="removeRow(this)" aria-label="Eliminar fila" title="Eliminar fila">
+            🗑
+          </button>
+        </div>
+      </div>
 
-    <button type="button" onclick="addPlayerRow()" style="margin-top:10px;">
-      + Añadir jugador
-    </button>
-
-    <br/><br/>
-
-    <button class="btn-primary" type="submit">Crear vuelta</button>
-    <a class="link-gm" href="/admin/rounds" style="margin-left:12px;">← Volver a rondas</a>
+      <div class="gm-actions">
+        <button class="btn-primary" type="submit">Crear vuelta</button>
+      </div>
+    </div>
 
   </form>
 </section>
+
+<style>
+  /* ===== Solo para esta vista ===== */
+
+  .gm-form-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
+  @media (max-width: 560px){
+    .gm-form-grid{ grid-template-columns: 1fr; }
+  }
+
+  .gm-field{ min-width:0; }
+
+  .gm-label{
+    font-weight:800;
+    display:block;
+    margin: 0 0 6px 0;
+  }
+
+  .gm-input, .gm-select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid rgba(0,0,0,.10);
+    border-radius:12px;
+    background:#fff;
+    font: inherit;
+  }
+
+  .gm-section{ margin-top: 14px; }
+
+  .gm-section-head{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:flex-end; /* <-- esto lo baja */
+  }
+  .gm-btn-add{ margin-bottom: 2px; }
+
+  .gm-section-title{
+    font-weight:900;
+    font-size:1.02rem;
+    margin:0;
+  }
+
+  .gm-hint{
+    font-size:0.92rem;
+    color:#6b7280;
+    margin:6px 0 0 0;
+  }
+
+  .table-scroll{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border:1px solid rgba(0,0,0,.10);
+    border-radius:14px;
+    background:#fff;
+  }
+  .admin-table{ min-width: 520px; }
+
+  .gm-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top: 12px;
+    flex-wrap:wrap;
+  }
+  .gm-btn-add{
+    border:1px solid rgba(0,0,0,.10);
+    background: rgba(20,83,45,.08);
+    border-color: rgba(20,83,45,.20);
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-weight: 800;
+    font-size: .9rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .gm-btn{
+    border:1px solid rgba(0,0,0,.10);
+    background:#fff;
+    border-radius:14px;
+    padding:10px 12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .gm-btn--soft{
+    background: rgba(20,83,45,.08);
+    border-color: rgba(20,83,45,.20);
+  }
+
+  .gm-iconbtn{
+    border:1px solid rgba(0,0,0,.10);
+    background:#fff;
+    border-radius:12px;
+    padding:10px 10px;
+    cursor:pointer;
+    line-height:1;
+  }
+
+  /* Evita que nada se salga del card */
+  .card, .gm-wrap, .gm-section { overflow-x: hidden; } /* seguro en móvil */
+
+  /* Tabla jugadores: nunca más ancha que el contenedor */
+  .admin-table--players{
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  /* Celdas pueden encoger */
+  .admin-table--players td,
+  .admin-table--players th{
+    min-width: 0;
+  }
+
+  /* Select no fuerza ancho */
+  .admin-table--players select{
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+
+  /* Botón papelera compacto */
+  .gm-iconbtn{
+    border:1px solid rgba(0,0,0,.10);
+    background:#fff;
+    border-radius:10px;
+    padding:6px 8px;
+    cursor:pointer;
+    line-height:1;
+  }
+  /* Head alineado abajo (botón a la altura del texto) */
+  .gm-section-head{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:flex-end;
+  }
+
+  .gm-btn-add{
+    border:1px solid rgba(20,83,45,.20);
+    background: rgba(20,83,45,.08);
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-weight: 900;
+    font-size: .9rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .players-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:10px;
+  }
+
+  .player-row{
+    display:grid;
+    grid-template-columns: 1fr 42px;
+    gap:10px;
+    align-items:center;
+  }
+
+  .gm-iconbtn--trash{
+    padding: 8px 8px;
+    border-radius: 12px;
+    box-shadow:none;
+  }
+
+</style>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
   function addPlayerRow() {
-    const tbody = document.getElementById('players-tbody');
-    const firstRow = tbody.querySelector('tr');
-
+    const wrap = document.getElementById('players-tbody');
+    const firstRow = wrap.querySelector('.player-row');
     const newRow = firstRow.cloneNode(true);
 
     const select = newRow.querySelector('select[name="player_ids"]');
     if (select) select.value = "";
 
-    tbody.appendChild(newRow);
+    wrap.appendChild(newRow);
+    if (select) select.focus();
   }
 
   function removeRow(button) {
-    const tbody = document.getElementById('players-tbody');
-    if (tbody.rows.length <= 1) return; // siempre dejamos una fila
-    const row = button.closest('tr');
-    tbody.removeChild(row);
+    const wrap = document.getElementById('players-tbody');
+    const rows = wrap.querySelectorAll('.player-row');
+    if (rows.length <= 1) return; // siempre dejamos una fila
+    const row = button.closest('.player-row');
+    row.remove();
   }
 </script>
+
 {% endblock %}

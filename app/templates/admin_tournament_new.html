@@ -1,15 +1,25 @@
 {% extends "admin_base.html" %}
-{% block title %}Nueva Copa · Admin{% endblock %}
+{% block title %}Admin · Nueva Copa{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Nueva Copa (Individual)</h1>
+    <p class="admin-subtitle">Crea el torneo y selecciona hasta 16 jugadores.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Copas", "url":"/admin/tournaments"},
+    {"label":"Nueva Copa", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
-  <section class="card admin-form-card">
-    <div class="admin-form-head">
-      <h1>Nueva Copa (Individual)</h1>
-      <p class="muted">Crea el torneo y selecciona hasta 16 jugadores.</p>
-    </div>
-  </section>
 
-  <section class="card admin-form-card" style="margin-top:14px;">
+  <section class="card admin-form-card card--spaced">
     <form method="post" action="/admin/tournaments/new" enctype="multipart/form-data">
       <div class="admin-form-grid" style="max-width:820px;">
 
@@ -60,4 +70,9 @@
       </div>
     </form>
   </section>
+
+  <style>
+    .card--spaced{ margin-top:18px; }
+  </style>
+
 {% endblock %}

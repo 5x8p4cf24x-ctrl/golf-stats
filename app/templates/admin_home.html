@@ -1,46 +1,254 @@
 {% extends "admin_base.html" %}
-
 {% block title %}Admin · Golf Mode{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Panel de administración</h1>
+    <p class="admin-subtitle">Gestión completa de Golf Mode</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-<section class="admin-actions">
+<div class="admin-dashboard">
 
-  <a href="/admin/rounds/new" class="admin-action admin-action--primary">
-    <h3>+ Nueva partida</h3>
-    <p>Crear una ronda nueva</p>
-  </a>
+  <!-- ================= KPI ================= -->
+  <section class="admin-dashboard-kpis">
+    <div class="admin-kpi-box">
+      <div class="admin-kpi-label">Jugadores</div>
+      <div class="admin-kpi-value">{{ kpi.players }}</div>
+    </div>
 
-  <a href="/admin/achievements/assignment" class="admin-action">
-    <h3>Asignación de logros</h3>
-    <p>Gestionar logros por jugador</p>
-  </a>
+    <div class="admin-kpi-box">
+      <div class="admin-kpi-label">Rondas</div>
+      <div class="admin-kpi-value">{{ kpi.rounds }}</div>
+    </div>
 
-  <a href="/admin/news" class="admin-action">
-    <h3>Noticias</h3>
-    <p>Crear y publicar novedades</p>
-  </a>
+    <div class="admin-kpi-box">
+      <div class="admin-kpi-label">Ligas</div>
+      <div class="admin-kpi-value">{{ kpi.leagues }}</div>
+    </div>
 
-</section>
+    <div class="admin-kpi-box">
+      <div class="admin-kpi-label">Copas</div>
+      <div class="admin-kpi-value">{{ kpi.tournaments }}</div>
+    </div>
+  </section>
 
-<section class="admin-actions admin-actions--secondary">
+  
+  <!-- ================= GRID PRINCIPAL ================= -->
+  <section class="admin-dashboard-grid">
 
-  <a href="/admin/players" class="admin-action">
-    <h3>Jugadores</h3>
-  </a>
+    <a href="/admin/rounds/new"
+      class="admin-dashboard-tile admin-dashboard-tile--primary admin-dashboard-tile--full">
+      + Nueva partida
+    </a>
 
-  <a href="/admin/rounds" class="admin-action">
-    <h3>Rondas</h3>
-  </a>
+    <a href="/admin/players" class="admin-dashboard-tile">Jugadores</a>
+    <a href="/admin/courses" class="admin-dashboard-tile">Campos</a>
 
-  <a href="/admin/courses" class="admin-action">
-    <h3>Campos</h3>
-  </a>
+    <a href="/admin/rounds" class="admin-dashboard-tile">Rondas</a>
+    <a href="/admin/achievements" class="admin-dashboard-tile">Logros</a>
 
-  <a href="/admin/leagues" class="admin-action">
-    <h3>Ligas</h3>
-  </a>
+    <a href="/admin/leagues" class="admin-dashboard-tile">Ligas</a>
+    <a href="/admin/tournaments" class="admin-dashboard-tile">Copas</a>
 
-</section>
+    <a href="/admin/news"
+      class="admin-dashboard-tile admin-dashboard-tile--full">
+      News
+    </a>
+
+  </section>
+
+</div>
+
+<style>
+  .admin-title{
+    font-size: clamp(1.8rem, 5.6vw, 2.3rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    max-width: 16ch; /* ayuda a que no haga 2 líneas tan fácil */
+    margin-bottom:-06px;
+  }
+
+  .admin-subtitle{
+    font-size:.90rem;
+    margin-bottom:30px;
+    
+   
+  }
+
+  /* =========================
+    ADMIN HOME – BASE + LOOK
+    ========================= */
+
+  .admin-dashboard{
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 0 2px;
+  }
+
+  /* KPI */
+  .admin-dashboard-kpis{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:10px;
+    margin-top:10px;
+    margin-bottom:12px;
+  }
+
+  .admin-kpi-box{
+    background:#fff;
+    border:1px solid rgba(0,0,0,.06);
+    padding:12px 14px;
+    border-radius:14px;
+    box-shadow: 0 6px 14px rgba(0,0,0,.035);
+    min-width:0;
+  }
+
+  .admin-kpi-label{
+    font-size:.70rem;
+    letter-spacing:.09em;
+    text-transform: uppercase;
+    color: rgba(20,83,45,.75);
+    font-weight: 700;
+  }
+
+  .admin-kpi-value{
+    margin-top:6px;
+    font-size:1.1rem;
+    font-weight: 800;
+    color: var(--gm-green, #14532d);
+  }
+
+  /* CTA Nueva partida */
+  .admin-dashboard-primary{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    margin: 10px 0 14px;
+    padding:14px 0;
+    border-radius:14px;
+    text-decoration:none;
+    color:#fff;
+    font-weight:900;
+    letter-spacing:.02em;
+    text-transform: lowercase;
+    background: linear-gradient(180deg, rgba(20,83,45,1), rgba(16,70,38,1));
+    box-shadow: 0 10px 24px rgba(20,83,45,.18);
+    border: 1px solid rgba(255,255,255,.10);
+    transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
+  }
+
+  .admin-dashboard-primary:hover{
+    filter: brightness(1.03);
+    box-shadow: 0 12px 28px rgba(20,83,45,.22);
+  }
+
+  .admin-dashboard-primary:active{
+    transform: translateY(1px);
+  }
+
+  /* Grid tiles */
+  .admin-dashboard-grid{
+    margin-top: 34px;  /* separa KPIs del grid */
+    gap: 12px;         /* un pelín más de aire */
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:05px;
+  }
+
+  .admin-dashboard-tile{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 0;
+    background:#fff;
+    border:1px solid rgba(0,0,0,.06);
+    box-shadow:0 6px 14px rgba(0,0,0,.03);
+    text-decoration:none;
+    font-weight:800;
+    color:var(--gm-green,#14532d);
+    transition:all .15s ease;
+    border-radius:0;
+  }
+
+  .admin-dashboard-tile:hover{
+    background:rgba(20,83,45,.06);
+    border-color:rgba(20,83,45,.22);
+    box-shadow:0 8px 18px rgba(0,0,0,.05);
+  }
+  
+  /* ===== NUEVA PARTIDA DESTACADO ===== */
+  .admin-dashboard-tile--primary{
+    background:#1f7a3f;            /* verde más claro */
+    color:#fff;
+    font-weight:900;
+    letter-spacing:.02em;
+    padding:28px 0;                /* más alto */
+    box-shadow:0 12px 26px rgba(20,83,45,.22);
+  }
+
+  .admin-dashboard-tile--primary:hover{
+    background:#228a45;
+    border-color:#228a45;
+    box-shadow:0 16px 32px rgba(20,83,45,.28);
+  }
+
+  /* Full width */
+  .admin-dashboard-tile--full{
+    grid-column:1 / -1;
+  }
+  .admin-dashboard-tile--primary{
+    color: #fff !important;
+  }
+
+  .admin-dashboard-tile--primary:hover{
+    color: #fff !important;
+  }
+
+  /* Móvil */
+  @media (max-width:680px){
+    .admin-dashboard{
+      max-width: 520px;
+      padding: 0 6px;
+    }
+    .admin-dashboard-primary{
+      padding:13px 0;
+      font-size:1rem;
+    }
+    .admin-dashboard-tile{
+      padding:28px 0;
+      font-size:.95rem;
+    }
+  }
+  /* ADMIN HOME: título SIEMPRE 1 línea */
+  .admin-pagehead .admin-title{
+    display:block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    /* tamaño más contenido */
+    font-size: clamp(1.5rem, 4.2vw, 2.2rem);
+    line-height: 1.05;
+
+    /* quita límites que lo estrechan */
+    max-width: none !important;
+  }
+
+  /* Asegura que el header no esté estrechándose por layout */
+  .admin-pagehead{
+    width: 100%;
+  }
+</style>
 
 {% endblock %}

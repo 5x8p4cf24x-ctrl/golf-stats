@@ -1,53 +1,187 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-  <main class="container">
-    <h1>{{ title }}</h1>
+{% extends "admin_base.html" %}
 
-    <section class="card">
-      <form method="post" enctype="multipart/form-data">
-        <label>Nombre</label><br/>
-        <input name="name" value="{{ course.name if course else '' }}" required/><br/><br/>
+{% block title %}{{ title }}{% endblock %}
 
-        <label>Ciudad</label><br/>
-        <input name="city" value="{{ course.city if course else '' }}"/><br/><br/>
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">{{ title }}</h1>
+    <p class="admin-subtitle">Completa los datos del campo. El logo es opcional.</p>
+  </header>
+{% endblock %}
 
-        <label>Par total</label><br/>
-        <input name="par_total" type="number"
-               value="{{ course.par_total if course else 72 }}"/><br/><br/>
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Campos", "url":"/admin/courses"},
+    {"label": title, "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
-        <label>Slope amarillas</label><br/>
-        <input name="slope_yellow" type="number"
-               value="{{ course.slope_yellow if course else 113 }}"/><br/><br/>
+{% block content %}
 
-        <label>Rating amarillas</label><br/>
-        <input name="rating_yellow" type="number" step="0.1"
-               value="{{ course.rating_yellow if course else 72.0 }}"/><br/><br/>
+<form method="post" enctype="multipart/form-data" class="page-has-sticky-actions">
 
-        <label>Metros totales</label><br/>
-        <input type="number" name="meters_total"
-               value="{{ course.meters_total if course and course.meters_total is not none else '' }}"/><br/><br/>
-        
-        <label>Logo del campo (opcional)</label><br/>
-        {% if course and course.logo_url %}
-          <img src="/uploads/{{ course.logo_url }}"
-            alt="Logo {{ course.name }}"
-            style="width:80px; height:80px; object-fit:contain; background:#0f172a; border-radius:8px; padding:4px; display:block; margin-bottom:8px;">
-        {% endif %}
-        <input type="file" name="logo">
-        <br/><br/>
+  <section class="card card--spaced">
+    <div class="form-grid">
 
-               
-        <button type="submit">Guardar</button>
-      </form>
-    </section>
+      <div class="field">
+        <label class="field-label">Nombre</label>
+        <input class="gm-input" name="name" value="{{ course.name if course else '' }}" required/>
+      </div>
 
-    <p><a href="/admin/courses">Volver</a></p>
-  </main>
-</body>
-</html>
+      <div class="field">
+        <label class="field-label">Ciudad</label>
+        <input class="gm-input" name="city" value="{{ course.city if course else '' }}"/>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Par total</label>
+        <input class="gm-input" name="par_total" type="number"
+               value="{{ course.par_total if course else 72 }}"/>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Metros totales</label>
+        <input class="gm-input" type="number" name="meters_total"
+               value="{{ course.meters_total if course and course.meters_total is not none else '' }}"/>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Slope amarillas</label>
+        <input class="gm-input" name="slope_yellow" type="number"
+               value="{{ course.slope_yellow if course else 113 }}"/>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Rating amarillas</label>
+        <input class="gm-input" name="rating_yellow" type="number" step="0.1"
+               value="{{ course.rating_yellow if course else 72.0 }}"/>
+      </div>
+
+      <div class="field field--logo">
+        <label class="field-label">Logo del campo (opcional)</label>
+
+        <div class="logo-row">
+          {% if course and course.logo_url %}
+            <img src="/uploads/{{ course.logo_url }}"
+                 alt="Logo {{ course.name }}"
+                 class="logo-preview">
+          {% endif %}
+
+          <input class="gm-input" type="file" name="logo">
+        </div>
+
+        <div class="muted" style="margin-top:6px; font-size:13px;">
+          Recomendado: PNG cuadrado, fondo transparente.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Barra acciones tipo app -->
+  <div class="action-bar action-bar--sticky">
+    <a class="action-btn action-btn--ghost" href="/admin/courses">Volver</a>
+    <button class="action-btn action-btn--primary" type="submit">Guardar</button>
+  </div>
+
+</form>
+
+<style>
+  .muted{ color: var(--muted); }
+  .card--spaced{ margin-top: 18px; }
+
+  .form-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .field{ display:flex; flex-direction:column; gap:8px; }
+  .field-label{ font-weight:800; color: var(--text); }
+
+  .gm-input{ width:100%; }
+
+  .field--logo{ grid-column: 1 / -1; }
+
+  .logo-row{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .logo-preview{
+    width:72px;
+    height:72px;
+    object-fit:contain;
+    background:#0f172a;
+    border-radius:10px;
+    padding:6px;
+    border:1px solid rgba(0,0,0,.08);
+  }
+
+  /* Barra acciones (igual que player_form) */
+  .action-bar{
+    margin-top: 14px;
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+
+  .action-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 900;
+    text-decoration: none;
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: none;
+    cursor: pointer;
+  }
+
+  .action-btn--ghost{
+    background:#fff;
+    color: var(--gm-green);
+  }
+
+  .action-btn--primary{
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border-color: rgba(0,0,0,.06);
+  }
+
+  @media (max-width: 820px){
+    .form-grid{ grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 560px){
+    .page-has-sticky-actions{ padding-bottom: 92px; }
+
+    .action-bar--sticky{
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 9998;
+      margin-top: 0;
+
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.14);
+
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+    }
+    .action-bar--sticky .action-btn{ flex:1; }
+  }
+</style>
+
+{% endblock %}

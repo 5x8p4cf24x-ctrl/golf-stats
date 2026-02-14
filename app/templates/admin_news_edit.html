@@ -1,48 +1,96 @@
 {% extends "admin_base.html" %}
 
+{% block title %}Admin · Editar noticia{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Editar noticia</h1>
+    <p class="admin-subtitle">Modifica el contenido, la categoría, el link o la imagen.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Noticias", "url":"/admin/news"},
+    {"label":"Editar", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
 {% block content %}
-<h1>Editar noticia</h1>
 
-<form method="post" enctype="multipart/form-data" class="form">
+<section class="card card--spaced">
 
-  <div class="form-row">
-    <label>Título</label>
-    <input type="text" name="title" value="{{ item.title }}" required>
-  </div>
+  <form method="post" enctype="multipart/form-data" class="admin-form-grid">
 
-  <div class="form-row">
-    <label>Texto</label>
-    <textarea name="excerpt" rows="4" required>{{ item.excerpt }}</textarea>
-  </div>
+    <div class="admin-field admin-span-2">
+      <label>Título</label>
+      <input type="text" name="title" value="{{ item.title }}" required>
+    </div>
 
-  <div class="form-row">
-    <label>Categoría</label>
-    <select name="category">
-      {% for c in ["general","league","achievement","record","round"] %}
-        <option value="{{ c }}" {% if item.category == c %}selected{% endif %}>
-          {{ c }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+    <div class="admin-field admin-span-2">
+      <label>Texto</label>
+      <textarea name="excerpt" rows="4" required>{{ item.excerpt }}</textarea>
+    </div>
 
-  <div class="form-row">
-    <label>Link</label>
-    <input type="text" name="related_url" value="{{ item.related_url or '' }}">
-  </div>
+    <div class="admin-field">
+      <label>Categoría</label>
+      <select name="category">
+        {% for c in ["general","league","achievement","record","round"] %}
+          <option value="{{ c }}" {% if item.category == c %}selected{% endif %}>
+            {{ c }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
 
-  <div class="form-row">
-    <label>Imagen nueva (opcional)</label>
-    <input type="file" name="image" accept="image/*">
-    {% if item.image_path %}
-      <div style="margin-top:8px;">
-        <img src="{{ item.image_path }}" style="max-width:200px;border-radius:8px;">
-      </div>
-    {% endif %}
-  </div>
+    <div class="admin-field">
+      <label>Link (opcional)</label>
+      <input type="text" name="related_url" value="{{ item.related_url or '' }}">
+    </div>
 
-  <button class="btn btn-primary">Guardar cambios</button>
-  <a href="/admin/news" class="btn">Cancelar</a>
+    <div class="admin-field admin-span-2">
+      <label>Imagen nueva (opcional)</label>
+      <input type="file" name="image" accept="image/*">
 
-</form>
+      {% if item.image_path %}
+        <div class="news-image-preview">
+          <div class="muted" style="font-size:.85rem; margin-bottom:8px;">Imagen actual</div>
+          <img src="{{ item.image_path }}" alt="Imagen noticia" class="news-image-preview-img">
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="admin-form-actions admin-span-2" style="justify-content:space-between;">
+      <a class="btn-secondary" href="/admin/news">Cancelar</a>
+      <button class="btn-primary" type="submit">Guardar cambios</button>
+    </div>
+
+  </form>
+
+</section>
+
+<style>
+  .card--spaced{ margin-top:18px; }
+  .muted{ color: var(--muted); }
+
+  .news-image-preview{
+    margin-top:10px;
+    padding:10px;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    background:#fff;
+    display:inline-block;
+  }
+
+  .news-image-preview-img{
+    display:block;
+    width: 220px;
+    max-width: 100%;
+    border-radius:12px;
+    border:1px solid rgba(0,0,0,.08);
+  }
+</style>
+
 {% endblock %}

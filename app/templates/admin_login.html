@@ -5,14 +5,28 @@
 {% block header_subtitle %}Introduce la clave para acceder al panel.{% endblock %}
 
 {% block content %}
-<section class="card" style="max-width:520px; margin: 0 auto;">
+<section class="card admin-form-card" style="max-width:480px; margin: 40px auto;">
+
   {% if error %}
-    <p style="color:#dc2626; font-weight:800; margin-top:0;">{{ error }}</p>
+    <div style="margin-bottom:16px; padding:10px 12px; border-radius:10px; background:rgba(220,38,38,.08); color:#dc2626; font-weight:700;">
+      {{ error }}
+    </div>
   {% endif %}
 
-  <form method="post" action="/admin/login" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-    <input name="key" type="password" placeholder="Clave admin" required style="flex:1; min-width:220px;">
-    <button class="btn-primary" type="submit">Entrar</button>
+  <form method="post" action="/admin/login">
+
+    <div class="admin-field">
+      <label>Clave admin</label>
+      <input name="key" type="password" placeholder="Introduce la clave" required>
+    </div>
+
+    <div class="admin-form-actions" style="margin-top:14px;">
+      <button class="btn-gm" type="submit">
+        Entrar
+      </button>
+    </div>
+
   </form>
+
 </section>
 {% endblock %}

@@ -1,76 +1,275 @@
 {% extends "admin_base.html" %}
 
 {% block title %}Admin · Campos{% endblock %}
-{% block header_title %}Campos{% endblock %}
-{% block header_subtitle %}Gestión de campos, hoyos y datos de juego.{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Campos</h1>
+    <p class="admin-subtitle">Gestión de campos, hoyos y datos de juego.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Campos", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-<div style="margin: 10px 0 14px 0;">
+<div class="admin-toolbar">
   <a class="btn-primary" href="/admin/courses/new">+ Nuevo campo</a>
 </div>
 
-<!-- FILTRO POR CIUDAD -->
-<section class="card" style="margin-bottom:16px;">
-  <form method="get" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-    <label for="city" style="font-weight:700;">Filtrar por ciudad:</label>
+<!-- Filtro -->
+<section class="card card--spaced">
+  <form method="get" class="filter-row">
+    <label for="city" class="field-label">Filtrar por ciudad</label>
 
-    <select name="city" id="city">
+    <select name="city" id="city" class="gm-select">
       <option value="">Todas</option>
       {% for c in cities %}
         <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
       {% endfor %}
     </select>
 
-    <button class="btn-primary" type="submit">Aplicar</button>
+    <button class="btn-secondary" type="submit">Aplicar</button>
 
     {% if selected_city %}
-      <a class="link-gm" href="/admin/courses" style="margin-left:8px;">Limpiar filtro</a>
+      <a class="link-gm" href="/admin/courses">Limpiar</a>
     {% endif %}
   </form>
 </section>
 
 <!-- LISTA DE CAMPOS -->
-<section class="card">
-  <table class="admin-table">
-    <thead>
-      <tr>
-        <th class="text-left">Nombre</th>
-        <th class="text-left">Ciudad</th>
-        <th style="text-align:right;">Par</th>
-        <th style="text-align:right;">Metros</th>
-        <th style="text-align:right;">Slope</th>
-        <th style="text-align:right;">Rating</th>
-        <th class="text-left">Acciones</th>
-      </tr>
-    </thead>
+<section class="card card--spaced">
 
-    <tbody>
+  {% if courses|length == 0 %}
+    <p>No hay campos registrados.</p>
+  {% else %}
+
+    <!-- Desktop -->
+    <div class="table-scroll courses-desktop">
+      <table class="admin-table admin-table--courses">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Ciudad</th>
+            <th class="num">Par</th>
+            <th class="num">Metros</th>
+            <th class="num">Slope</th>
+            <th class="num">Rating</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in courses %}
+          <tr>
+            <td><strong>{{ c.name }}</strong></td>
+            <td>{{ c.city or "-" }}</td>
+            <td class="num">{{ c.par_total }}</td>
+            <td class="num">{{ c.meters_total or "-" }}</td>
+            <td class="num">{{ c.slope_yellow }}</td>
+            <td class="num">{{ "%.1f"|format(c.rating_yellow) }}</td>
+            <td class="td-actions">
+              <a class="link-gm" href="/admin/courses/{{ c.id }}/holes">Hoyo a hoyo</a>
+              <a class="link-gm" href="/admin/courses/{{ c.id }}/edit">Editar</a>
+              <a class="btn-link-danger"
+                 href="/admin/courses/{{ c.id }}/delete"
+                 onclick="return confirm('¿Eliminar campo?')">
+                Borrar
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Móvil -->
+    <div class="courses-mobile">
       {% for c in courses %}
-      <tr>
-        <td class="text-left"><strong>{{ c.name }}</strong></td>
-        <td class="text-left">{{ c.city or "" }}</td>
-        <td style="text-align:right;">{{ c.par_total }}</td>
-        <td style="text-align:right;">{{ c.meters_total or "-" }}</td>
-        <td style="text-align:right;">{{ c.slope_yellow }}</td>
-        <td style="text-align:right;">{{ "%.1f"|format(c.rating_yellow) }}</td>
+        <div class="course-card">
+          <div class="course-card-head">
+            <div class="course-name">{{ c.name }}</div>
+            <div class="course-city">{{ c.city or "-" }}</div>
+          </div>
 
-        <td class="text-left" style="white-space:nowrap;">
-          <a class="link-gm" href="/admin/courses/{{ c.id }}/holes">Hoyo a hoyo</a>
-          <span style="color:#cbd5e1;"> | </span>
-          <a class="link-gm" href="/admin/courses/{{ c.id }}/edit">Editar</a>
-          <span style="color:#cbd5e1;"> | </span>
-          <a class="link-gm" href="/admin/courses/{{ c.id }}/delete"
-             onclick="return confirm('¿Eliminar campo?')">Borrar</a>
-        </td>
-      </tr>
+          <div class="course-stats">
+            <div><span>Par</span><strong>{{ c.par_total }}</strong></div>
+            <div><span>Metros</span><strong>{{ c.meters_total or "-" }}</strong></div>
+            <div><span>Slope</span><strong>{{ c.slope_yellow }}</strong></div>
+            <div><span>Rating</span><strong>{{ "%.1f"|format(c.rating_yellow) }}</strong></div>
+          </div>
+
+          <div class="course-actions">
+            <a href="/admin/courses/{{ c.id }}/holes" class="btn-secondary btn-compact">Hoyo a hoyo</a>
+            <a href="/admin/courses/{{ c.id }}/edit" class="btn-secondary btn-compact">Editar</a>
+            <a href="/admin/courses/{{ c.id }}/delete"
+               class="btn-danger-outline btn-compact"
+               onclick="return confirm('¿Eliminar campo?')">
+              Borrar
+            </a>
+          </div>
+        </div>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
+
+  {% endif %}
+
 </section>
 
-<div style="margin-top:14px;">
-  <a class="link-gm" href="/admin">← Volver al panel admin</a>
-</div>
+
+<style>
+  .admin-toolbar{
+    margin: 8px 0 12px 0;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .card--spaced{ margin-top: 18px; }
+
+  .field-label{
+    font-weight:800;
+    color: var(--text);
+  }
+
+  .filter-row{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .table-scroll{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    background:#fff;
+  }
+
+  .admin-table--courses{ min-width: 860px; }
+  .num{ text-align:right; white-space:nowrap; }
+
+  .td-actions{
+    white-space:nowrap;
+    display:flex;
+    gap:14px;
+    align-items:center;
+  }
+
+  .btn-link-danger{
+    border:none;
+    background:none;
+    color:#ef4444;
+    cursor:pointer;
+    font-weight:800;
+    padding:0;
+  }
+  .btn-link-danger:hover{ text-decoration: underline; }
+
+  /* En desktop a veces el flex en td puede desalinear: lo normalizamos */
+  @media (min-width: 641px){
+    .admin-table--courses td.td-actions{ display: table-cell; }
+    .admin-table--courses td.td-actions a + a{ margin-left: 14px; }
+  }
+
+  /* En móvil: acciones como fila separada dentro del scroll ya va bien */
+  /* ===== Cursos – responsive ===== */
+
+  .courses-mobile{ display:none; }
+
+  .course-card{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    padding:12px;
+    margin-bottom:14px;
+    background:#fff;
+  }
+
+  .course-card-head{
+    margin-bottom:10px;
+  }
+
+  .course-name{
+    font-weight:800;
+    font-size:1.00rem;
+    line-height:1.2;
+    color: var(--gm-green);
+  }
+
+  .course-city{
+    font-size:.8rem;
+    margin-top:2px;
+    color: var(--muted);
+  }
+
+  .course-stats{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap:6px 14px;
+    margin:10px 0 6px 0;
+  }
+
+  .course-stats span{
+    display:block;
+    font-size:.70rem;
+    color: var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+
+  .course-stats strong{
+    font-weight:800;
+    font-size:.90rem;
+  }
+
+  .course-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    border-top:1px solid rgba(0,0,0,.06);
+    margin-top:12px;
+    padding-top:10px;
+    }
+
+  .btn-compact{
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:800;
+    border-radius:10px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#f8fafc;
+    color: var(--gm-green);
+  }
+
+  .btn-compact:hover{
+    background:rgba(20,83,45,.06);
+  }
+
+  .btn-danger-outline{
+    background:transparent;
+    border:1px solid #ef4444;
+    color:#ef4444;
+  }
+
+  .btn-danger-outline:hover{
+    background:#ef4444;
+    color:#fff;
+  }
+
+  /* Responsive switch */
+  @media (max-width: 860px){
+    .courses-desktop{ display:none; }
+    .courses-mobile{ display:block; }
+  }
+
+</style>
 
 {% endblock %}

@@ -1,103 +1,111 @@
 {% extends "admin_base.html" %}
 
 {% block title %}Admin · Tarjeta — {{ player.name }}{% endblock %}
-{% block header_title %}Tarjeta — {{ player.name }}{% endblock %}
-{% block header_subtitle %}
-  Campo: {{ course.name }} · Fecha: {{ round.date }} · Tee: {{ round.tee }}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Tarjeta — {{ player.name }}</h1>
+    <p class="admin-subtitle">Campo: {{ course.name }} · Fecha: {{ round.date }} · Tee: {{ round.tee }}</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Rondas", "url":"/admin/rounds"},
+    {"label":"Resumen", "url":"/admin/rounds/" ~ round.id ~ "/summary"},
+    {"label":"Tarjeta", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
 {% endblock %}
 
 {% block content %}
 
-<form id="score_form" method="post" action="/admin/rounds/{{ round.id }}/player/{{ rp.id }}/card">
+<form id="score_form"
+      class="page-has-sticky-actions"
+      method="post"
+      action="/admin/rounds/{{ round.id }}/player/{{ rp.id }}/card">
 
-  <div class="admin-toolbar">
-    <div class="admin-toolbar-left">
-      <button class="btn-primary" type="submit">Guardar tarjeta</button>
-      <a class="btn-secondary" href="/admin/rounds/{{ round.id }}/summary">← Volver al resumen</a>
-    </div>
-  </div>
+  <!-- Link jugador -->
+  <section class="card card--spaced">
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Link para el jugador (móvil)</h2>
+        <div class="status-line">
+          Estado:
+          {% if rp.player_card_locked %}
+            <strong class="status-pill status-pill--closed">CERRADA</strong>
+            <span class="muted">· Solo admin</span>
+          {% else %}
+            <strong class="status-pill status-pill--open">ABIERTA</strong>
+            <span class="muted">· Live activo</span>
+          {% endif %}
+        </div>
+      </div>
 
-  <!-- LINK JUGADOR (MÓVIL / LIVE) -->
-  <section class="card" style="margin-bottom:16px;">
-    <h2>Link para el jugador (móvil)</h2>
-
-    <p style="margin:4px 0; color:var(--muted);">
-      Estado:
-      {% if rp.player_card_locked %}
-        <strong style="color:var(--text);">CERRADA</strong>
-        · Solo el administrador puede modificar
-      {% else %}
-        <strong style="color:var(--text);">ABIERTA</strong>
-        · El jugador puede anotar en vivo
-      {% endif %}
-    </p>
-
-    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
-
-      <!-- generar / regenerar token (SIN FORM ANIDADO) -->
-      <button class="btn-secondary"
-              type="submit"
-              formmethod="post"
-              formaction="/admin/rounds/{{ round.id }}/player/{{ rp.id }}/token">
-        {% if rp.edit_token %}Regenerar link{% else %}Generar link{% endif %}
-      </button>
-
-      {% if rp.edit_token %}
-        <input id="playerLink"
-              type="text"
-              readonly
-              value="{{ request.base_url }}public/live/round/{{ round.id }}/card?token={{ rp.edit_token }}"
-              style="min-width:340px; flex:1; padding:10px 12px;
-                      border:1px solid var(--border); border-radius:10px;
-                      font-size:13px;">
-        <button class="btn-primary" type="button" onclick="copyPlayerLink()">
-          Copiar
+      <div class="card-actions">
+        <button class="btn-secondary"
+                type="submit"
+                formmethod="post"
+                formaction="/admin/rounds/{{ round.id }}/player/{{ rp.id }}/token">
+          {% if rp.edit_token %}Regenerar link{% else %}Generar link{% endif %}
         </button>
-      {% else %}
-        <span style="color:var(--muted); font-size:13px;">
-          Genera el link para compartirlo con el jugador.
-        </span>
-      {% endif %}
+
+        {% if rp.edit_token %}
+          <button class="btn-primary" type="button" onclick="copyPlayerLink()">Copiar</button>
+        {% endif %}
+      </div>
     </div>
+
+    {% if rp.edit_token %}
+      <input id="playerLink"
+             class="link-input"
+             type="text"
+             readonly
+             value="{{ request.base_url }}public/live/round/{{ round.id }}/card?token={{ rp.edit_token }}">
+    {% else %}
+      <p class="muted" style="margin:0; font-size:13px;">Genera el link para compartirlo con el jugador.</p>
+    {% endif %}
   </section>
 
+  <!-- HCP -->
+  <section class="card card--spaced">
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Handicap de la vuelta</h2>
+        <div class="muted" style="font-size:13px; margin-top:4px;">
+          HCP exacto: <strong style="color:var(--text);">{{ "%.1f"|format(rp.hcp_exact_day) }}</strong>
+        </div>
+      </div>
+    </div>
 
-  <!-- BLOQUE HCP -->
-  <section class="card" style="margin-bottom:16px;">
-    <h2>Handicap de la vuelta</h2>
-
-    <p style="margin:4px 0; color:var(--muted);">
-      HCP exacto del jugador:
-      <strong style="color:var(--text);">{{ "%.1f"|format(rp.hcp_exact_day) }}</strong>
-    </p>
-
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">
-      <label for="course_handicap" style="font-weight:800; color:var(--text);">
-        HCP de juego (editable)
-      </label>
+    <div class="hcp-row">
+      <label for="course_handicap" class="hcp-label">HCP de juego</label>
 
       <input id="course_handicap"
              type="number"
              name="course_handicap"
              value="{{ rp.course_handicap }}"
-             style="width:90px; text-align:center;">
+             class="hcp-input">
 
-      <span style="color:var(--muted);">Golpes de juego</span>
     </div>
   </section>
 
-  <!-- TARJETA HORIZONTAL -->
-  <section class="card">
-    <h2>Hoyo a hoyo</h2>
-    <p class="hint" style="margin:6px 0 10px; color:var(--muted); font-size:13px;">
-      Tip: puedes copiar 18 celdas desde Excel (fila o columna) y pegarlas empezando en el hoyo 1 de la fila correspondiente (Golpes / Putts / FIR).
-    </p>
+  <!-- Tarjeta hoyo a hoyo -->
+  <section class="card card--spaced">
+    <div class="card-head">
+      <div>
+        <h2 class="card-title">Hoyo a hoyo</h2>
+        <p class="muted hint">
+          Tip: puedes copiar 18 celdas desde Excel (fila o columna) y pegarlas desde el hoyo 1 (Golpes / Putts / FIR).
+        </p>
+      </div>
+    </div>
 
-    <div style="overflow:auto; padding-bottom:6px;">
+    <div class="matrix-scroll">
       <table class="score-matrix">
         <tbody>
 
-          <!-- 1) Hoyos -->
           <tr class="score-row score-row--head">
             <th class="score-label">Hoyo</th>
             {% for h in holes %}
@@ -105,7 +113,6 @@
             {% endfor %}
           </tr>
 
-          <!-- 2) Par -->
           <tr>
             <th class="score-label">Par</th>
             {% for h in holes %}
@@ -113,7 +120,6 @@
             {% endfor %}
           </tr>
 
-          <!-- 3) HCP hoyo -->
           <tr>
             <th class="score-label">HCP</th>
             {% for h in holes %}
@@ -121,10 +127,8 @@
             {% endfor %}
           </tr>
 
-          <!-- Separación -->
           <tr class="score-sep"><td colspan="{{ holes|length + 1 }}"></td></tr>
 
-          <!-- 4) Golpes (acepta número o X) -->
           <tr>
             <th class="score-label">Golpes</th>
             {% for h in holes %}
@@ -142,7 +146,6 @@
             {% endfor %}
           </tr>
 
-          <!-- 5) Putts -->
           <tr>
             <th class="score-label">Putts</th>
             {% for h in holes %}
@@ -157,7 +160,6 @@
             {% endfor %}
           </tr>
 
-          <!-- 6) FIR (solo Par 4/5) -->
           <tr>
             <th class="score-label">FIR</th>
             {% for h in holes %}
@@ -179,20 +181,202 @@
       </table>
     </div>
 
-    <div style="margin-top:14px;">
-      <button class="btn-primary" type="submit">Guardar tarjeta</button>
-      <a class="btn-secondary" href="/admin/rounds/{{ round.id }}/summary" style="margin-left:10px;">
-        ← Volver al resumen
-      </a>
+    <!-- Acciones pro tipo app -->
+    <div class="action-bar action-bar--sticky">
+      <a class="action-btn action-btn--ghost" href="/admin/rounds/{{ round.id }}/summary">Volver</a>
+      <button class="action-btn action-btn--primary" type="submit">Guardar</button>
     </div>
 
   </section>
 
 </form>
 
+<style>
+  .muted{ color: var(--muted); }
+
+  /* Aire entre secciones */
+  .card--spaced{ margin-top: 18px; }
+
+  .card-head{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    margin-bottom: 10px;
+  }
+  .card-title{ margin:0; }
+
+  .hint{ margin:6px 0 0 0; font-size:13px; }
+
+  .card-actions{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  /* Estado en pill */
+  .status-line{ font-size: 13px; margin-top:6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    padding:2px 10px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:12px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+  }
+  .status-pill--open{ background: rgba(34,197,94,.10); color: var(--gm-green); border-color: rgba(34,197,94,.25); }
+  .status-pill--closed{ background: rgba(239,68,68,.10); color: #b91c1c; border-color: rgba(239,68,68,.25); }
+
+  .link-input{
+    width: 100%;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    font-size:13px;
+    background:#fff;
+  }
+
+  .hcp-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .hcp-label{ font-weight:900; color: var(--text); }
+  .hcp-input{ width: 90px; text-align:center; }
+
+  .matrix-scroll{
+    width:100%;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:6px;
+  }
+
+  /* Barra de acciones tipo app */
+  .action-bar{
+    margin-top: 14px;
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+
+  .action-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 900;
+    text-decoration: none;
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: none;
+    cursor: pointer;
+  }
+
+  .action-btn--ghost{
+    background:#fff;
+    color: var(--gm-green);
+  }
+
+  .action-btn--primary{
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border-color: rgba(0,0,0,.06);
+  }
+
+  /* ===== Sticky SOLO en móvil ===== */
+  @media (max-width: 560px){
+
+    /* reserva espacio abajo SOLO en esta pantalla */
+    .page-has-sticky-actions{
+      padding-bottom: 92px;
+    }
+
+    .action-bar--sticky{
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 9998;
+
+      margin-top: 0;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.14);
+
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+    }
+
+    .action-bar--sticky .action-btn{
+      flex: 1;
+    }
+  }
+  .admin-title{
+    margin:0;
+    font-weight:700;
+    font-size:1.15rem;   /* antes 1.35rem */
+    line-height:1.25;
+  }
+  .admin-subtitle{
+    margin:1;
+    font-weight:400;
+    font-size:0.75rem;   /* antes 1.35rem */
+    
+  }
+  /* Botones discretos del bloque link */
+  .card-actions{
+    display:flex;
+    gap:8px;
+    width:100%;
+    margin-top:10px;
+  }
+
+  .card-actions .btn-secondary,
+  .card-actions .btn-primary{
+    flex:1;
+    padding:7px 10px;
+    font-size:13px;
+    font-weight:700;
+    border-radius:10px;
+    box-shadow:none;
+  }
+
+  /* Regenerar: más neutro */
+  .card-actions .btn-secondary{
+    background: #f1f5f9;
+    color: var(--text);
+    border:1px solid var(--border);
+  }
+
+  .card-actions .btn-secondary:hover{
+    background:#e5e7eb;
+  }
+
+  /* Copiar: verde pero suave */
+  .card-actions .btn-primary{
+    background: rgba(34,197,94,.12);
+    color: var(--gm-green);
+    border:1px solid rgba(34,197,94,.25);
+  }
+
+  .card-actions .btn-primary:hover{
+    background: rgba(34,197,94,.18);
+  }
+
+
+</style>
+
 <script>
   function parseClipboard(text) {
-    // Excel suele venir como TSV (tabs) con saltos de línea
     return text
       .trim()
       .split(/\r?\n/)
@@ -200,7 +384,6 @@
   }
 
   function flattenGrid(grid) {
-    // Convierte 1x18 o 18x1 en una lista lineal
     const flat = [];
     for (const row of grid) for (const cell of row) flat.push(cell);
     return flat.filter(v => v !== "");
@@ -231,7 +414,6 @@
     const row = active.closest("tr");
     if (!row) return;
 
-    // Caso A: pegado en un input numérico (Golpes o Putts)
     if (isScoreInput) {
       const cells = Array.from(row.querySelectorAll("input.score-input"));
       const startIndex = cells.indexOf(active);
@@ -247,7 +429,6 @@
       return;
     }
 
-    // Caso B: pegado en FIR (checkboxes)
     if (isFirCheck) {
       const checks = Array.from(row.querySelectorAll("input.score-check--fir"));
       const startIndex = checks.indexOf(active);
@@ -257,13 +438,13 @@
         const target = checks[startIndex + i];
         if (!target) break;
 
-        // Permite: 1/0, X/blank, TRUE/FALSE, SI/NO, etc.
         target.checked = toBool(values[i]);
         target.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
   });
 </script>
+
 <script>
   function copyPlayerLink(){
     const el = document.getElementById("playerLink");

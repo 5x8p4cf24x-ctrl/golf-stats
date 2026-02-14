@@ -1,26 +1,44 @@
 {% extends "admin_base.html" %}
 
+{% block title %}Admin · Noticias{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Noticias</h1>
+    <p class="admin-subtitle">Crea y gestiona noticias para la home pública.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Noticias", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
 {% block content %}
 
-<h1>Noticias</h1>
-
 <!-- ===================== CREAR NOTICIA ===================== -->
-<section class="card">
-  <h2>Nueva noticia</h2>
+<section class="card card--spaced">
+  <div class="card-head">
+    <h2 class="card-title">Nueva noticia</h2>
+    <div class="card-sub">Máximo 5 líneas. Imagen recomendada 400×300 (4:3).</div>
+  </div>
 
-  <form action="/admin/news/new" method="post" enctype="multipart/form-data" class="form">
+  <form action="/admin/news/new" method="post" enctype="multipart/form-data" class="admin-form-grid">
 
-    <div class="form-row">
+    <div class="admin-field admin-span-2">
       <label>Título</label>
       <input type="text" name="title" maxlength="120" required>
     </div>
 
-    <div class="form-row">
+    <div class="admin-field admin-span-2">
       <label>Texto (máx. 5 líneas)</label>
       <textarea name="excerpt" rows="4" required></textarea>
     </div>
 
-    <div class="form-row">
+    <div class="admin-field">
       <label>Categoría</label>
       <select name="category">
         <option value="general">General</option>
@@ -31,75 +49,194 @@
       </select>
     </div>
 
-    <div class="form-row">
+    <div class="admin-field">
       <label>Link (opcional)</label>
       <input
         type="text"
         name="related_url"
-        placeholder="/public/leagues/3  ·  /players/2  ·  /public/rounds/5"
+        placeholder="/public/leagues/3 · /players/2 · /public/rounds/5"
       >
     </div>
 
-    <div class="form-row">
+    <div class="admin-field admin-span-2">
       <label>Imagen (opcional)</label>
       <input type="file" name="image" accept="image/*">
-      <small>Recomendado 400×300 (formato 4:3)</small>
+      <div class="admin-help muted">Recomendado 400×300 (formato 4:3).</div>
     </div>
 
-    <button type="submit" class="btn btn-primary">Publicar noticia</button>
+    <div class="admin-form-actions admin-span-2">
+      <button type="submit" class="btn-primary">Publicar noticia</button>
+    </div>
 
   </form>
 </section>
 
 <!-- ===================== LISTADO ===================== -->
-<section class="card" style="margin-top:24px;">
-  <h2>Últimas noticias</h2>
+<section class="card card--spaced">
+  <div class="card-head">
+    <h2 class="card-title">Últimas noticias</h2>
+    <div class="card-sub">Editar, ocultar o borrar.</div>
+  </div>
 
-  {% if news %}
-    <table class="table">
+  {% if news and news|length > 0 %}
+
+    <!-- Desktop: tabla -->
+    <div class="table-scroll news-desktop">
+      <table class="admin-table">
         <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Título</th>
-                <th>Categoría</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
+          <tr>
+            <th class="text-left">Fecha</th>
+            <th class="text-left">Título</th>
+            <th class="text-left">Categoría</th>
+            <th class="text-left">Estado</th>
+            <th class="text-left">Acciones</th>
+          </tr>
         </thead>
         <tbody>
-            {% for n in news %}
-            <tr>
-                <td>{{ n.created_at.strftime("%d/%m/%Y %H:%M") if n.created_at else "" }}</td>
-                <td>{{ n.title }}</td>
-                <td>{{ n.category }}</td>
-                <td>
-                {% if n.published %}
-                    ✅ Publicada
-                {% else %}
-                    ⛔ Oculta
-                {% endif %}
-                </td>
-                <td>
-                <a href="/admin/news/{{ n.id }}/edit" class="btn btn-small">Editar</a>
-
-                <form action="/admin/news/{{ n.id }}/delete"
-                        method="post"
-                        style="display:inline;">
-                    <button
-                    class="btn btn-small btn-danger"
-                    onclick="return confirm('¿Borrar esta noticia?')">
-                    Borrar
-                    </button>
-                </form>
-                </td>
-            </tr>
-            {% endfor %}
+          {% for n in news %}
+          <tr>
+            <td class="text-left">{{ n.created_at.strftime("%d/%m/%Y %H:%M") if n.created_at else "" }}</td>
+            <td class="text-left"><strong>{{ n.title }}</strong></td>
+            <td class="text-left">{{ n.category }}</td>
+            <td class="text-left">
+              {% if n.published %}
+                <span class="badge win">Publicada</span>
+              {% else %}
+                <span class="badge loss">Oculta</span>
+              {% endif %}
+            </td>
+            <td class="text-left" style="white-space:nowrap;">
+              <a class="link-gm" href="/admin/news/{{ n.id }}/edit">Editar</a>
+              <span style="color:#cbd5e1;"> | </span>
+              <form action="/admin/news/{{ n.id }}/delete" method="post" style="display:inline;"
+                    onsubmit="return confirm('¿Borrar esta noticia?');">
+                <button type="submit" class="btn-link-danger">Borrar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
         </tbody>
+      </table>
+    </div>
 
-    </table>
+    <!-- Mobile: cards -->
+    <div class="news-mobile">
+      {% for n in news %}
+        <div class="news-card-admin">
+          <div class="news-card-top">
+            <div style="min-width:0;">
+              <div class="news-card-title">{{ n.title }}</div>
+              <div class="muted" style="font-size:.9rem; margin-top:4px;">
+                {{ n.created_at.strftime("%d/%m/%Y %H:%M") if n.created_at else "" }}
+                · {{ n.category }}
+              </div>
+            </div>
+
+            <div>
+              {% if n.published %}
+                <span class="badge win">Publicada</span>
+              {% else %}
+                <span class="badge loss">Oculta</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="news-card-actions">
+            <a class="btn-secondary btn-compact" href="/admin/news/{{ n.id }}/edit">Editar</a>
+
+            <form action="/admin/news/{{ n.id }}/delete" method="post"
+                  onsubmit="return confirm('¿Borrar esta noticia?');">
+              <button class="btn-danger-outline btn-compact" type="submit">Borrar</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
   {% else %}
-    <p>No hay noticias todavía.</p>
+    <p class="muted" style="margin:0;">No hay noticias todavía.</p>
   {% endif %}
 </section>
+
+<style>
+  .card--spaced{ margin-top:18px; }
+  .card-head{ margin-bottom:10px; }
+  .card-title{ margin:0; font-size:1.05rem; font-weight:900; color: var(--gm-green); }
+  .card-sub{ margin-top:4px; color: var(--muted); font-size:.9rem; }
+
+  /* Reusar tus helpers del admin new tournament */
+  /* admin-form-grid / admin-field / admin-span-2 / admin-form-actions ya existen en tu CSS */
+
+  /* Listado */
+  .news-mobile{ display:none; }
+
+  .news-card-admin{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:12px;
+    background:#fff;
+    margin-bottom:12px;
+  }
+  .news-card-top{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:flex-start;
+  }
+  .news-card-title{
+    font-weight:900;
+    color: var(--gm-green);
+    line-height:1.2;
+  }
+
+  .news-card-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:nowrap;
+    border-top:1px solid rgba(0,0,0,.06);
+    margin-top:12px;
+    padding-top:10px;
+  }
+  .news-card-actions > a,
+  .news-card-actions > form{ flex:1; }
+  .news-card-actions a,
+  .news-card-actions button{ width:100%; text-align:center; }
+
+  /* Botones compactos (si ya existen, puedes borrar este bloque) */
+  .btn-compact{
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:900;
+    border-radius:10px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#f8fafc;
+    color: var(--gm-green);
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .btn-compact:hover{ background: rgba(20,83,45,.06); }
+
+  .btn-danger-outline{
+    background:transparent;
+    border:1px solid #ef4444;
+    color:#ef4444;
+  }
+  .btn-danger-outline:hover{ background:#ef4444; color:#fff; }
+
+  .btn-link-danger{
+    border:none;
+    background:none;
+    color:#dc2626;
+    cursor:pointer;
+    font-weight:900;
+    padding:0;
+  }
+  .btn-link-danger:hover{ text-decoration:underline; }
+
+  @media (max-width: 860px){
+    .news-desktop{ display:none; }
+    .news-mobile{ display:block; }
+  }
+</style>
 
 {% endblock %}

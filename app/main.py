@@ -15,7 +15,7 @@ from . import models
 from typing import List
 from .db import Base, engine, get_db
 from . import crud, schemas
-from app.models import Player, Course, Round, RoundPlayer, HoleScore, Hole
+from app.models import Player, Course, Round, RoundPlayer, HoleScore, Hole, League, Tournament
 import os
 from fastapi import HTTPException
 from fastapi.responses import PlainTextResponse
@@ -89,8 +89,92 @@ ensure_player_hcp_updated_at_column()
 
 
 
-
 app = FastAPI(title="Golf Stats")
+
+# ==============================================================================================
+# =============================== PASSWORD ADMIN ===============================================
+# ==============================================================================================
+
+import os
+from fastapi import Form, Request
+from fastapi.responses import HTMLResponse
+from starlette.responses import RedirectResponse
+from starlette.status import HTTP_303_SEE_OTHER
+from starlette.middleware.sessions import SessionMiddleware
+
+ADMIN_KEY = os.getenv("ADMIN_KEY", "").strip()
+SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-me").strip()
+ENV = os.getenv("ENV", "local")
+
+# ===============================
+# GUARD (primero)
+# ===============================
+@app.middleware("http")
+async def admin_guard(request: Request, call_next):
+    path = request.url.path
+
+    if not path.startswith("/admin"):
+        return await call_next(request)
+
+    if path in ("/admin/login", "/admin/logout") or path.startswith("/static") or path.startswith("/uploads"):
+        return await call_next(request)
+
+    if not ADMIN_KEY:
+        return await call_next(request)
+
+    # ✅ aquí ya existirá request.session (porque SessionMiddleware irá por fuera)
+    if request.session.get("admin_ok") is True:
+        return await call_next(request)
+
+    return RedirectResponse(url="/admin/login", status_code=HTTP_303_SEE_OTHER)
+
+
+# ===============================
+# SessionMiddleware (después)
+# ===============================
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    same_site="lax",
+    https_only=(ENV == "production"),
+)
+
+
+# ===============================
+# LOGIN / LOGOUT
+# ===============================
+@app.get("/admin/login", response_class=HTMLResponse)
+def admin_login_form(request: Request):
+    return templates.TemplateResponse("admin_login.html", {"request": request})
+
+
+@app.post("/admin/login", response_class=HTMLResponse)
+async def admin_login_submit(request: Request, key: str = Form(...)):
+    key = (key or "").strip()
+
+    if not ADMIN_KEY:
+        request.session["admin_ok"] = True
+        return RedirectResponse(url="/admin", status_code=HTTP_303_SEE_OTHER)
+
+    if key != ADMIN_KEY:
+        return templates.TemplateResponse(
+            "admin_login.html",
+            {"request": request, "error": "Clave incorrecta"},
+            status_code=401,
+        )
+
+    request.session["admin_ok"] = True
+    return RedirectResponse(url="/admin", status_code=HTTP_303_SEE_OTHER)
+
+
+@app.get("/admin/logout")
+def admin_logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/public", status_code=HTTP_303_SEE_OTHER)
+
+#========================================================================================================
+#========================================================================================================
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
@@ -142,23 +226,6 @@ ensure_alias("default_league.jpg")
 ensure_alias("default_achievement.jpg")
 ensure_alias("default_round.jpg")
 
-# ---------------------------
-# Admin auth
-# ---------------------------
-ADMIN_KEY = os.getenv("ADMIN_KEY", "")  # en local puedes dejarlo vacío si quieres
-
-def require_admin(request: Request):
-    # 1) Si no hay ADMIN_KEY configurada, NO protegemos (modo dev)
-    if not ADMIN_KEY:
-        return
-
-    # 2) Comprobamos cookie
-    cookie_key = request.cookies.get("admin_key")
-    if cookie_key == ADMIN_KEY:
-        return
-
-    # 3) Si no coincide -> fuera
-    raise HTTPException(status_code=401, detail="Admin auth required")
 
 # ---------------------- Iconos para Apple ------------------------#
 
@@ -174,67 +241,6 @@ def apple_touch_icon_precomposed():
 def favicon():
     return RedirectResponse(url="/static/favicon-20260124.png")
 
-# ================================================================================
-# =============================== PASSWORD ADMIN =================================
-# ================================================================================
-
-@app.get("/admin/login", response_class=HTMLResponse)
-def admin_login_form(request: Request):
-    return templates.TemplateResponse("admin_login.html", {"request": request})
-
-
-@app.post("/admin/login")
-def admin_login_submit(request: Request, key: str = Form(...)):
-    if not ADMIN_KEY:
-        return RedirectResponse("/admin", status_code=303)
-
-    if key != ADMIN_KEY:
-        return templates.TemplateResponse(
-            "admin_login.html",
-            {"request": request, "error": "Clave incorrecta"},
-            status_code=401,
-        )
-
-    resp = RedirectResponse("/admin", status_code=303)
-    resp.set_cookie(
-        "admin_key",
-        key,
-        httponly=True,
-        samesite="lax",
-        max_age=60 * 60 * 12,  # 12 horas
-    )
-
-    return resp
-
-
-@app.get("/admin/logout")
-def admin_logout():
-    resp = RedirectResponse("/public", status_code=303)
-    resp.delete_cookie("admin_key")
-    return resp
-
-@app.middleware("http")
-async def admin_guard(request: Request, call_next):
-    path = request.url.path
-
-    # Solo proteger /admin...
-    if path.startswith("/admin"):
-        # permitimos login/logout y static
-        if path in ("/admin/login", "/admin/logout"):
-            return await call_next(request)
-
-        # si no hay ADMIN_KEY (dev), no protegemos
-        if not ADMIN_KEY:
-            return await call_next(request)
-
-        # si cookie OK, seguimos
-        if request.cookies.get("admin_key") == ADMIN_KEY:
-            return await call_next(request)
-
-        # si no, redirigimos a login
-        return RedirectResponse("/admin/login", status_code=303)
-
-    return await call_next(request)
 
 
 # ---------------------------------------------------------------------------------
@@ -763,14 +769,56 @@ def admin_round_delete(round_id: int, db: Session = Depends(get_db)):
 # =================================================================================
 
 
+# =================================================================================
+# ============================== ADMIN: HOME / PANEL ==============================
+# =================================================================================
+
+from sqlalchemy import func
+from app import models
+
+
 @app.get("/admin", response_class=HTMLResponse, name="admin_home")
 def admin_home(request: Request, db: Session = Depends(get_db)):
-    players = crud.get_players(db)  # asumo que ya tienes este crud
+
+    # ================= KPIs =================
+
+    # Jugadores activos
+    kpi_players = (
+        db.query(func.count(models.Player.id))
+        .filter(models.Player.active == True)
+        .scalar() or 0
+    )
+
+    # Rondas totales
+    kpi_rounds = (
+        db.query(func.count(models.Round.id))
+        .scalar() or 0
+    )
+
+    # Ligas en vigor
+    kpi_leagues = (
+        db.query(func.count(models.League.id))
+        .scalar() or 0
+    )
+
+    # Copas totales
+    kpi_tournaments = (
+        db.query(func.count(models.Tournament.id))
+        .scalar() or 0
+    )
+
+    kpi = {
+        "players": kpi_players,
+        "rounds": kpi_rounds,
+        "leagues": kpi_leagues,
+        "tournaments": kpi_tournaments,
+    }
+
     return templates.TemplateResponse(
         "admin_home.html",
         {
             "request": request,
-            "players": players,
+            "kpi": kpi,
         }
     )
 

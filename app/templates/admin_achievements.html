@@ -1,102 +1,172 @@
 {% extends "admin_base.html" %}
 
 {% block title %}Admin · Logros{% endblock %}
-{% block header_title %}Logros{% endblock %}
-{% block header_subtitle %}Catálogo y gestión de asignación.{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Logros</h1>
+    <p class="admin-subtitle">Catálogo de logros y accesos a asignación.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Logros", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-<!-- HUB: accesos principales -->
-<section class="card" style="margin-bottom:16px;">
-  <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+<!-- HUB -->
+<section class="card card--spaced">
+  <div class="admin-hub">
     <a href="/admin/achievements/assignment" class="btn-primary" style="text-decoration:none;">
       👥 Asignación por jugador
     </a>
 
-    <a href="#new-achievement" class="btn-primary" style="background:#fff; color:var(--gm-green); text-decoration:none;">
+    <a href="#new-achievement" class="btn-secondary" style="text-decoration:none;">
       ➕ Crear logro
-    </a>
-
-    <a class="link-gm" href="/admin" style="margin-left:auto;">
-      ← Volver al panel admin
     </a>
   </div>
 </section>
 
 <!-- CREAR NUEVO LOGRO -->
-<section class="card" style="margin-bottom:16px;">
-  <h2 id="new-achievement" style="margin-bottom:10px;">Nuevo logro</h2>
+<section class="card card--spaced">
+  <div class="card-head">
+    <h2 id="new-achievement" class="card-title">Nuevo logro</h2>
+    <div class="card-sub">Nombre, descripción e icono (ruta o filename).</div>
+  </div>
 
-  <form method="post"
-        action="/admin/achievements/new"
-        style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+  <form method="post" action="/admin/achievements/new" class="admin-form-grid">
 
-    <input name="name" placeholder="Nombre del logro" required>
-    <input name="description" placeholder="Descripción">
-    <input name="icon" placeholder="iconos/logro1.png">
+    <div class="admin-field">
+      <label>Nombre *</label>
+      <input name="name" placeholder="Nombre del logro" required>
+    </div>
 
-    <button class="btn-primary" type="submit">Crear</button>
+    <div class="admin-field">
+      <label>Icono</label>
+      <input name="icon" placeholder="iconos/logro1.png">
+    </div>
+
+    <div class="admin-field admin-span-2">
+      <label>Descripción</label>
+      <input name="description" placeholder="Descripción (opcional)">
+    </div>
+
+    <div class="admin-form-actions admin-span-2">
+      <button class="btn-primary" type="submit">Crear</button>
+    </div>
   </form>
 </section>
 
-<!-- LISTADO DE LOGROS -->
-<section class="card">
-  <h2 style="margin-bottom:10px;">Logros existentes</h2>
+<!-- LISTADO -->
+<section class="card card--spaced">
+  <div class="card-head">
+    <h2 class="card-title">Logros existentes</h2>
+    <div class="card-sub">Edita rápido y guarda por fila.</div>
+  </div>
 
   {% if achievements|length == 0 %}
-    <p>No hay logros todavía.</p>
+    <p class="muted" style="margin:0;">No hay logros todavía.</p>
   {% else %}
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th class="text-left">Nombre</th>
-          <th class="text-left">Descripción</th>
-          <th class="text-left">Icono</th>
-          <th class="text-left">Acciones</th>
-        </tr>
-      </thead>
 
-      <tbody>
-        {% for a in achievements %}
-        <tr>
-          <!-- FORM EDIT -->
-          <form method="post" action="/admin/achievements/{{ a.id }}/edit">
+    <div class="table-scroll">
+      <table class="admin-table admin-table--tight">
+        <thead>
+          <tr>
+            <th class="text-left">Nombre</th>
+            <th class="text-left">Descripción</th>
+            <th class="text-left">Icono</th>
+            <th class="text-left" style="width:210px;">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for a in achievements %}
+          <tr>
             <td class="text-left">
-              <input name="name" value="{{ a.name }}">
+              <form id="edit-{{ a.id }}" method="post" action="/admin/achievements/{{ a.id }}/edit">
+                <input name="name" value="{{ a.name }}" class="gm-input gm-input--table">
             </td>
 
             <td class="text-left">
-              <input name="description" value="{{ a.description }}">
+                <input name="description" value="{{ a.description }}" class="gm-input gm-input--table">
             </td>
 
             <td class="text-left">
-              <input name="icon" value="{{ a.icon }}">
+                <input name="icon" value="{{ a.icon }}" class="gm-input gm-input--table">
+              </form>
             </td>
 
             <td class="text-left" style="white-space:nowrap;">
-              <button type="submit"
-                      class="btn-primary"
-                      style="padding:6px 10px;">
-                Guardar
-              </button>
-          </form>
+              <div class="row-actions">
+                <button type="submit" form="edit-{{ a.id }}" class="btn-primary btn-compact">
+                  Guardar
+                </button>
 
-          <!-- FORM DELETE -->
-          <form method="post"
-                action="/admin/achievements/{{ a.id }}/delete"
-                style="display:inline;"
-                onsubmit="return confirm('¿Eliminar este logro?');">
-            <button type="submit"
-                    style="border:none; background:none; color:#dc2626; font-weight:800; cursor:pointer; margin-left:8px;">
-              Eliminar
-            </button>
-          </form>
+                <form method="post"
+                      action="/admin/achievements/{{ a.id }}/delete"
+                      onsubmit="return confirm('¿Eliminar este logro?');"
+                      style="margin:0;">
+                  <button type="submit" class="btn-danger-outline btn-compact">
+                    Eliminar
+                  </button>
+                </form>
+              </div>
             </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
   {% endif %}
 </section>
+
+<style>
+  .card--spaced{ margin-top:18px; }
+  .muted{ color: var(--muted); }
+
+  .card-head{ margin-bottom:10px; }
+  .card-title{ margin:0; font-size:1.05rem; font-weight:900; color: var(--gm-green); }
+  .card-sub{ margin-top:4px; color: var(--muted); font-size:.9rem; }
+
+  .admin-hub{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .admin-table--tight th, .admin-table--tight td{
+    padding-top:10px;
+    padding-bottom:10px;
+    vertical-align:middle;
+  }
+
+  .gm-input--table{
+    width:100%;
+    padding:8px 10px;
+    border-radius:10px;
+  }
+
+  .row-actions{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:flex-start;
+  }
+
+  /* Si ya los tienes definidos en otros templates, puedes borrar estos 2 */
+  .btn-compact{
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:900;
+    border-radius:10px;
+  }
+</style>
 
 {% endblock %}

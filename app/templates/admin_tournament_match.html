@@ -1,37 +1,42 @@
 {% extends "admin_base.html" %}
-{% block title %}Match · {{ tournament.name }}{% endblock %}
+{% block title %}Admin · Match · {{ tournament.name }}{% endblock %}
+
+{# --- URL LIVE (solo para compartir) --- #}
+{% set base = request.base_url|string %}
+{% if base.endswith('/') %}
+  {% set base = base[:-1] %}
+{% endif %}
+{% set live_url = base ~ "/public/tournaments/" ~ tournament.id ~ "/matches/" ~ match.id ~ "/live?token=" ~ (match.edit_token or "") %}
+
+{% set hole_map = holes_by_hole if holes_by_hole is defined and holes_by_hole else {} %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">{{ match.round }} · Partido #{{ match.position }}</h1>
+    <p class="admin-subtitle">
+      {{ match.player_a.name if match.player_a else "-" }} vs {{ match.player_b.name if match.player_b else "-" }}
+    </p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Copas", "url":"/admin/tournaments"},
+    {"label": tournament.name, "url":"/admin/tournaments/" ~ tournament.id},
+    {"label":"Partido #" ~ match.position, "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-  {# --- URL LIVE (solo para compartir) --- #}
-  {% set base = request.base_url|string %}
-  {% if base.endswith('/') %}
-    {% set base = base[:-1] %}
-  {% endif %}
-  {% set live_url = base ~ "/public/tournaments/" ~ tournament.id ~ "/matches/" ~ match.id ~ "/live?token=" ~ (match.edit_token or "") %}
-
-  {% set hole_map = holes_by_hole if holes_by_hole is defined and holes_by_hole else {} %}
-
-  <!-- HEADER -->
-  <section class="card admin-form-card">
-    <a class="btn-gm btn-gm--outline" href="/admin/tournaments/{{ tournament.id }}">← Volver al torneo</a>
-
-    <div class="admin-match-head">
-      <div class="admin-match-title">
-        <h1>{{ match.round }} · Partido #{{ match.position }}</h1>
-        <p class="muted">
-          {{ match.player_a.name if match.player_a else "-" }} vs {{ match.player_b.name if match.player_b else "-" }}
-        </p>
-      </div>
-    </div>
-  </section>
-
   <!-- LINK LIVE (SOLO COMPARTIR) -->
-  <section class="card admin-form-card" style="margin-top:14px;">
-    <div class="admin-live-row">
-      <div class="admin-live-left">
-        <div class="admin-live-label">Link Live (para móvil)</div>
-        <div class="muted admin-live-url">
+  <section class="card admin-form-card card--spaced">
+    <div class="admin-live-row" style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+      <div style="min-width:240px; flex:1;">
+        <div class="admin-live-label" style="font-weight:900; color:var(--gm-green);">Link Live (para móvil)</div>
+        <div class="muted admin-live-url" style="margin-top:6px; word-break:break-all;">
           {{ live_url }}
         </div>
       </div>
@@ -56,11 +61,11 @@
      ========================= #}
   {% if match.winner_id %}
     <section class="card admin-form-card admin-alert-card" style="margin-top:14px;">
-      <div class="admin-alert-row">
-        <div class="admin-alert-left">
-          <div class="admin-alert-title">⚠ Partido cerrado</div>
-          <div class="muted admin-alert-text">
-            Resultado: <span class="admin-strong">{{ match.result_text or "—" }}</span>.
+      <div class="admin-alert-row" style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+        <div style="min-width:240px; flex:1;">
+          <div class="admin-alert-title" style="font-weight:900;">⚠ Partido cerrado</div>
+          <div class="muted admin-alert-text" style="margin-top:6px;">
+            Resultado: <span class="admin-strong" style="font-weight:900; color:var(--text);">{{ match.result_text or "—" }}</span>.
             Para modificarlo es necesario reabrir el partido.
           </div>
         </div>
@@ -101,5 +106,9 @@
       {% endfor %}
     </div>
   </section>
+
+  <style>
+    .card--spaced{ margin-top:18px; }
+  </style>
 
 {% endblock %}

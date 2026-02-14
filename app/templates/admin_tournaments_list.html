@@ -1,19 +1,32 @@
 {% extends "admin_base.html" %}
-{% block title %}Copas · Admin{% endblock %}
+
+{% block title %}Admin · Copas{% endblock %}
 {% block container_class %}gm-wrap{% endblock %}
 
-{% block content %}
-  <section class="card">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-      <div>
-        <h1 style="margin:0;">Copas</h1>
-        <p class="muted" style="margin:6px 0 0 0;">Torneos cortos en matchplay (individual / equipos).</p>
-      </div>
-      <a class="btn-gm" href="/admin/tournaments/new">+ Nueva Copa</a>
-    </div>
-  </section>
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Copas</h1>
+    <p class="admin-subtitle">Torneos cortos en matchplay (individual / equipos).</p>
+  </header>
+{% endblock %}
 
-  <section class="card" style="margin-top:14px;">
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Copas", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+  <!-- CTA -->
+  <div style="margin: 10px 0 14px 0; display:flex; justify-content:flex-end;">
+    <a class="btn-gm" href="/admin/tournaments/new">+ Nueva Copa</a>
+  </div>
+
+  <!-- LISTA -->
+  <section class="card">
     {% if tournaments|length == 0 %}
       <p class="muted" style="margin:0;">Aún no hay copas creadas.</p>
     {% else %}
@@ -23,13 +36,15 @@
 
             <!-- LINK AL DETALLE -->
             <a href="/admin/tournaments/{{ t.id }}"
-              style="display:flex; gap:12px; align-items:center; text-decoration:none; flex:1; min-width:0;">
+               style="display:flex; gap:12px; align-items:center; text-decoration:none; flex:1; min-width:0;">
 
               <div style="width:64px; height:48px; border-radius:10px; overflow:hidden; background:rgba(0,0,0,.05); flex:0 0 auto;">
                 {% if t.image_path %}
                   <img src="{{ t.image_path }}" alt="{{ t.name }}" style="width:100%; height:100%; object-fit:cover;">
                 {% else %}
-                  <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-weight:800; color:rgba(0,0,0,.35);">🏆</div>
+                  <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-weight:800; color:rgba(0,0,0,.35);">
+                    🏆
+                  </div>
                 {% endif %}
               </div>
 
@@ -56,8 +71,8 @@
 
           </div>
         {% endfor %}
-
       </div>
     {% endif %}
   </section>
+
 {% endblock %}

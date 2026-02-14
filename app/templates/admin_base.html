@@ -15,17 +15,18 @@
 
 <body class="gm-body {% block body_class %}{% endblock %}">
 
-  {% block header %}
+  <div class="admin-sticky">
     {% include "components/admin_topbar.html" %}
-  {% endblock %}
+    {% block breadcrumbs %}{% endblock %}
+  </div>
 
-  <main class="gm-wrap {% block container_class %}{% endblock %}">
+  <main class="gm-wrap admin-main {% block container_class %}{% endblock %}">
+    {% block page_header %}{% endblock %}
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Reutiliza el mismo JS del topbar -->
   <script src="/static/public_topbar.js?v=1"></script>
-
   {% block scripts %}{% endblock %}
 </body>
+
 </html>

@@ -1,47 +1,122 @@
 {% extends "admin_base.html" %}
-{% block title %}Admin — Asignación de logros{% endblock %}
+{% block title %}Admin · Asignación de logros{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Asignación de logros</h1>
+    <p class="admin-subtitle">
+      Gestión manual por jugador. Los logros automáticos se calculan al cerrar rondas/ligas.
+    </p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Logros", "url":"/admin/achievements"},
+    {"label":"Asignación", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
 
 {% block content %}
 
-<section class="card block">
-  <h1 class="block-title">Asignación de logros</h1>
-  <div style="display:flex; gap:12px; align-items:center; margin: 10px 0 18px;">
-    <a class="btn-gm" href="/admin/achievements">← Volver a Logros</a>
-  </div>
-  <p class="muted" style="margin-top:-6px;">
-    Gestiona logros por jugador (manual). Los automáticos se calcularán al cerrar rondas.
-  </p>
+<section class="card card--spaced">
 
+  {% if players and players|length > 0 %}
 
-
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Jugador</th>
-          <th>HCP</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in players %}
-        <tr>
-          <td>{{ p.name }}</td>
-          <td>
-            {% if p.hcp_exact and p.hcp_exact > 0 %}
+    <!-- Desktop -->
+    <div class="table-scroll assign-desktop">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th class="text-left">Jugador</th>
+            <th style="text-align:right;">HCP</th>
+            <th style="text-align:right;">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in players %}
+          <tr>
+            <td class="text-left"><strong>{{ p.name }}</strong></td>
+            <td style="text-align:right;">
+              {% if p.hcp_exact and p.hcp_exact > 0 %}
                 {{ "%.1f"|format(p.hcp_exact) }}
-            {% else %}
+              {% else %}
                 -
-            {% endif %}
-          </td>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              <a class="link-gm" href="/admin/players/{{ p.id }}/achievements">Gestionar</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-          <td style="text-align:right;">
-            <a class="btn-link" href="/admin/players/{{ p.id }}/achievements">Gestionar logros</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <!-- Mobile -->
+    <div class="assign-mobile">
+      {% for p in players %}
+        <div class="assign-card">
+          <div class="assign-top">
+            <div style="min-width:0;">
+              <div class="assign-name">{{ p.name }}</div>
+              <div class="muted" style="margin-top:4px;">
+                HCP:
+                {% if p.hcp_exact and p.hcp_exact > 0 %}
+                  {{ "%.1f"|format(p.hcp_exact) }}
+                {% else %}
+                  -
+                {% endif %}
+              </div>
+            </div>
+
+            <a class="btn-secondary btn-compact" href="/admin/players/{{ p.id }}/achievements">
+              Gestionar
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <p class="muted" style="margin:0;">No hay jugadores.</p>
+  {% endif %}
+
 </section>
+
+<style>
+  .card--spaced{ margin-top:18px; }
+  .muted{ color: var(--muted); }
+
+  .assign-mobile{ display:none; }
+
+  .assign-card{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:12px;
+    background:#fff;
+    margin-bottom:12px;
+  }
+
+  .assign-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  .assign-name{
+    font-weight:900;
+    color: var(--gm-green);
+    line-height:1.2;
+  }
+
+  @media (max-width: 860px){
+    .assign-desktop{ display:none; }
+    .assign-mobile{ display:block; }
+  }
+</style>
+
 {% endblock %}
