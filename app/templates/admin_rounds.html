@@ -23,11 +23,76 @@
   <a class="btn-primary" href="/admin/rounds/new">+ Nueva vuelta</a>
 </div>
 
-<section class="card">
-  {% if rounds|length == 0 %}
+{% if rounds|length == 0 %}
+  <section class="card">
     <p>No hay vueltas registradas todavía.</p>
-  {% else %}
+  </section>
+{% else %}
 
+  {# =========================
+     MOBILE: estilo public + swipe borrar
+     ========================= #}
+  <section class="card rounds-mobile">
+    <div class="rounds-list">
+      {% for r in rounds %}
+
+        <div class="round-swipe" data-swipe>
+
+          {# acciones “detrás” #}
+          <div class="round-swipe-actions">
+            <form action="/admin/rounds/{{ r.id }}/delete"
+                  method="post"
+                  class="inline-form"
+                  onsubmit="return confirm('¿Eliminar esta vuelta?');">
+              <button type="submit" class="swipe-danger" aria-label="Borrar vuelta">Borrar</button>
+            </form>
+          </div>
+
+          {# tarjeta “delante” que se desplaza #}
+          <div class="round-swipe-card" data-card>
+            <a href="/admin/rounds/{{ r.id }}/summary"
+               class="round-item round-item--admin"
+               aria-label="Abrir resumen">
+
+              <div class="round-course-avatar">
+                {% if r.course.logo_url %}
+                  <img src="/uploads/{{ r.course.logo_url }}" alt="{{ r.course.name }}">
+                {% else %}
+                  <span>{{ r.course.name[0] }}</span>
+                {% endif %}
+              </div>
+
+              <div class="round-info">
+                <div class="round-info-top">
+                  <span class="round-date">{{ r.date }}</span>
+                </div>
+
+                <div class="round-field">{{ r.course.name }}</div>
+
+                <div class="round-players">
+                  {% for rp in r.round_players %}
+                    {{ rp.player.name }}{% if not loop.last %}, {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="round-type-chip {{ r.type }}">
+                {{ r.type }}
+              </div>
+
+            </a>
+          </div>
+
+        </div>
+
+      {% endfor %}
+    </div>
+  </section>
+
+  {# =========================
+     DESKTOP: tabla completa
+     ========================= #}
+  <section class="card rounds-desktop">
     <div class="table-scroll">
       <table class="admin-table admin-table--rounds">
         <thead>
@@ -76,11 +141,13 @@
         </tbody>
       </table>
     </div>
+  </section>
 
-  {% endif %}
-</section>
+{% endif %}
 
 <style>
+  .muted{ color: var(--muted); }
+
   /* Toolbar */
   .admin-toolbar{
     margin: 8px 0 12px 0;
@@ -90,7 +157,9 @@
     flex-wrap:wrap;
   }
 
-  /* Tabla responsive: scroll solo si hace falta */
+  /* =========================
+     DESKTOP TABLE
+     ========================= */
   .table-scroll{
     width:100%;
     overflow-x:auto;
@@ -99,11 +168,8 @@
     border-radius:14px;
     background:#fff;
   }
-
-  /* En listados grandes, mejor que la tabla tenga un mínimo */
   .admin-table--rounds{ min-width: 860px; }
 
-  /* Jugadores: evita que rompa alturas enormes */
   .td-players{
     max-width: 360px;
     white-space: nowrap;
@@ -111,7 +177,6 @@
     text-overflow: ellipsis;
   }
 
-  /* Acciones: compactas y sin separadores feos */
   .td-actions{
     white-space: nowrap;
     display:flex;
@@ -131,9 +196,245 @@
   }
   .btn-link-danger:hover{ text-decoration: underline; }
 
+  /* =========================
+     MOBILE: estilo public
+     ========================= */
+
+  .rounds-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .round-item--admin{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    text-decoration:none;
+    color:inherit;
+    background:#fff;
+  }
+
+  .round-course-avatar{
+    width:56px;
+    height:56px;
+    border-radius:14px;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    flex: 0 0 56px;
+  }
+  .round-course-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .round-course-avatar span{
+    font-weight:900;
+    color:#14532d;
+    font-size:1.1rem;
+  }
+
+  .round-info{
+    flex:1;
+    min-width:0;
+  }
+  .round-date{
+    font-weight:600;
+    color:#14532d;
+    font-size:.75rem;
+  }
+  .round-field{
+    font-weight:600;
+    font-size:0.85rem;
+    line-height:1.2;
+    margin-top:2px;
+  }
+  .round-players{
+    margin-top:3px;
+    font-size:.8rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .round-type-chip{
+    border-radius:999px;
+    padding:6px 12px;
+    font-weight:600;
+    font-size:.60rem;
+    border:1px solid rgba(0,0,0,.08);
+    white-space:nowrap;
+    text-transform: capitalize;
+  }
+  .round-type-chip.liga{
+    background: rgba(34,197,94,.14);
+    border-color: rgba(34,197,94,.22);
+    color:#14532d;
+  }
+  .round-type-chip.amistosa{
+    background: rgba(59,130,246,.10);
+    border-color: rgba(59,130,246,.18);
+    color:#1d4ed8;
+  }
+
+  /* =========================
+     Swipe-to-delete (móvil)
+     ========================= */
+  .round-swipe{
+    position: relative;
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    background:#fff;
+    overflow:hidden;
+  }
+
+  .round-swipe-actions{
+    position:absolute;
+    inset:0;
+    display:flex;
+    justify-content:flex-end;
+    align-items:stretch;
+    background: rgba(239,68,68,.10);
+  }
+
+  .swipe-danger{
+    width: 96px;
+    border:0;
+    background: #ef4444;
+    color: #fff;
+    font-weight: 900;
+    font-size: .95rem;
+    cursor:pointer;
+  }
+
+  .round-swipe-card{
+    position: relative;
+    background:#fff;
+    transform: translateX(0);
+    transition: transform .18s ease;
+    will-change: transform;
+    touch-action: pan-y; /* deja scroll vertical */
+  }
+
+  .round-swipe.open .round-swipe-card{
+    transform: translateX(-96px);
+  }
+
+  /* Switch mobile/desktop */
+  .rounds-mobile{ display:none; }
+  .rounds-desktop{ display:block; }
+
   @media (max-width: 560px){
-    .td-players{ max-width: 220px; }
+    .rounds-mobile{ display:block; }
+    .rounds-desktop{ display:none; }
   }
 </style>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const SWIPE_OPEN = -96;     // px (debe coincidir con el botón)
+  const THRESHOLD_OPEN = -40; // px para abrir
+  const THRESHOLD_CLOSE = -20;
+
+  document.querySelectorAll('[data-swipe]').forEach((wrap) => {
+    const card = wrap.querySelector('[data-card]');
+    let startX = 0, startY = 0, dx = 0;
+    let dragging = false;
+    let lockedAxis = null; // 'x' o 'y'
+    let isOpen = false;
+
+    function closeWrap(){
+      wrap.classList.remove('open');
+      isOpen = false;
+      card.style.transform = 'translateX(0px)';
+    }
+
+    function openWrap(){
+      wrap.classList.add('open');
+      isOpen = true;
+      card.style.transform = `translateX(${SWIPE_OPEN}px)`;
+    }
+
+    function closeOthers(){
+      document.querySelectorAll('.round-swipe.open').forEach(el => {
+        if (el !== wrap){
+          el.classList.remove('open');
+          const c = el.querySelector('[data-card]');
+          if (c) c.style.transform = 'translateX(0px)';
+        }
+      });
+    }
+
+    card.addEventListener('touchstart', (e) => {
+      if (!e.touches || e.touches.length !== 1) return;
+      closeOthers();
+      dragging = true;
+      lockedAxis = null;
+      dx = 0;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      card.style.transition = 'none';
+    }, {passive:true});
+
+    card.addEventListener('touchmove', (e) => {
+      if (!dragging || !e.touches || e.touches.length !== 1) return;
+
+      const x = e.touches[0].clientX;
+      const y = e.touches[0].clientY;
+      const mx = x - startX;
+      const my = y - startY;
+
+      if (!lockedAxis){
+        lockedAxis = (Math.abs(mx) > Math.abs(my) + 6) ? 'x' : 'y';
+      }
+      if (lockedAxis === 'y') return;
+
+      e.preventDefault();
+
+      // base: si está abierto, arrancamos desde -96
+      const base = isOpen ? SWIPE_OPEN : 0;
+      dx = base + mx;
+
+      // solo permitimos hacia la izquierda (hasta -96) y cerrar hacia la derecha (hasta 0)
+      dx = Math.min(0, dx);
+      dx = Math.max(SWIPE_OPEN, dx);
+
+      card.style.transform = `translateX(${dx}px)`;
+    }, {passive:false});
+
+    card.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      card.style.transition = '';
+
+      if (!isOpen && dx <= THRESHOLD_OPEN){
+        openWrap();
+      } else if (isOpen && dx >= THRESHOLD_CLOSE){
+        closeWrap();
+      } else {
+        // vuelve al estado actual
+        card.style.transform = isOpen ? `translateX(${SWIPE_OPEN}px)` : 'translateX(0px)';
+      }
+    });
+
+    // tap fuera cierra
+    document.addEventListener('touchstart', (e) => {
+      if (!isOpen) return;
+      if (!wrap.contains(e.target)){
+        closeWrap();
+      }
+    }, {passive:true});
+  });
+})();
+</script>
 {% endblock %}
