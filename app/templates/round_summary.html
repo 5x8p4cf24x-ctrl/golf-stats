@@ -20,8 +20,6 @@
 
 {% block content %}
 
-
-
 {% if winner_names and winner_names|length > 0 %}
   <section class="card">
     {% if winner_names|length == 1 %}
@@ -33,7 +31,160 @@
   </section>
 {% endif %}
 
-<section class="card">
+{# =========================
+   MOBILE: vista tipo fichas
+   ========================= #}
+<section class="card summary-mobile">
+  <div class="card-head">
+    <h2 style="margin:0;">Estadísticas</h2>
+    <div class="muted" style="font-size:.9rem;">Vista rápida (móvil)</div>
+  </div>
+
+  <div class="summary-cards">
+    {% for s in results %}
+      <article class="summary-card">
+        <div class="summary-top">
+          <div class="summary-name">
+            <a href="/players/{{ s.player.id }}">{{ s.player.name }}</a>
+            <div class="muted summary-sub">
+              CH {{ s.course_handicap }} · Nivel (HCP) {{ "%.1f"|format(s.level_hcp) if s.level_hcp else "-" }}
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="kpi">
+            <div class="k">Gross</div>
+            <div class="v">{{ s.gross_total or "-" }}</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Neto</div>
+            <div class="v">{{ s.net_total or "-" }}</div>
+          </div>
+
+          <div class="kpi">
+            <div class="k">Pts HCP</div>
+            <div class="v">{{ s.points or "-" }}</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Pts Scr</div>
+            <div class="v">{{ s.scratch_points or "-" }}</div>
+          </div>
+
+          <div class="kpi">
+            <div class="k">FIR</div>
+            <div class="v">
+              {{ s.fir }} / {{ s.fir_possible }}
+              <span class="muted">({{ "%.0f"|format(s.fir_pct) if s.fir_pct else "-" }}%)</span>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="k">GIR</div>
+            <div class="v">
+              {{ s.gir }} / {{ s.gir_possible }}
+              <span class="muted">({{ "%.0f"|format(s.gir_pct) if s.gir_pct else "-" }}%)</span>
+            </div>
+          </div>
+        </div>
+
+        {# % Golpes barra apilada (igual que Public) #}
+        {% set total_shots =
+          (s.hio or 0) + (s.albatros or 0) + (s.eagles or 0) + (s.birdies or 0) +
+          (s.pars or 0) + (s.bogeys or 0) + (s.dbl or 0) + (s.overdbl or 0)
+        %}
+
+        {% if total_shots > 0 %}
+          <div class="shots-bar shots-bar--mobile">
+            {% if s.hio %}
+              {% set pct = (s.hio * 100.0 / total_shots) %}
+              <div class="shots-seg hio" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if s.albatros %}
+              {% set pct = (s.albatros * 100.0 / total_shots) %}
+              <div class="shots-seg alb" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if s.eagles %}
+              {% set pct = (s.eagles * 100.0 / total_shots) %}
+              <div class="shots-seg eag" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if s.birdies %}
+              {% set pct = (s.birdies * 100.0 / total_shots) %}
+              <div class="shots-seg bird" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if s.pars %}
+              {% set pct = (s.pars * 100.0 / total_shots) %}
+              <div class="shots-seg par" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if s.bogeys %}
+              {% set pct = (s.bogeys * 100.0 / total_shots) %}
+              <div class="shots-seg bogey" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if s.dbl %}
+              {% set pct = (s.dbl * 100.0 / total_shots) %}
+              <div class="shots-seg dbl" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if s.overdbl %}
+              {% set pct = (s.overdbl * 100.0 / total_shots) %}
+              <div class="shots-seg over" style="width: {{ '%.2f'|format(pct) }}%;">
+                {% if pct >= 9 %}
+                  <span>{{ '%.0f'|format(pct) }}%</span>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {# Sticky CTA dentro de cada ficha #}
+        <div class="summary-sticky">
+          <a class="summary-cta"
+             href="/admin/rounds/{{ round.id }}/player/{{ s.rp_id }}/card">
+            Editar tarjeta
+          </a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+{# =========================
+   DESKTOP: tabla completa
+   ========================= #}
+<section class="card summary-desktop">
   <div class="card-head">
     <h2 style="margin:0;">Estadísticas completas</h2>
     <div class="muted" style="font-size:.9rem;">
@@ -114,14 +265,6 @@
 </section>
 
 <style>
-  .admin-toolbar{
-    margin: 8px 0 12px 0;
-    display:flex;
-    gap:12px;
-    align-items:center;
-    flex-wrap:wrap;
-  }
-
   .muted{ color: var(--muted); }
 
   .card-head{
@@ -142,7 +285,6 @@
     background:#fff;
   }
 
-  /* Esta tabla necesita mínimo grande sí o sí (muchas columnas) */
   .admin-table--summary{
     min-width: 1400px;
     text-align:center;
@@ -159,18 +301,152 @@
   .admin-title{
     margin:0;
     font-weight:800;
-    font-size:1.15rem;   /* antes 1.35rem */
+    font-size:1.15rem;
     line-height:1.25;
   }
   .admin-subtitle{
     margin:1;
     font-weight:400;
-    font-size:0.85rem;   /* antes 1.35rem */
-    
+    font-size:0.85rem;
   }
 
-  .admin-main .card{
-    margin-top: 40px;   /* antes estaba en 14px */
+  /* ======= MOBILE CARDS ======= */
+  .summary-cards{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .summary-card{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:12px;
+    background:#fff;
+    overflow:hidden;
+    position:relative;
+  }
+
+  .summary-top{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom:10px;
+  }
+
+  .summary-name a{
+    font-weight:800;
+    color: inherit;
+    text-decoration:none;
+  }
+  .summary-sub{ margin-top:4px; font-size:.9rem; }
+
+  /* KPI grid: 2 columnas */
+  .summary-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  .kpi{
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:14px;
+    padding:10px;
+    background: rgba(0,0,0,.02);
+  }
+  .kpi .k{
+    font-size:.78rem;
+    color: var(--muted);
+    margin-bottom:4px;
+  }
+  .kpi .v{
+    font-weight:800;
+    line-height:1.1;
+  }
+
+  /* ---------------------------------------------------------
+     % GOLPES (barra apilada) - mismas clases que Public
+     --------------------------------------------------------- */
+  .shots-bar{
+    display: flex;
+    width: 280px;
+    height: 22px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #f3f4f6;
+    margin: 0 auto;
+  }
+
+  .shots-seg{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #111827;
+  }
+
+  .shots-seg.hio   { background: #ffc000; }
+  .shots-seg.alb   { background: #ffe5b4; }
+  .shots-seg.eag   { background: #fff7cc; }
+  .shots-seg.bird  { background: #ffe4d6; }
+  .shots-seg.par   { background: #e2f0d9; }
+  .shots-seg.bogey { background: #d9e1f2; }
+  .shots-seg.dbl   { background: #f2f2f2; }
+  .shots-seg.over  { background: #e0e0e0; }
+
+  /* Admin móvil: full width + un pelín más alta + % sin negrita */
+  .shots-bar.shots-bar--mobile{
+    width: 100%;
+    height: 26px;
+    margin: 6px 0 10px;
+  }
+  .shots-bar--mobile .shots-seg{
+    font-size: .72rem;
+    font-weight: 400; /* <- % sin negrita */
+  }
+  .shots-bar--mobile .shots-seg span{
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: .2px;
+  }
+
+  /* Sticky CTA dentro de cada ficha */
+  .summary-sticky{
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin-top: 10px;
+    padding-top: 10px;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(8px);
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .summary-cta{
+    width: 100%;
+    white-space: nowrap;
+    border:1px solid rgba(20,83,45,.20);
+    background: rgba(20,83,45,.08);
+    color: #14532d;
+    border-radius: 16px;
+    height: 46px;
+    padding: 0 12px;
+    font-weight: 800;
+    font-size: .95rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+  }
+
+  /* ======= RESPONSIVE SWITCH ======= */
+  .summary-mobile{ display:none; }
+  .summary-desktop{ display:block; }
+
+  @media (max-width: 560px){
+    .summary-mobile{ display:block; }
+    .summary-desktop{ display:none; }
   }
 </style>
 
