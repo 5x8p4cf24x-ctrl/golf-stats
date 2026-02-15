@@ -87,13 +87,7 @@ def ensure_player_hcp_updated_at_column():
 ensure_player_hcp_updated_at_column()
 
 
-
-
 app = FastAPI(title="Golf Stats")
-
-# ==============================================================================================
-# =============================== PASSWORD ADMIN ===============================================
-# ==============================================================================================
 
 import os
 from fastapi import Form, Request
@@ -101,37 +95,43 @@ from fastapi.responses import HTMLResponse
 from starlette.responses import RedirectResponse
 from starlette.status import HTTP_303_SEE_OTHER
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 ADMIN_KEY = os.getenv("ADMIN_KEY", "").strip()
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-me").strip()
 ENV = os.getenv("ENV", "local")
 
 # ===============================
-# GUARD (primero)
+# GUARD middleware (clase)
 # ===============================
-@app.middleware("http")
-async def admin_guard(request: Request, call_next):
-    path = request.url.path
+class AdminGuardMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
 
-    if not path.startswith("/admin"):
-        return await call_next(request)
+        if not path.startswith("/admin"):
+            return await call_next(request)
 
-    if path in ("/admin/login", "/admin/logout") or path.startswith("/static") or path.startswith("/uploads"):
-        return await call_next(request)
+        if path in ("/admin/login", "/admin/logout"):
+            return await call_next(request)
 
-    if not ADMIN_KEY:
-        return await call_next(request)
+        if path.startswith(("/static", "/uploads")):
+            return await call_next(request)
 
-    # ✅ aquí ya existirá request.session (porque SessionMiddleware irá por fuera)
-    if request.session.get("admin_ok") is True:
-        return await call_next(request)
+        if not ADMIN_KEY:
+            return await call_next(request)
 
-    return RedirectResponse(url="/admin/login", status_code=HTTP_303_SEE_OTHER)
+        # Ahora SÍ existirá request.session (porque SessionMiddleware va por fuera)
+        if request.session.get("admin_ok") is True:
+            return await call_next(request)
 
+        return RedirectResponse(url="/admin/login", status_code=HTTP_303_SEE_OTHER)
 
 # ===============================
-# SessionMiddleware (después)
+# Middlewares (orden IMPORTANTE)
+#   - Guard primero
+#   - Session después (para que envuelva a todo)
 # ===============================
+app.add_middleware(AdminGuardMiddleware)
 
 app.add_middleware(
     SessionMiddleware,
@@ -140,14 +140,12 @@ app.add_middleware(
     https_only=(ENV == "production"),
 )
 
-
 # ===============================
 # LOGIN / LOGOUT
 # ===============================
 @app.get("/admin/login", response_class=HTMLResponse)
 def admin_login_form(request: Request):
     return templates.TemplateResponse("admin_login.html", {"request": request})
-
 
 @app.post("/admin/login", response_class=HTMLResponse)
 async def admin_login_submit(request: Request, key: str = Form(...)):
@@ -167,13 +165,11 @@ async def admin_login_submit(request: Request, key: str = Form(...)):
     request.session["admin_ok"] = True
     return RedirectResponse(url="/admin", status_code=HTTP_303_SEE_OTHER)
 
-
 @app.get("/admin/logout")
 def admin_logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/public", status_code=HTTP_303_SEE_OTHER)
 
-#========================================================================================================
 #========================================================================================================
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
