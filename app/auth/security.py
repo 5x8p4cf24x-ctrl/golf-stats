@@ -16,8 +16,8 @@ RESET_TTL_HOURS = int(os.getenv("RESET_TTL_HOURS", "24"))
 def make_reset_token() -> str:
     return secrets.token_urlsafe(32)
 
-def now_utc():
-    return datetime.utcnow()
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc)
 
 def reset_expiration_datetime() -> datetime:
     return now_utc() + timedelta(hours=RESET_TTL_HOURS)
