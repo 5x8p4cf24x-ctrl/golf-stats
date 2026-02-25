@@ -37,9 +37,18 @@ from sqlalchemy.orm import joinedload
 from app.auth.routes import router as auth_router
 from starlette.responses import HTMLResponse
 from fastapi import Query
-from dotenv import load_dotenv
-load_dotenv()
 
+
+
+import os
+
+# Solo cargar .env en local
+if os.getenv("ENV", "local") == "local":
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except Exception:
+        pass
 
 
 
