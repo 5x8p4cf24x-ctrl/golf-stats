@@ -1,3 +1,4 @@
+{% set player = request.state.player if request.state.player is defined else None %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -5,12 +6,10 @@
   <link rel="icon" href="/static/favicon-20260124.png" type="image/png">
   <link rel="shortcut icon" href="/static/favicon.ico">
 
-
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Golf Mode{% endblock %}</title>
 
-  <!-- Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,9 +19,13 @@
 </head>
 
 <body class="gm-body {% block body_class %}{% endblock %}">
+
   {% block header %}
     {% include "components/public_topbar.html" %}
   {% endblock %}
+
+  {# ✅ Session strip global (1 sola vez) #}
+  {% include "components/session_strip.html" %}
 
   {% block breadcrumbs %}{% endblock %}
 
@@ -36,5 +39,4 @@
   {% block scripts %}{% endblock %}
   {% block body_extra %}{% endblock %}
 </body>
-
 </html>

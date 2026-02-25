@@ -221,14 +221,18 @@ input[readonly], textarea[readonly]{
 .kpi .value{font-size:1.6rem; font-weight:800; margin-top:2px;}
 .kpi .sub{color:var(--muted); font-size:.8rem;}
 
-/* ===================== BREADCRUMBS (franja gris) ===================== */
 
+/* ===================== BREADCRUMBS (franja gris) ===================== */
 .gm-breadcrumbs{
-  background: #f3f4f6;
+  background: rgba(243,244,246,.92);
   border-bottom: 1px solid rgba(20, 83, 45, 0.10);
-  /* QUITAR sticky */
-  position: relative;
-  z-index: 2001; /* por encima del topbar si hiciera falta */
+
+  position: sticky;
+  top: 64px;
+  z-index: 2001;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .gm-breadcrumbs-inner{
@@ -972,6 +976,88 @@ body.gm-body{ padding-top: 78px; }
   font-weight: 900;
 }
 
+/* ============================= */
+/* SESSION STRIP (tipo breadcrumb fino) */
+/* ============================= */
+
+.gm-sessionstrip{
+  background: #f3f4f6;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+/* usa el mismo ancho que gm-wrap */
+.gm-sessionstrip-inner{
+  background: #f3f4f6;
+  border-top: -2px solid rgba(0,0,0,.06);
+  border-bottom: 0px solid rgba(0,0,0,.06);
+}
+
+.gm-sessionstrip-inner .gm-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding: 6px 14px; /* ← 6 regula altura, 14 regula alineación lateral */
+}
+
+.gm-sessionstrip-left{ display:flex; align-items:center; gap:8px; min-width:0; }
+
+.gm-session-avatar{
+  width:36px; height:36px; border-radius:999px; object-fit:cover;
+}
+
+.gm-session-avatar--placeholder{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:.85rem;
+  color:#14532d;
+  background: rgba(20,83,45,.08);
+}
+
+.gm-session-meta{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:.80rem;
+  min-width:0;
+}
+
+.gm-session-name{
+  font-weight:700;
+  color:#14532d;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width: 200px;
+}
+
+.gm-session-dot{
+  color: rgba(0,0,0,.35);
+}
+
+.gm-session-sub{
+  color: rgba(0,0,0,.55);
+  font-weight:500;
+  white-space:nowrap;
+}
+
+.gm-session-cta{
+  padding: 5px 12px;
+  border-radius: 999px;
+  background:#14532d;
+  color:#fff !important;
+  text-decoration:none;
+  font-weight:800;
+  font-size:.75rem;
+  letter-spacing:.05em;
+  line-height:1;
+}
+
+.gm-session-cta:hover{
+  filter: brightness(1.05);
+}
 
 /* ============================================================================== */
 /* ============================== HERO FULL ==================================== */
@@ -3415,6 +3501,14 @@ main.gm-wrap.player-profile-page{
   color: #334155;
   border: 1px solid #cbd5e1;
 }
+
+/* ESTILO PARA TRAINING */
+.round-type-chip.training {
+  background: #ffe9c1;
+  color: #595959e3;
+  border: 1px solid #f8b762;
+}
+
 
 /* Enlace volver */
 .rounds-back {

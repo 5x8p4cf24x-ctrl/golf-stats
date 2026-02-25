@@ -1,0 +1,60 @@
+{% extends "public_base.html" %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Jugar", "url":"/play"},
+    {"label":"Entrenamiento", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block title %}Entrenamiento · Jugar{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;margin:0 auto;padding:0 10px;">
+  <header style="margin:10px 0 14px;">
+    <h1 style="margin:0;font-size:1.4rem;color:var(--gm-green,#14532d);">Entrenamiento</h1>
+    <p style="margin:6px 0 0;color:rgba(0,0,0,.6);">{{ player.name }}</p>
+  </header>
+
+  <section style="padding:16px;border-radius:18px;border:1px solid rgba(0,0,0,.10);background:#fff;">
+    <form method="post" action="/play/training" style="display:grid; gap:10px;">
+      <div>
+        <label style="display:block;margin:0 0 6px;">Fecha</label>
+        <input type="date" name="round_date" required
+               style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+      </div>
+
+      <div>
+        <label style="display:block;margin:0 0 6px;">Campo</label>
+        <select name="course_id" required
+                style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+          {% for c in courses %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block;margin:0 0 6px;">Tee</label>
+        <select name="tee" required
+                style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+          {% for t in tees %}
+            <option value="{{ t }}">{{ t|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit"
+              style="padding:12px 14px;border-radius:12px;border:0;background:#14532d;color:#fff;font-weight:900;">
+        Empezar entrenamiento
+      </button>
+    </form>
+
+    <p style="margin:12px 0 0;color:rgba(0,0,0,.55);font-size:.92rem;">
+      Nota: cuenta para estadísticas, pero no para victorias ni logros.
+    </p>
+  </section>
+</div>
+{% endblock %}

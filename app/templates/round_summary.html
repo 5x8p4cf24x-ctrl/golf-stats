@@ -20,16 +20,51 @@
 
 {% block content %}
 
-{% if winner_names and winner_names|length > 0 %}
-  <section class="card">
-    {% if winner_names|length == 1 %}
-      <h2 style="margin:0 0 6px 0;">🏆 Ganador</h2>
-    {% else %}
-      <h2 style="margin:0 0 6px 0;">🤝 Empate en primera posición</h2>
+{# =========================
+   CIERRE DE RONDA (ADMIN)
+   ========================= #}
+
+{% set total_players = results|length %}
+{% set completed_players = (results | selectattr("gross_total") | list | length) %}
+{% set locked_players = (results | selectattr("player_card_locked") | list | length) %}
+
+{# ✅ única verdad: cerrada solo si closed_at existe #}
+{% set is_closed = (round.closed_at is not none) %}
+{% set all_locked = (total_players > 0 and locked_players == total_players) %}
+
+<section class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <div style="font-weight:900; font-size:1.0rem;">
+      Estado:
+      {% if is_closed %}
+        <span class="pill pill--closed">Cerrada</span>
+      {% elif all_locked %}
+        <span class="pill pill--open">Enviada</span>
+      {% else %}
+        <span class="pill pill--open">Abierta</span>
+      {% endif %}
+    </div>
+
+    <div class="muted" style="margin-top:6px;">
+      Tarjetas completas: <strong>{{ completed_players }}</strong>/{{ total_players }}
+      · Bloqueadas: <strong>{{ locked_players }}</strong>/{{ total_players }}
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    {# ✅ el cierre oficial siempre disponible mientras NO haya closed_at #}
+    {% if not is_closed %}
+      <form method="post" action="/admin/rounds/{{ round.id }}/close" style="margin:0;">
+        <button type="submit" class="btn-danger"
+                {% if completed_players != total_players %}disabled title="Faltan tarjetas por completar"{% endif %}>
+          Cerrar ronda
+        </button>
+      </form>
     {% endif %}
-    <p style="margin:0;">{{ winner_names | join(", ") }}</p>
-  </section>
-{% endif %}
+
+    <a href="/admin/rounds" class="btn-soft">Volver a rondas</a>
+  </div>
+</section>
 
 {# =========================
    MOBILE: vista tipo fichas
@@ -309,6 +344,58 @@
     font-weight:400;
     font-size:0.85rem;
   }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: .78rem;
+    border: 1px solid rgba(0,0,0,.10);
+  }
+
+  .pill--open{
+    background: rgba(148,163,184,.18);
+    border-color: rgba(148,163,184,.40);
+    color: #0f172a;
+  }
+
+  .pill--closed{
+    background: rgba(34,197,94,.12);
+    border-color: rgba(34,197,94,.30);
+    color: #14532d;
+  }
+
+  .btn-danger{
+    background: #ef4444;
+    color: #fff;
+    border: 0;
+    border-radius: 14px;
+    height: 44px;
+    padding: 0 14px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .btn-danger:disabled{
+    opacity: .45;
+    cursor: not-allowed;
+  }
+
+  .btn-soft{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(20,83,45,.20);
+    background: rgba(20,83,45,.06);
+    color: #14532d;
+    font-weight: 900;
+    text-decoration:none;
+  }
 
   /* ======= MOBILE CARDS ======= */
   .summary-cards{
@@ -448,6 +535,7 @@
     .summary-mobile{ display:block; }
     .summary-desktop{ display:none; }
   }
+
 </style>
 
 {% endblock %}

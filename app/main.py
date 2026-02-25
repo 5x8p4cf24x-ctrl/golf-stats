@@ -7,9 +7,9 @@ from pathlib import Path
 from uuid import uuid4
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from sqlalchemy import extract, func, case, and_
+from sqlalchemy import extract, func, case, or_, and_
 from sqlalchemy.exc import OperationalError
-from datetime import datetime
+from datetime import datetime, timedelta
 from datetime import date
 from . import models
 from typing import List
@@ -27,6 +27,18 @@ from fastapi.responses import JSONResponse
 from app.achievements_engine import evaluate_achievements_on_round_close
 from app.services.handicap_rfeg import fetch_rfeg_handicap
 from app.utils.email import send_admin_email
+from starlette.responses import RedirectResponse
+from starlette.status import HTTP_303_SEE_OTHER
+from app.db import get_db
+from app.models import User
+from app.auth.security import verify_password
+from app.auth.dependencies import get_current_user, get_current_player, get_current_player_optional
+from sqlalchemy.orm import joinedload
+from app.auth.routes import router as auth_router
+from starlette.responses import HTMLResponse
+from fastapi import Query
+from dotenv import load_dotenv
+load_dotenv()
 
 
 
@@ -87,22 +99,57 @@ def ensure_player_hcp_updated_at_column():
 ensure_player_hcp_updated_at_column()
 
 
-app = FastAPI(title="Golf Stats")
-
 import os
-from fastapi import Form, Request
+from fastapi import FastAPI, Form, Request, Depends
 from fastapi.responses import HTMLResponse
-from starlette.responses import RedirectResponse
 from starlette.status import HTTP_303_SEE_OTHER
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from sqlalchemy.orm import Session
 
-ADMIN_KEY = os.getenv("ADMIN_KEY", "").strip()
+from app.db import get_db, SessionLocal
+from app.models import User, Player
+from app.auth.security import verify_password
+
+app = FastAPI(title="Golf Stats")
+app.include_router(auth_router)
+
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-me").strip()
 ENV = os.getenv("ENV", "local")
 
+
 # ===============================
-# GUARD middleware (clase)
+# GUARD global: app privada
+# ===============================
+class AuthGuardMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+
+        # 🔓 rutas públicas completas
+        public_prefixes = (
+            "/login",
+            "/logout",
+            "/admin/login",
+            "/admin/logout",
+            "/auth/",      # ← toda la sección auth libre
+            "/static",
+            "/uploads",
+        )
+
+        if path.startswith(public_prefixes):
+            return await call_next(request)
+
+        if path.startswith(("/static", "/uploads")):
+            return await call_next(request)
+
+        if request.session.get("user_id"):
+            return await call_next(request)
+
+        return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
+
+
+# ===============================
+# GUARD admin: requiere role=admin
 # ===============================
 class AdminGuardMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -114,24 +161,62 @@ class AdminGuardMiddleware(BaseHTTPMiddleware):
         if path in ("/admin/login", "/admin/logout"):
             return await call_next(request)
 
-        if path.startswith(("/static", "/uploads")):
+        user_id = request.session.get("user_id")
+        if not user_id:
+            return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
+
+        db = SessionLocal()
+        try:
+            user = (
+                db.query(User)
+                .filter(User.id == user_id, User.is_active == True)
+                .first()
+            )
+            if user and user.role == "admin":
+                return await call_next(request)
+        finally:
+            db.close()
+
+        return RedirectResponse(url="/public", status_code=HTTP_303_SEE_OTHER)
+
+
+# ===============================
+# INJECT player en request.state (para templates)
+# ===============================
+class PlayerInjectMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request.state.player = None
+
+        # en login/logout no hace falta tocar DB
+        if request.url.path in ("/login", "/logout"):
             return await call_next(request)
 
-        if not ADMIN_KEY:
-            return await call_next(request)
+        user_id = request.session.get("user_id")
+        if user_id:
+            db = SessionLocal()
+            try:
+                user = (
+                    db.query(User)
+                    .filter(User.id == user_id, User.is_active == True)
+                    .first()
+                )
+                if user:
+                    request.state.player = user.player  # 1:1 o None
+            finally:
+                db.close()
 
-        # Ahora SÍ existirá request.session (porque SessionMiddleware va por fuera)
-        if request.session.get("admin_ok") is True:
-            return await call_next(request)
+        return await call_next(request)
 
-        return RedirectResponse(url="/admin/login", status_code=HTTP_303_SEE_OTHER)
 
 # ===============================
 # Middlewares (orden IMPORTANTE)
-#   - Guard primero
-#   - Session después (para que envuelva a todo)
+#   1) Session primero (para que request.session exista)
+#   2) PlayerInject (usa request.session)
+#   3) Guards (usan request.session)
 # ===============================
 app.add_middleware(AdminGuardMiddleware)
+app.add_middleware(AuthGuardMiddleware)
+app.add_middleware(PlayerInjectMiddleware)
 
 app.add_middleware(
     SessionMiddleware,
@@ -140,40 +225,78 @@ app.add_middleware(
     https_only=(ENV == "production"),
 )
 
+
 # ===============================
-# LOGIN / LOGOUT
+# LOGIN / LOGOUT (únicos)
 # ===============================
-@app.get("/admin/login", response_class=HTMLResponse)
-def admin_login_form(request: Request):
-    return templates.TemplateResponse("admin_login.html", {"request": request})
+@app.get("/login", response_class=HTMLResponse)
+def login_form(
+    request: Request,
+    reset: str | None = Query(default=None),
+):
+    return templates.TemplateResponse(
+        "login.html",
+        {
+            "request": request,
+            "reset_ok": (reset == "1"),
+        },
+    )
 
-@app.post("/admin/login", response_class=HTMLResponse)
-async def admin_login_submit(request: Request, key: str = Form(...)):
-    key = (key or "").strip()
+@app.post("/login", response_class=HTMLResponse)
+def login_submit(
+    request: Request,
+    identifier: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    identifier = (identifier or "").strip()
 
-    if not ADMIN_KEY:
-        request.session["admin_ok"] = True
-        return RedirectResponse(url="/admin", status_code=HTTP_303_SEE_OTHER)
+    q = db.query(User).filter(User.is_active == True)
 
-    if key != ADMIN_KEY:
+    if "@" in identifier:
+        user = q.filter(User.email == identifier.lower()).first()
+    else:
+        user = q.filter(User.username == identifier.lower()).first()
+
+    if not user or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(
-            "admin_login.html",
-            {"request": request, "error": "Clave incorrecta"},
+            "login.html",
+            {"request": request, "error": "Credenciales incorrectas"},
             status_code=401,
         )
 
-    request.session["admin_ok"] = True
-    return RedirectResponse(url="/admin", status_code=HTTP_303_SEE_OTHER)
-
-@app.get("/admin/logout")
-def admin_logout(request: Request):
     request.session.clear()
+    request.session["user_id"] = user.id
+
+    if user.role == "admin":
+        return RedirectResponse(url="/admin", status_code=HTTP_303_SEE_OTHER)
+
     return RedirectResponse(url="/public", status_code=HTTP_303_SEE_OTHER)
 
-#========================================================================================================
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
+
+
+# ===============================
+# ALIAS admin (para no romper enlaces viejos)
+# ===============================
+@app.get("/admin/login")
+def admin_login_alias():
+    return RedirectResponse(url="/login", status_code=HTTP_303_SEE_OTHER)
+
+
+@app.get("/admin/logout")
+def admin_logout_alias():
+    return RedirectResponse(url="/logout", status_code=HTTP_303_SEE_OTHER)
+
+#=======================================================================================================
+#=======================================================================================================
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+from app.web import templates
 UPLOAD_BASE_DIR = Path(os.getenv("UPLOAD_BASE_DIR", "app/static/uploads"))
 
 UPLOAD_PLAYERS_DIR = UPLOAD_BASE_DIR / "players"
@@ -965,6 +1088,7 @@ def round_summary(round_id: int, request: Request, db: Session = Depends(get_db)
         results.append({
             "rp_id": rp.id,
             "player": rp.player,
+            "player_card_locked": rp.player_card_locked,
             "course_handicap": rp.course_handicap,
 
             "gross_total": rp.gross_total,
@@ -1066,28 +1190,35 @@ def parse_gross_input(raw: str | None) -> tuple[bool, int | None]:
         return True, None
 
 
+
+from starlette.responses import RedirectResponse
+
 @app.post("/admin/rounds/{round_id}/player/{rp_id}/card")
-async def round_card_player_save(round_id: int, rp_id: int, request: Request, db: Session = Depends(get_db)):
+async def round_card_player_save(
+    round_id: int,
+    rp_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     form = await request.form()
     r = crud.get_round(db, round_id)
     holes = crud.get_holes_for_course(db, r.course_id)
     rp = crud.get_round_player(db, rp_id)
 
-    # 1) Actualizar HCP de juego si viene en el formulario
-    ch_raw = form.get("course_handicap")
-    if ch_raw is not None and ch_raw != "":
+    # 1) (Opcional) si viene CH, lo guardamos (pero OJO: esto solo se usará cuando realmente guardas tarjeta)
+    ch_raw = (form.get("course_handicap") or "").strip()
+    if ch_raw != "":
         try:
             rp.course_handicap = int(ch_raw)
             db.commit()
             db.refresh(rp)
         except ValueError:
-            # Si algo raro ocurre, simplemente ignoramos el cambio de HCP
             pass
 
-    # 2) Leer tarjeta hoyo a hoyo (GUARDAMOS BRUTO AJUSTADO COMO RESULTADO OFICIAL)
+    # 2) Leer tarjeta hoyo a hoyo
     gross_by_hole: dict[int, int] = {}
     putts_by_hole: dict[int, int | None] = {}
-    fir_by_hole: dict[int, bool | None] = {}  # 👈 aquí era el fallo: puede ser None
+    fir_by_hole: dict[int, bool | None] = {}
 
     course_hcp = int(rp.course_handicap or 0)
 
@@ -1097,17 +1228,12 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
         fir_val = form.get(f"fir_{h.number}")
 
         cap = max_allowed_strokes(h.par, course_hcp, h.stroke_index)
-
         is_x, strokes_in = parse_gross_input(g_val)
 
-        if is_x:
+        if is_x or strokes_in is None or strokes_in < 1:
             strokes = cap
         else:
-            # si meten 0 o negativo, lo tratamos como X (cap) para mantener consistencia
-            if strokes_in is None or strokes_in < 1:
-                strokes = cap
-            else:
-                strokes = min(strokes_in, cap)
+            strokes = min(strokes_in, cap)
 
         gross_by_hole[h.number] = strokes
 
@@ -1120,72 +1246,42 @@ async def round_card_player_save(round_id: int, rp_id: int, request: Request, db
         else:
             putts_by_hole[h.number] = None
 
-        # FIR:
-        # - par 3: None (no aplica)
-        # - par 4/5: True/False según checkbox
+        # FIR
         if h.par <= 3:
             fir_by_hole[h.number] = None
         else:
             fir_by_hole[h.number] = (fir_val is not None)
 
-
-    # 3) Guardar la tarjeta y recalcular totales (gross/neto/puntos/putts_total, etc.)
+    # 3) Guardar tarjeta y recalcular totales
     crud.save_card_for_round_player(db, rp, holes, gross_by_hole, putts_by_hole, fir_by_hole)
 
-    # 4) Si todos tienen tarjeta cerrada -> cerrar vuelta + ganador
-    rps = crud.get_round_players(db, round_id)
-    if all(x.gross_total is not None for x in rps):
-        # cerramos y calculamos ganador (estable: stableford hcp en tu lógica)
-        crud.close_round_and_set_winner(db, round_id)
-        
-        # ✅ Logros automáticos (apagado por defecto)
-        if os.getenv("ACHIEVEMENTS_AUTO", "0") == "1":
-            evaluate_achievements_on_round_close(db, round_id, emit_news=True)
-
-        # recargar datos ya actualizados
-        r = crud.get_round(db, round_id)
-        course = crud.get_course(db, r.course_id)
-        rps = crud.get_round_players(db, round_id)  # ✅ recarga
-
-        course_name = course.name if course else "Campo"
-
-        winner_name = None
-        winner_pts = None
-
-        # ✅ 1) PRIORIDAD: winner_id fijado en la ronda
-        if getattr(r, "winner_id", None):
-            for rp in rps:
-                if rp.player_id == r.winner_id:
-                    winner_name = rp.player.name if rp.player else None
-                    winner_pts = rp.stableford_hcp_total
-                    break
-
-        # ✅ 2) FALLBACK seguro (si por cualquier motivo winner_id no existe):
-        # mejor stableford_hcp_total (más puntos gana). NUNCA gross.
-        if winner_name is None:
-            valid = [x for x in rps if x.stableford_hcp_total is not None]
-            if valid:
-                best = max(valid, key=lambda x: x.stableford_hcp_total)
-                winner_name = best.player.name if best.player else None
-                winner_pts = best.stableford_hcp_total
-
-        # noticia
-        title = f"Ronda cerrada en {course_name}"
-        if winner_name and winner_pts is not None:
-            excerpt = f"Ganador: {winner_name} con {winner_pts} puntos Stableford. ¡GolfMode ON!"
-        else:
-            excerpt = "Ronda cerrada y resultados actualizados."
-
-        crud.create_news(
-            db,
-            title=title,
-            excerpt=excerpt,
-            category="round",
-            image_path="news/default_round.jpg",
-            related_url=f"/public/rounds/{round_id}",
-        )
-
     return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=303)
+
+from starlette.status import HTTP_303_SEE_OTHER
+from starlette.responses import RedirectResponse
+
+@app.post("/admin/rounds/{round_id}/player/{rp_id}/hcp")
+async def admin_roundplayer_update_hcp(
+    round_id: int,
+    rp_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    form = await request.form()
+    rp = crud.get_round_player(db, rp_id)
+
+    if (not rp) or (rp.round_id != round_id):
+        return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=HTTP_303_SEE_OTHER)
+
+    ch_raw = (form.get("course_handicap") or "").strip()
+    if ch_raw != "":
+        try:
+            rp.course_handicap = int(ch_raw)
+            db.commit()
+        except ValueError:
+            pass
+
+    return RedirectResponse(f"/admin/rounds/{round_id}/player/{rp_id}/card", status_code=HTTP_303_SEE_OTHER)
 
 @app.post("/admin/rounds/{round_id}/player/{rp_id}/token")
 async def admin_generate_roundplayer_token(round_id: int, rp_id: int, request: Request, db: Session = Depends(get_db)):
@@ -1212,7 +1308,105 @@ async def admin_generate_roundplayer_token(round_id: int, rp_id: int, request: R
 
     return RedirectResponse(f"/admin/rounds/{round_id}/player/{rp_id}/card", status_code=303)
 
+import os
+from starlette.status import HTTP_303_SEE_OTHER
+from app.auth.dependencies import get_current_user
 
+
+@app.post("/admin/rounds/{round_id}/close")
+def admin_close_round(
+    round_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    r = crud.get_round(db, round_id)
+    rps = crud.get_round_players(db, round_id)
+
+    if not r or not rps:
+        return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=HTTP_303_SEE_OTHER)
+
+    # 1) CIERRE OFICIAL: marcar closed_at (y opcionalmente bloquear tarjetas)
+    for rp in rps:
+        rp.player_card_locked = True
+
+    if getattr(r, "closed_at", None) is None:
+        r.closed_at = datetime.utcnow()
+
+    db.commit()
+
+    # ✅ MUY IMPORTANTE: recargar estado real tras el commit
+    r = crud.get_round(db, round_id)
+    rps = crud.get_round_players(db, round_id)
+
+    # 2) Si hay datos suficientes, calcula winner + logros + news
+    is_complete = all(x.gross_total is not None for x in rps)
+
+    if is_complete:
+        crud.close_round_and_set_winner(db, round_id)
+
+        # ✅ En training NO evaluamos logros ni emitimos news
+        r = crud.get_round(db, round_id)
+        if r and getattr(r, "context", None) == "training":
+            return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=HTTP_303_SEE_OTHER)
+
+        if os.getenv("ACHIEVEMENTS_AUTO", "0") == "1":
+            evaluate_achievements_on_round_close(db, round_id, emit_news=True)
+
+        # ---- NEWS ----
+        r = crud.get_round(db, round_id)
+        course = crud.get_course(db, r.course_id) if r else None
+        rps = crud.get_round_players(db, round_id)
+
+        course_name = course.name if course else "Campo"
+
+        winner_name = None
+        winner_pts = None
+
+        ids = []
+        if getattr(r, "winner_player_ids", None):
+            try:
+                ids = [int(x) for x in (r.winner_player_ids or "").split(",") if x.strip()]
+            except Exception:
+                ids = []
+
+        if ids:
+            names = []
+            for rp in rps:
+                if rp.player_id in ids and rp.player:
+                    names.append(rp.player.name)
+
+            if names:
+                winner_name = " y ".join(names)
+                for rp in rps:
+                    if rp.player_id == ids[0]:
+                        winner_pts = rp.stableford_hcp_total
+                        break
+
+        if winner_name is None:
+            valid = [x for x in rps if x.stableford_hcp_total is not None]
+            if valid:
+                best = max(valid, key=lambda x: x.stableford_hcp_total)
+                winner_name = best.player.name if best.player else None
+                winner_pts = best.stableford_hcp_total
+
+        title = f"Ronda cerrada en {course_name}"
+        if winner_name and winner_pts is not None:
+            excerpt = f"Ganador: {winner_name} con {winner_pts} puntos Stableford. ¡GolfMode ON!"
+        elif winner_name:
+            excerpt = f"Ganador: {winner_name}. ¡GolfMode ON!"
+        else:
+            excerpt = "Ronda cerrada y resultados actualizados."
+
+        crud.create_news(
+            db,
+            title=title,
+            excerpt=excerpt,
+            category="round",
+            image_path="news/default_round.jpg",
+            related_url=f"/public/rounds/{round_id}",
+        )
+
+    return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=HTTP_303_SEE_OTHER)
 # ===========================================================================================
 # ----------------------------------- ADMIN: LEAGUES ----------------------------------------
 # ===========================================================================================
@@ -1278,7 +1472,258 @@ def admin_leagues_close(league_id: int, db: Session = Depends(get_db)):
 
     return RedirectResponse("/admin/leagues", status_code=303)
 
+# ======================================================================================
+#                                       ADMIN: USERS
+# ======================================================================================
 
+@app.get("/admin/users", response_class=HTMLResponse)
+def admin_users(request: Request, db: Session = Depends(get_db)):
+    users = (
+        db.query(User)
+        .order_by(User.role.desc(), User.username.asc().nullslast(), User.email.asc())
+        .all()
+    )
+
+    players_free = (
+        db.query(Player)
+        .filter(Player.user_id.is_(None))
+        .order_by(Player.name.asc())
+        .all()
+    )
+
+    # Mapa: user_id -> player_name (para mostrar vinculación en la tabla)
+    linked_players = {
+        p.user_id: p.name
+        for p in db.query(Player).filter(Player.user_id.isnot(None)).all()
+        if p.user_id is not None
+    }
+    
+    last_created_creds = request.session.pop("last_created_creds", None)
+
+    return templates.TemplateResponse(
+        "admin_users.html",
+        {
+            "request": request,
+            "users": users,
+            "players_free": players_free,
+            "linked_players": linked_players,
+            "last_created_creds": last_created_creds,
+        },
+    )
+
+
+@app.post("/admin/users/link")
+def admin_users_link(
+    request: Request,
+    user_id: int = Form(...),
+    player_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    player = db.query(Player).filter(Player.id == player_id).first()
+
+    if not user or not player:
+        return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+    # Si este user ya estaba vinculado a otro player, lo soltamos (1:1)
+    other = db.query(Player).filter(Player.user_id == user.id).first()
+    if other and other.id != player.id:
+        other.user_id = None
+
+    # Si este player ya estaba vinculado a otro user, lo soltamos (1:1)
+    if player.user_id and player.user_id != user.id:
+        player.user_id = None
+
+    # Vincula
+    player.user_id = user.id
+    db.commit()
+
+    return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+
+@app.post("/admin/users/unlink")
+def admin_users_unlink(
+    request: Request,
+    user_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    # Desvincula el player asociado a ese user (si existe)
+    player = db.query(Player).filter(Player.user_id == user_id).first()
+    if player:
+        player.user_id = None
+        db.commit()
+
+    return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+from app.auth.security import hash_password
+
+@app.post("/admin/users/create")
+def admin_users_create(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    role: str = Form("player"),
+    db: Session = Depends(get_db),
+):      
+    username = (username or "").strip().lower()
+    email = (email or "").strip().lower()
+    role = (role or "player").strip().lower()
+
+    # Validaciones básicas
+    if role not in ("player", "admin"):
+        role = "player"
+
+    # Unicidad
+    if db.query(User).filter(User.username == username).first():
+        return RedirectResponse(url="/admin/users?err=user_exists", status_code=HTTP_303_SEE_OTHER)
+
+    if db.query(User).filter(User.email == email).first():
+        return RedirectResponse(url="/admin/users?err=email_exists", status_code=HTTP_303_SEE_OTHER)
+
+    u = User(
+        username=username,
+        email=email,
+        password_hash=hash_password(password),
+        role=role,
+        is_active=True,
+    )
+    db.add(u)
+    db.commit()
+
+    request.session["last_created_creds"] = {
+        "username": username,
+        "email": email,
+        "password": password,
+}
+
+    return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+import os
+import secrets  # (solo si quieres mantener el legacy)
+from fastapi import Form, Request, Depends
+from starlette.responses import RedirectResponse
+from starlette.status import HTTP_303_SEE_OTHER
+from sqlalchemy.orm import Session
+
+from app.db import get_db
+from app.models import User  # o models.User si lo usas así
+from app.auth.security import (
+    make_reset_token,
+    reset_expiration_datetime,
+    hash_password,  # solo si mantienes legacy
+)
+from app.utils.email import send_user_email
+
+ENV = os.getenv("ENV", "local")
+
+
+# =============================================================================
+# ✅ NUEVO (PRO): Enviar enlace para crear contraseña (recomendado)
+# =============================================================================
+@app.post("/admin/users/send_reset_link")
+def admin_users_send_reset_link(
+    request: Request,
+    user_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+
+    # No filtramos info sensible: si no existe / no activo / sin email => volvemos igual
+    if user and user.is_active and (user.email or "").strip():
+        token = make_reset_token()
+        user.reset_token = token
+        user.reset_token_expires_at = reset_expiration_datetime()
+        db.commit()
+
+        base = (os.getenv("PUBLIC_BASE_URL") or "").rstrip("/")
+        if not base:
+            base = str(request.base_url).rstrip("/")
+
+        reset_url = f"{base}/auth/reset-password?token={token}"
+
+        subject = "Golf Mode · Crea tu contraseña"
+        body = (
+            "Te hemos enviado un enlace para crear tu contraseña.\n\n"
+            f"Abre este enlace:\n{reset_url}\n\n"
+            "Si no lo has solicitado, puedes ignorar este email."
+        )
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;line-height:1.5">
+          <h2 style="margin:0 0 12px 0;">Crea tu contraseña</h2>
+          <p style="margin:0 0 12px 0;">Pulsa aquí para crear tu contraseña:</p>
+          <p style="margin:0 0 16px 0;">
+            <a href="{reset_url}" style="display:inline-block;padding:10px 14px;border-radius:10px;text-decoration:none;">
+              Crear contraseña
+            </a>
+          </p>
+          <p style="margin:0;font-size:14px;">
+            Si el botón no funciona, copia y pega este enlace:<br>
+            <a href="{reset_url}">{reset_url}</a>
+          </p>
+        </div>
+        """
+
+        send_user_email(to_email=user.email, subject=subject, body=body, html=html)
+
+    return RedirectResponse(url="/admin/users?reset_sent=1", status_code=HTTP_303_SEE_OTHER)
+
+
+# =============================================================================
+# 🟡 LEGACY (opcional): resetear a contraseña temporal y mostrarla (tu endpoint actual)
+# Recomendación: dejarlo solo en local.
+# =============================================================================
+@app.post("/admin/users/reset_password")
+def admin_users_reset_password(
+    request: Request,
+    user_id: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    # En producción, mejor no usar contraseñas temporales
+    if ENV != "local":
+        return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+    temp_password = secrets.token_urlsafe(8)  # ~11-12 chars
+    user.password_hash = hash_password(temp_password)
+    db.commit()
+
+    request.session["last_created_creds"] = {
+        "username": user.username or "",
+        "email": user.email or "",
+        "password": temp_password,
+    }
+
+    return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+@app.post("/admin/users/update_email")
+def admin_users_update_email(
+    request: Request,
+    user_id: int = Form(...),
+    email: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    email = (email or "").strip().lower()
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+    # email único
+    exists = db.query(User).filter(User.email == email, User.id != user_id).first()
+    if exists:
+        return RedirectResponse(url="/admin/users?err=email_exists", status_code=HTTP_303_SEE_OTHER)
+
+    user.email = email
+    db.commit()
+    return RedirectResponse(url="/admin/users", status_code=HTTP_303_SEE_OTHER)
+
+
+# ======================================================================================
 
 
 # =====================================================================================
@@ -2548,7 +2993,8 @@ def player_profile(
         "player_profile.html",
         {
             "request": request,
-            "player": player,
+            "profile_player": player,   # 👈 jugador del perfil
+            "header_player": player,    # 👈 para la cabecera, si luego la usamos
             "rounds_played": rounds_played,
             "wins": wins,
             "ties": ties,
@@ -2564,16 +3010,15 @@ def player_profile(
             "total_birdies": total_birdies,
             "stats_results": stats_results,
             "history": history,
-            "avg_play_level": avg_play_level,  
-            "total_eagles": total_eagles,        
+            "avg_play_level": avg_play_level,
+            "total_eagles": total_eagles,
             "par_stats": par_stats,
             "achievements": achievements_data,
             "last10_hcp": last10_hcp,
             "last10_gross": last10_gross,
             "year": year,
             "years_available": years_available,
-            "titles_count": titles_count,  # 👈 AÑADE ESTA LÍNEA
-
+            "titles_count": titles_count,
         },
     )
 
@@ -3008,12 +3453,17 @@ def public_leagues(request: Request, db: Session = Depends(get_db)):
 
 
 
+from fastapi import Depends, Request
+from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
+
 @app.get("/public/leagues/{league_id}", response_class=HTMLResponse)
 def public_league_detail(
     league_id: int,
     request: Request,
     player_id: int | None = None,
     db: Session = Depends(get_db),
+    player: Player | None = Depends(get_current_player_optional),  # ✅ NUEVO
 ):
     league = crud.get_league(db, league_id)
     if not league:
@@ -3023,19 +3473,44 @@ def public_league_detail(
     standings = crud.compute_league_standings(db, league, rounds)
 
     # ---- jugadores que han jugado en esta liga ----
-    players_set = {}
+    players_set: dict[int, Player] = {}
     for r in rounds:
         for rp in r.round_players:
             if rp.player is not None:
                 players_set[rp.player.id] = rp.player
 
-    players_in_league = sorted(players_set.values(), key=lambda p: p.name)
+    players_in_league = sorted(players_set.values(), key=lambda p: (p.name or ""))
 
-    # jugador seleccionado (query ?player_id=...)
-    selected_player_id = player_id
+    # =================================================================================
+    # ✅ SELECCIÓN "INTELIGENTE" DEL JUGADOR (igual que en rounds)
+    # - Si viene ?player_id= y está en la liga -> usarlo
+    # - Si viene ?player_id= pero NO está -> ignorar
+    # - Si NO viene ?player_id= y el jugador logueado está en la liga -> usarlo
+    # - Si nada aplica -> primero por orden
+    # =================================================================================
+    players_ids_in_league = {p.id for p in players_in_league}
+
+    # 1) aceptar player_id solo si pertenece
+    player_id_safe = player_id if (player_id is not None and player_id in players_ids_in_league) else None
+
+    # 2) si no viene válido, usar jugador logueado si está en la liga
+    current_player_id = getattr(player, "id", None)
+    if player_id_safe is None and current_player_id in players_ids_in_league:
+        player_id_safe = current_player_id
+
+    # 3) (opcional) poner el seleccionado primero en el selector
+    if player_id_safe is not None:
+        players_in_league = sorted(
+            players_in_league,
+            key=lambda p: (0 if p.id == player_id_safe else 1, (p.name or ""))
+        )
+
+    # 4) selected final
+    selected_player_id = player_id_safe
     if selected_player_id is None and players_in_league:
         selected_player_id = players_in_league[0].id
 
+    # ---- resto de tu lógica tal cual ----
     player_detail = None
     player_history: list[dict] = []
 
@@ -3067,11 +3542,9 @@ def public_league_detail(
             avg_scratch = (sum(scratch_list) / len(scratch_list)) if scratch_list else None
             scratch_points_total = sum(scratch_list) if scratch_list else 0
 
-            # 🔹 Acumuladores para NIVEL de juego medio (diferencial WHS)
             level_sum = 0.0
             level_count = 0
 
-            # 🔹 Estadísticas por hoyo en TODA la liga
             par3_sum = par3_count = 0
             par4_sum = par4_count = 0
             par5_sum = par5_count = 0
@@ -3090,10 +3563,8 @@ def public_league_detail(
                 if not course:
                     continue
 
-                # 🔹 Nivel de juego de ESTA vuelta (diferencial WHS)
                 if (
                     rp.gross_total is not None
-                    and course
                     and course.slope_yellow
                     and course.rating_yellow is not None
                 ):
@@ -3109,7 +3580,6 @@ def public_league_detail(
                     if par is None or s.gross_strokes is None:
                         continue
 
-                    # Medias Par 3 / 4 / 5
                     if par == 3:
                         par3_sum += s.gross_strokes
                         par3_count += 1
@@ -3120,24 +3590,20 @@ def public_league_detail(
                         par5_sum += s.gross_strokes
                         par5_count += 1
 
-                    # Putts
                     if s.putts is not None:
                         total_putts += s.putts
                         putts_count += 1
 
-                    # FIR
                     if s.fir is not None:
                         fir_possible += 1
                         if s.fir:
                             fir_total += 1
 
-                    # GIR
                     if s.gir is not None:
                         gir_possible += 1
                         if s.gir:
                             gir_total += 1
 
-                    # Distribución resultados por hoyo
                     if s.gross_strokes == 1:
                         hio += 1
                         continue
@@ -3158,7 +3624,6 @@ def public_league_detail(
                     elif d >= 3:
                         overdbl += 1
 
-            # 🔹 Medias y porcentajes
             avg_par3 = (par3_sum / par3_count) if par3_count > 0 else None
             avg_par4 = (par4_sum / par4_count) if par4_count > 0 else None
             avg_par5 = (par5_sum / par5_count) if par5_count > 0 else None
@@ -3167,14 +3632,11 @@ def public_league_detail(
             fir_pct = (fir_total / fir_possible * 100) if fir_possible > 0 else None
             gir_pct = (gir_total / gir_possible * 100) if gir_possible > 0 else None
 
-            # 🔹 MEDIA del NIVEL de juego (AHORA SÍ)
             level_hcp_avg = (level_sum / level_count) if level_count > 0 else None
 
-            # 🔹 Historial de vueltas del jugador SOLO en esta liga
             for rp in sorted(rps_player, key=lambda x: x.round.date, reverse=True):
                 course = rp.round.course
 
-                # Nivel de juego por vuelta (para la tabla)
                 level_hcp_round = None
                 if (
                     rp.gross_total is not None
@@ -3187,8 +3649,8 @@ def public_league_detail(
                 player_history.append({
                     "date": rp.round.date,
                     "course": course.name if course else "",
-                    "course_hcp": rp.course_handicap,   # HCP asignado
-                    "level_hcp": level_hcp_round,       # Nivel de juego por vuelta
+                    "course_hcp": rp.course_handicap,
+                    "level_hcp": level_hcp_round,
                     "gross": rp.gross_total,
                     "net": rp.net_total,
                     "points": rp.stableford_hcp_total,
@@ -3198,7 +3660,6 @@ def public_league_detail(
                     "round_id": rp.round_id,
                 })
 
-            # Mejor vuelta bruta
             best_gross = min(gross_list) if gross_list else None
 
             player_detail = {
@@ -3209,7 +3670,7 @@ def public_league_detail(
                 "avg_gross": avg_gross,
                 "avg_net": avg_net,
                 "avg_scratch": avg_scratch,
-                "level_hcp_avg": level_hcp_avg,      # 👉 nivel de juego medio
+                "level_hcp_avg": level_hcp_avg,
                 "best_gross": best_gross,
                 "avg_par3": avg_par3,
                 "avg_par4": avg_par4,
@@ -3226,8 +3687,7 @@ def public_league_detail(
                 "bogeys": bogeys,
                 "dbl": dbl,
                 "overdbl": overdbl,
-                "scratch_points_total": scratch_points_total,   # 👈 NUEVO
-
+                "scratch_points_total": scratch_points_total,
             }
 
     return templates.TemplateResponse(
@@ -3243,7 +3703,6 @@ def public_league_detail(
             "player_history": player_history,
         }
     )
-
 
 
 
@@ -3371,7 +3830,19 @@ def public_round_summary(
 
     players_in_round = [rp.player for rp in rps]
 
-    selected_player_id_final = player_id
+    # ✅ Si viene player_id pero ese jugador NO está en la ronda, lo ignoramos
+    players_ids_in_round = {p.id for p in players_in_round}
+    player_id_safe = player_id if (player_id is not None and player_id in players_ids_in_round) else None
+
+    # (opcional) si player_id es válido, lo ponemos primero en el selector
+    if player_id_safe is not None:
+        players_in_round = sorted(
+            players_in_round,
+            key=lambda p: (0 if p.id == player_id_safe else 1, (p.name or ""))
+        )
+
+    # ✅ seleccionamos: el seguro si existe, si no, el primero real de la ronda
+    selected_player_id_final = player_id_safe
     if selected_player_id_final is None and players_in_round:
         selected_player_id_final = players_in_round[0].id
 
@@ -3485,20 +3956,59 @@ def get_rp_by_token(db: Session, token: str) -> models.RoundPlayer | None:
     return db.query(models.RoundPlayer).filter(models.RoundPlayer.edit_token == token).first()
 
 
+from fastapi import Query
+import secrets
+from datetime import datetime
+
 # ========= (A) PAGE: móvil =========
 @app.get("/public/live/round/{round_id}/card", response_class=HTMLResponse)
-def public_live_round_card(round_id: int, token: str, request: Request, db: Session = Depends(get_db)):
-    rp = get_rp_by_token(db, token)
-    if rp is None:
-        raise HTTPException(status_code=403, detail="Token inválido")
+def public_live_round_card(
+    round_id: int,
+    request: Request,
+    token: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    player: Player | None = Depends(get_current_player_optional),
+):
+    rp = None
 
-    if rp.round_id != round_id:
-        raise HTTPException(status_code=403, detail="Token no corresponde a esta ronda")
+    # 1️⃣ Caso acceso por TOKEN (link compartido)
+    if token:
+        rp = get_rp_by_token(db, token)
+        if rp is None:
+            raise HTTPException(status_code=403, detail="Token inválido")
 
+        if rp.round_id != round_id:
+            raise HTTPException(status_code=403, detail="Token no corresponde a esta ronda")
+
+    # 2️⃣ Caso acceso desde usuario logueado (Play → Partido)
+    else:
+        if not player:
+            raise HTTPException(status_code=403, detail="No autorizado")
+
+        rp = (
+            db.query(RoundPlayer)
+            .filter(
+                RoundPlayer.round_id == round_id,
+                RoundPlayer.player_id == player.id,
+            )
+            .first()
+        )
+
+        if not rp:
+            raise HTTPException(status_code=403, detail="No perteneces a esta ronda")
+
+        # Si no tenía token aún, lo generamos (para que JS pueda usarlo)
+        if not rp.edit_token:
+            rp.edit_token = secrets.token_urlsafe(24)
+            rp.token_created_at = datetime.utcnow()
+            db.commit()
+
+        token = rp.edit_token  # 👈 muy importante para JS
+
+    # ----------- resto igual que antes -----------
     r = crud.get_round(db, round_id)
     course = crud.get_course(db, r.course_id)
     holes = crud.get_holes_for_course(db, r.course_id)
-    player = crud.get_player(db, rp.player_id)
 
     existing_scores = {hs.hole_number: hs for hs in rp.hole_scores}
 
@@ -3510,9 +4020,9 @@ def public_live_round_card(round_id: int, token: str, request: Request, db: Sess
             "course": course,
             "holes": holes,
             "rp": rp,
-            "player": player,
+            "player": rp.player,   # 👈 ahora siempre correcto
             "existing": existing_scores,
-            "token": token,  # importante para JS
+            "token": token,        # 👈 necesario para tus APIs LIVE
         },
     )
 
@@ -3628,7 +4138,6 @@ async def public_live_save_hole(round_id: int, hole_number: int, request: Reques
 }
 
 
-# ========= (C) API: terminar (bloquear + recalcular totales) =========
 @app.post("/public/live/api/round/{round_id}/finish")
 async def public_live_finish(round_id: int, request: Request, db: Session = Depends(get_db)):
     data = await request.json()
@@ -3638,6 +4147,7 @@ async def public_live_finish(round_id: int, request: Request, db: Session = Depe
     if rp is None or rp.round_id != round_id:
         return JSONResponse({"ok": False, "error": "Token inválido"}, status_code=403)
 
+    # Si ya estaba bloqueada, no hacemos nada
     if rp.player_card_locked:
         return {"ok": True, "locked": True}
 
@@ -3646,58 +4156,310 @@ async def public_live_finish(round_id: int, request: Request, db: Session = Depe
 
     # comprobar que hay 18 hoyos con gross
     existing_scores = {hs.hole_number: hs for hs in rp.hole_scores}
-    missing = [h.number for h in holes if h.number not in existing_scores or existing_scores[h.number].gross_strokes is None]
+    missing = [
+        h.number
+        for h in holes
+        if h.number not in existing_scores
+        or existing_scores[h.number].gross_strokes is None
+    ]
     if missing:
-        return JSONResponse({"ok": False, "error": f"Faltan hoyos por completar: {missing}"}, status_code=400)
+        return JSONResponse(
+            {"ok": False, "error": f"Faltan hoyos por completar: {missing}"},
+            status_code=400
+        )
 
-    # construir dicts desde DB y recalcular con tu método "oficial"
+    # recalcular totales oficiales
     gross_by_hole = {h.number: int(existing_scores[h.number].gross_strokes) for h in holes}
     putts_by_hole = {h.number: existing_scores[h.number].putts for h in holes}
     fir_by_hole = {h.number: existing_scores[h.number].fir for h in holes}
 
     crud.save_card_for_round_player(db, rp, holes, gross_by_hole, putts_by_hole, fir_by_hole)
 
+    # 🔒 Bloquear tarjeta
     rp.player_card_locked = True
     db.commit()
+    db.refresh(r)
+    print("DEBUG round_id", round_id, "closed_at", r.closed_at)
+    rps = crud.get_round_players(db, round_id)
+    print("DEBUG locked:", [(x.id, x.player_card_locked) for x in rps])
 
-    # ✅ email aquí
+    # 📧 Enviar email SOLO cuando se bloquea por primera vez
     try:
         admin_url = f"https://golfmode.es/admin/rounds/{round_id}/summary"
+
         send_admin_email(
             subject="🏁 Tarjeta LIVE cerrada",
             body=(
-                f"Un jugador ha cerrado su tarjeta LIVE.\n\n"
-                f"Round ID: {round_id}\n"
-                f"RoundPlayer ID: {rp.id}\n"
-                f"Player ID: {rp.player_id}\n\n"
+                f"Jugador: {rp.player.name}\n"
+                f"Ronda ID: {round_id}\n\n"
                 f"Revisar en admin:\n{admin_url}\n"
             ),
         )
     except Exception as e:
         print("ERROR email admin:", e)
 
+    # ⚠️ NO cerramos la ronda aquí
+    # El cierre oficial lo hará el admin manualmente
 
-    # ¿están todos los jugadores con tarjeta cerrada?
+    # estado global
     rps = crud.get_round_players(db, round_id)
     all_done = all(x.player_card_locked for x in rps)
-
-    # si están todos, cerramos la ronda y ganador (si no lo haces ya aquí)
-    if all_done:
-        crud.close_round_and_set_winner(db, round_id)
 
     return {"ok": True, "locked": True, "all_done": all_done}
 
-@app.get("/public/live/api/round/{round_id}/status")
-def public_live_round_status(round_id: int, token: str, db: Session = Depends(get_db)):
-    rp = get_rp_by_token(db, token)
-    if rp is None or rp.round_id != round_id:
-        return JSONResponse({"ok": False, "error": "Token inválido"}, status_code=403)
+# ======================================================================================
+# ------------------------------------ PUBLIC: PLAY  -----------------------------------
+# ======================================================================================
 
-    rps = crud.get_round_players(db, round_id)
-    all_done = all(x.player_card_locked for x in rps)
-    return {"ok": True, "all_done": all_done}
-    
+from fastapi import Request, Depends, Form
+from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
+from app.db import get_db
+from app.models import User, Player, Course
+from sqlalchemy import func
+from app.models import Round, RoundPlayer, Course, HoleScore  # añade HoleScore
 
+
+
+@app.get("/play", response_class=HTMLResponse)
+def play_home(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    open_training = (
+        db.query(RoundPlayer)
+        .options(joinedload(RoundPlayer.round).joinedload(Round.course))
+        .join(Round)
+        .filter(
+            Round.context == "training",
+            RoundPlayer.player_id == player.id,
+            RoundPlayer.player_card_locked == False
+        )
+        .order_by(Round.id.desc())
+        .first()
+    )
+
+    # ---- hole_label (no se guarda en DB, solo para UI) ----
+    if open_training:
+        last_hole = (
+            db.query(func.max(HoleScore.hole_number))
+            .filter(HoleScore.round_player_id == open_training.id)
+            .scalar()
+        )
+
+        if last_hole is None:
+            open_training.hole_label = "Hoyo 1"
+        else:
+            next_hole = 18 if last_hole >= 18 else last_hole + 1
+            open_training.hole_label = f"Siguiente: Hoyo {next_hole}"
+
+    open_matches_count = 0
+    open_cups_count = 0
+
+    return templates.TemplateResponse(
+        "play_home.html",
+        {
+            "request": request,
+            "user": user,
+            "player": player,
+            "open_training": open_training,
+            "open_matches_count": open_matches_count,
+            "open_cups_count": open_cups_count,
+        },
+    )
+
+@app.get("/play/training", response_class=HTMLResponse)
+def play_training_form(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    courses = db.query(Course).order_by(Course.name.asc()).all()
+    tees = ["yellow", "white", "blue", "red"]  # ajusta si usas otros
+
+    return templates.TemplateResponse(
+        "play_training.html",
+        {"request": request, "player": player, "courses": courses, "tees": tees},
+    )
+
+# ___________________________________ Play Matches _____________________________________
+
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session, joinedload
+from fastapi import Depends, Request
+from starlette.responses import RedirectResponse
+from starlette.templating import Jinja2Templates
+
+@app.get("/play/matches", response_class=HTMLResponse)
+def play_matches(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+
+    my_rps = (
+        db.query(RoundPlayer)
+        .options(
+            joinedload(RoundPlayer.round).joinedload(Round.course),
+            joinedload(RoundPlayer.round)
+                .joinedload(Round.round_players)
+                .joinedload(RoundPlayer.player),
+        )
+        .join(Round)
+        .filter(
+            RoundPlayer.player_id == player.id,
+            Round.context.in_(["friendly", "league"]),
+        )
+        .order_by(Round.date.desc(), Round.id.desc())
+        .all()
+    )
+
+    open_matches = []
+
+    for rp in my_rps:
+        r = rp.round
+        if not r:
+            continue
+
+        # Estado real
+        all_locked = all(x.player_card_locked for x in (r.round_players or []))
+        closed_at = getattr(r, "closed_at", None)
+
+        # ✅ LA ÚNICA VERDAD: cerrada solo si closed_at existe
+        is_closed = (closed_at is not None)
+
+        
+        if is_closed:
+            # cerrada por admin -> aplicamos ventana 24h
+            if closed_at < cutoff:
+                continue
+            status = "finished"
+        else:
+            # no cerrada -> pending o sent
+            status = "sent" if rp.player_card_locked else "pending"
+
+        open_matches.append({
+            "rp": rp,
+            "round": r,
+            "status": status,  # pending | sent | finished
+        })
+
+    return templates.TemplateResponse(
+        "play_matches.html",
+        {
+            "request": request,
+            "player": player,
+            "open_matches": open_matches,
+        },
+    )
+
+
+@app.get("/play/tournaments", response_class=HTMLResponse)
+def play_tournaments(
+    request: Request,
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    return templates.TemplateResponse("play_tournaments.html", {"request": request, "player": player})
+
+
+import secrets
+from datetime import date, datetime
+from starlette.status import HTTP_303_SEE_OTHER
+
+from app.models import Round, RoundPlayer, Course
+from app.golf_calc import course_handicap
+
+
+
+@app.post("/play/training")
+def play_training_create(
+    request: Request,
+    round_date: str = Form(...),
+    course_id: int = Form(...),
+    tee: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        return RedirectResponse(url="/play/training", status_code=HTTP_303_SEE_OTHER)
+
+    d = date.fromisoformat(round_date)
+
+    # 1) Crear Round (context = training)
+    r = Round(
+        date=d,
+        course_id=course_id,
+        tee=tee,
+        context="training",
+        type="training",
+        league_id=None,
+    )
+    db.add(r)
+    db.commit()
+    db.refresh(r)
+
+    # 2) Calcular handicap (por ahora solo slope_yellow)
+    hcp_exact_day = float(player.hcp_exact)
+    ch = course_handicap(hcp_exact_day, course.slope_yellow)
+
+    # 3) Generar token + RoundPlayer
+    token = secrets.token_urlsafe(32)
+
+    rp = RoundPlayer(
+        round_id=r.id,
+        player_id=player.id,
+        hcp_exact_day=hcp_exact_day,
+        course_handicap=ch,
+        edit_token=token,
+        token_created_at=datetime.utcnow(),
+        player_card_locked=False,
+    )
+    db.add(rp)
+    db.commit()
+    db.refresh(rp)
+
+    # 4) Redirect al LIVE card
+    return RedirectResponse(
+        url=f"/public/live/round/{r.id}/card?token={rp.edit_token}",
+        status_code=HTTP_303_SEE_OTHER
+    )
+
+from fastapi import HTTPException
+from starlette.status import HTTP_303_SEE_OTHER
+from starlette.status import HTTP_303_SEE_OTHER
+
+@app.post("/play/training/{round_id}/cancel")
+def play_training_cancel(
+    round_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    rp = (
+        db.query(RoundPlayer)
+        .join(Round)
+        .filter(
+            RoundPlayer.round_id == round_id,
+            RoundPlayer.player_id == player.id,
+            Round.context == "training",
+            RoundPlayer.player_card_locked == False,
+        )
+        .first()
+    )
+
+    if rp:
+        rp.player_card_locked = True
+        db.commit()
+
+    return RedirectResponse(url="/play", status_code=HTTP_303_SEE_OTHER)
 
 
 # ======================================================================================
@@ -3988,3 +4750,57 @@ def public_stats(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+#_______________________________________________________________________________________
+# MANTENIMIENTO ENDPOINT PARA CERRAR TODAS LAS RONDAS ANTIGUAS EN RENDER
+#_______________________________________________________________________________________
+
+from datetime import datetime, time
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
+
+@app.post("/admin/maintenance/backfill_closed_at_locked")
+def admin_backfill_closed_at_locked(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    # Si tienes flag admin, valida aquí.
+    # if not user.is_admin:
+    #     return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
+
+    rounds = db.query(models.Round).filter(models.Round.closed_at.is_(None)).all()
+
+    updated = 0
+    skipped_no_players = 0
+    skipped_not_all_locked = 0
+
+    for r in rounds:
+        rps = db.query(models.RoundPlayer).filter(models.RoundPlayer.round_id == r.id).all()
+        if not rps:
+            skipped_no_players += 1
+            continue
+
+        all_locked = all(rp.player_card_locked for rp in rps)
+        if not all_locked:
+            skipped_not_all_locked += 1
+            continue
+
+        # Solo marcamos closed_at. Usamos fecha de la ronda si existe, si no, "ahora".
+        if getattr(r, "date", None):
+            r.closed_at = datetime.combine(r.date, time.min)
+        else:
+            r.closed_at = datetime.utcnow()
+
+        updated += 1
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "updated": updated,
+        "skipped_no_players": skipped_no_players,
+        "skipped_not_all_locked": skipped_not_all_locked,
+    }
+

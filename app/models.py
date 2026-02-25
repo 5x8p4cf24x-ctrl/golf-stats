@@ -1,9 +1,11 @@
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from .db import Base
 from datetime import datetime
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy.sql import func
+
+
 
 
 class Player(Base):
@@ -22,6 +24,14 @@ class Player(Base):
 
     rounds = relationship("RoundPlayer", back_populates="player")
     achievements = relationship("PlayerAchievement", back_populates="player")
+
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)
+
+    user = relationship(
+        "User",
+        backref=backref("player", uselist=False),
+        uselist=False,
+    )
 
 
 class Course(Base):
@@ -54,17 +64,18 @@ class Round(Base):
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
     tee = Column(String, nullable=False, default="yellow")
     type = Column(String, nullable=False, default="amistosa")
+    context = Column(String(16), nullable=False, default="friendly")
 
-    # ✅ FK a leagues
     league_id = Column(Integer, ForeignKey("leagues.id"), nullable=True)
     league = relationship("League", back_populates="rounds")
 
-    winner_type = Column(String, nullable=True)  # single/tie
-    winner_player_ids = Column(String, nullable=True)  # "1,3"
+    winner_type = Column(String, nullable=True)
+    winner_player_ids = Column(String, nullable=True)
+
+    # ✅ NUEVO
+    closed_at = Column(DateTime, nullable=True)
 
     course = relationship("Course", back_populates="rounds")
-
-    # ✅ nombre consistente con el resto del proyecto
     round_players = relationship("RoundPlayer", back_populates="round")
 
 
@@ -289,3 +300,18 @@ class TournamentMatchHole(Base):
 
     match = relationship("TournamentMatch", back_populates="hole_results")
 
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(64), unique=True, index=True, nullable=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(20), nullable=False, default="player")
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # ✅ Reset password (nuevo)
+    reset_token = Column(String(128), nullable=True, index=True)
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)

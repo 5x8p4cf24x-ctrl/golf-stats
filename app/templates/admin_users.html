@@ -1,0 +1,210 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin · Usuarios{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead">
+    <h1 class="admin-title">Usuarios</h1>
+    <p class="admin-subtitle">Gestiona accesos y vinculación con jugadores.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Usuarios", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+{# ✅ Aviso cuando se envía el enlace #}
+{% if request.query_params.get('reset_sent') == '1' %}
+<section class="card card--spaced" style="border:1px solid rgba(34,197,94,.35); background:rgba(34,197,94,.08);">
+  <strong style="color:#14532d;">✅ Enlace enviado.</strong>
+  <span style="color:rgba(0,0,0,.7);">Si el usuario tenía un email válido, lo recibirá en unos segundos.</span>
+</section>
+{% endif %}
+
+{% if last_created_creds %}
+<section class="card card--spaced" style="border:1px solid rgba(20,83,45,.25);">
+  <h2 style="margin:0 0 6px 0;">Credenciales creadas</h2>
+  <p style="margin:0 0 10px 0; color:rgba(0,0,0,.7);">
+    Copia y envía al jugador (solo se muestra una vez).
+  </p>
+
+  <div style="display:grid; gap:8px;">
+    <div><strong>Usuario:</strong> <span id="cc_user">{{ last_created_creds.username }}</span></div>
+    <div><strong>Email:</strong> <span id="cc_email">{{ last_created_creds.email }}</span></div>
+    <div><strong>Password:</strong> <span id="cc_pass">{{ last_created_creds.password }}</span></div>
+  </div>
+
+  <button type="button"
+          onclick="copyCreds()"
+          style="margin-top:12px;padding:10px 14px;border-radius:12px;border:0;background:#14532d;color:#fff;font-weight:800;">
+    Copiar credenciales
+  </button>
+
+  <script>
+    function copyCreds(){
+      const u = document.getElementById('cc_user').innerText;
+      const e = document.getElementById('cc_email').innerText;
+      const p = document.getElementById('cc_pass').innerText;
+      const text = `Usuario: ${u}\nEmail: ${e}\nPassword: ${p}`;
+      navigator.clipboard.writeText(text);
+    }
+  </script>
+</section>
+{% endif %}
+
+<section class="card card--spaced">
+  <h2 style="margin:0 0 10px 0;">Crear usuario</h2>
+
+  {% if request.query_params.get('err') == 'user_exists' %}
+    <p style="margin:0 0 10px;color:#b91c1c;font-weight:700;">Ese username ya existe.</p>
+  {% elif request.query_params.get('err') == 'email_exists' %}
+    <p style="margin:0 0 10px;color:#b91c1c;font-weight:700;">Ese email ya existe.</p>
+  {% endif %}
+
+  <form method="post" action="/admin/users/create"
+        style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:10px; align-items:end;">
+
+    <div>
+      <label style="display:block; margin:0 0 6px;">Username</label>
+      <input name="username" required
+             style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(0,0,0,.12);">
+    </div>
+
+    <div>
+      <label style="display:block; margin:0 0 6px;">Email</label>
+      <input name="email" type="email" required
+             style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(0,0,0,.12);">
+    </div>
+
+    <div>
+      <label style="display:block; margin:0 0 6px;">Password (temporal)</label>
+      <input name="password" type="password" required
+             style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(0,0,0,.12);">
+    </div>
+
+    <button type="submit" class="btn btn--primary"
+            style="padding:10px 14px; border-radius:12px;">
+      Crear
+    </button>
+  </form>
+</section>
+
+<section class="card card--spaced">
+  <h2 style="margin:0 0 10px 0;">Vincular usuario a jugador</h2>
+
+  <form method="post" action="/admin/users/link"
+        style="display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; align-items:end;">
+
+    <div>
+      <label style="display:block; margin:0 0 6px;">Usuario</label>
+      <select name="user_id" required
+              style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(0,0,0,.12);">
+        {% for u in users %}
+          <option value="{{ u.id }}">
+            {{ (u.username or u.email) }} · {{ u.role }}
+            {% if linked_players.get(u.id) %} · ({{ linked_players.get(u.id) }}){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="display:block; margin:0 0 6px;">Jugador (sin usuario)</label>
+      <select name="player_id" required
+              style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(0,0,0,.12);">
+        {% for p in players_free %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn--primary"
+            style="padding:10px 14px; border-radius:12px;">
+      Vincular
+    </button>
+  </form>
+
+  {% if players_free|length == 0 %}
+    <p style="margin:12px 0 0; color:rgba(0,0,0,.6);">No hay jugadores libres para vincular.</p>
+  {% endif %}
+</section>
+
+
+<section class="card card--spaced">
+  <h2 style="margin:0 0 10px 0;">Listado de usuarios</h2>
+
+  <div style="overflow:auto;">
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="text-align:left;">
+          <th style="padding:10px; border-bottom:1px solid rgba(0,0,0,.10);">Usuario</th>
+          <th style="padding:10px; border-bottom:1px solid rgba(0,0,0,.10);">Email</th>
+          <th style="padding:10px; border-bottom:1px solid rgba(0,0,0,.10);">Rol</th>
+          <th style="padding:10px; border-bottom:1px solid rgba(0,0,0,.10);">Jugador</th>
+          <th style="padding:10px; border-bottom:1px solid rgba(0,0,0,.10);">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid rgba(0,0,0,.06);">
+            {{ u.username or "—" }}
+          </td>
+          <td style="padding:10px; border-bottom:1px solid rgba(0,0,0,.06);">
+            {{ u.email }}
+          </td>
+          <td style="padding:10px; border-bottom:1px solid rgba(0,0,0,.06);">
+            {{ u.role }}
+          </td>
+          <td style="padding:10px; border-bottom:1px solid rgba(0,0,0,.06);">
+            {{ linked_players.get(u.id) or "—" }}
+          </td>
+          <td style="padding:10px; border-bottom:1px solid rgba(0,0,0,.06);">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+
+              <!-- ✅ Enviar enlace (nuevo flujo pro) -->
+              <form method="post" action="/admin/users/send_reset_link" style="margin:0; display:inline;">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <button type="submit"
+                        style="padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:#fff;font-weight:700;">
+                  Enviar enlace
+                </button>
+              </form>
+
+              <!-- modificar email -->
+              <form method="post" action="/admin/users/update_email" style="margin:0; display:flex; gap:6px; flex-wrap:wrap;">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <input name="email" value="{{ u.email }}" type="email"
+                        style="padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);min-width:220px;">
+                <button type="submit"
+                        style="padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:#fff;font-weight:700;">
+                    Guardar email
+                </button>
+              </form>
+
+              <!-- Unlink solo si hay jugador vinculado -->
+              {% if linked_players.get(u.id) %}
+                <form method="post" action="/admin/users/unlink" style="margin:0; display:inline;">
+                  <input type="hidden" name="user_id" value="{{ u.id }}">
+                  <button type="submit"
+                          style="padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:#fff;font-weight:700;">
+                    Desvincular
+                  </button>
+                </form>
+              {% endif %}
+
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,280 @@
+{% extends "public_base.html" %}
+{% block title %}Partidos · Golf Mode{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Jugar", "url":"/play"},
+    {"label":"Partidos", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+<section class="matches-wrap">
+
+  <header class="matches-head">
+    <h1 class="matches-title">Partidos</h1>
+    <p class="matches-sub">Rondas creadas por el administrador.</p>
+  </header>
+
+  {% if not open_matches %}
+    <div class="empty card">
+      <div class="empty-title">No tienes partidos</div>
+      <div class="empty-sub">Cuando el admin cree un partido, aparecerá aquí.</div>
+      <a class="btn btn--primary" href="/play">Volver a Jugar</a>
+    </div>
+  {% else %}
+    <div class="matches-list">
+      {% for item in open_matches %}
+        {% set rp = item.rp %}
+        {% set r = item.round %}
+        {% set status = item.status %}
+
+        {# ✅ Link: finished -> resumen público | resto -> live #}
+        {% if status == "finished" %}
+          {% set href = "/public/rounds/" ~ r.id %}
+        {% else %}
+          {% set href = "/public/live/round/" ~ r.id ~ "/card" %}
+        {% endif %}
+
+        <a class="match-card"
+           href="{{ href }}"
+           aria-label="Abrir partido del {{ r.date.strftime('%d/%m/%Y') }}">
+
+          <div class="match-left">
+            <div class="course-logo">
+              <span class="logo-fallback">{{ (r.course.name[:1] if r.course and r.course.name else "G") }}</span>
+            </div>
+
+            <div class="match-info">
+              <div class="match-date">{{ r.date.strftime("%Y-%m-%d") }}</div>
+              <div class="match-course">{{ r.course.name }}</div>
+
+              <div class="match-player">
+                {% if r.round_players %}
+                  {% set names = [] %}
+                  {% for x in r.round_players %}
+                    {% if x.player %}
+                      {% set _ = names.append(x.player.name) %}
+                    {% endif %}
+                  {% endfor %}
+                  {{ names | join(" · ") }}
+                {% else %}
+                  {{ player.name }}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="match-right">
+            <div class="pill-stack">
+
+              {# ✅ Si está finalizada por admin, mostramos SOLO Finalizada #}
+              {% if status == "finished" %}
+                <span class="pill pill--finished">🏁 Finalizada</span>
+
+              {% else %}
+                {# Tipo #}
+                {% if r.context == "league" or r.league_id %}
+                  <span class="pill pill--league">Liga</span>
+                {% else %}
+                  <span class="pill pill--friendly">Amistosa</span>
+                {% endif %}
+
+                {# Estado tarjeta del jugador #}
+                {% if status == "pending" %}
+                  <span class="pill pill--pending">Pendiente</span>
+                {% else %}
+                  <span class="pill pill--sent">Enviada</span>
+                {% endif %}
+              {% endif %}
+
+            </div>
+          </div>
+
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</section>
+
+<style>
+  :root{
+    --gm-green:#14532d;
+    --gm-border:rgba(0,0,0,.10);
+    --gm-muted:#64748b;
+    --gm-card:#fff;
+  }
+
+  .matches-wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 14px 12px 26px;
+  }
+
+  .matches-head{ margin: 8px 0 14px; }
+  .matches-title{
+    margin:0;
+    font-size: 26px;
+    line-height: 1.1;
+    color:#0f172a;
+  }
+  .matches-sub{
+    margin: 6px 0 0;
+    color: var(--gm-muted);
+  }
+
+  .matches-list{ display:flex; flex-direction:column; gap:12px; }
+
+  .match-card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 14px;
+
+    background: var(--gm-card);
+    border: 1px solid var(--gm-border);
+    border-radius: 18px;
+    padding: 14px;
+
+    text-decoration:none;
+    color: inherit;
+    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  }
+
+  .match-left{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .course-logo{
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    border: 1px solid rgba(20,83,45,.35);
+    background: rgba(20,83,45,.06);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .logo-fallback{
+    font-weight: 900;
+    color: var(--gm-green);
+  }
+
+  .match-info{ min-width:0; }
+  .match-date{
+    font-weight: 900;
+    color: var(--gm-green);
+    letter-spacing: .03em;
+    font-size: 14px;
+  }
+  .match-course{
+    margin-top: 2px;
+    font-weight: 900;
+    color:#0f172a;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    max-width: 62vw;
+  }
+  .match-player{
+    margin-top: 2px;
+    color: var(--gm-muted);
+    font-size: 14px;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    max-width: 62vw;
+  }
+
+  .match-right{ flex-shrink:0; }
+
+  .pill-stack{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    align-items:flex-end;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 13px;
+    border: 1px solid rgba(0,0,0,.10);
+    background: rgba(0,0,0,.03);
+    color:#0f172a;
+    white-space: nowrap;
+  }
+
+  .pill--league{
+    background: rgba(34,197,94,.12);
+    border-color: rgba(34,197,94,.30);
+    color: #14532d;
+  }
+
+  .pill--friendly{
+    background: rgba(148,163,184,.18);
+    border-color: rgba(148,163,184,.35);
+    color: #0f172a;
+  }
+
+  .pill--pending{
+    background: rgba(245,158,11,.12);
+    border-color: rgba(245,158,11,.30);
+    color: #92400e;
+  }
+
+  .pill--sent{
+    background: rgba(96,165,250,.12);
+    border-color: rgba(96,165,250,.30);
+    color: #1e3a8a;
+  }
+
+  .pill--finished{
+    background: rgba(20,83,45,.10);
+    border-color: rgba(20,83,45,.28);
+    color: #14532d;
+  }
+
+  /* Empty state */
+  .card{
+    background: var(--gm-card);
+    border: 1px solid var(--gm-border);
+    border-radius: 18px;
+    padding: 16px;
+  }
+  .empty-title{ font-weight: 900; color:#0f172a; }
+  .empty-sub{ margin-top:6px; color: var(--gm-muted); }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-top: 12px;
+    border:0;
+    border-radius:14px;
+    padding: 10px 12px;
+    font-weight: 900;
+    text-decoration:none;
+    background: var(--gm-green);
+    color:#fff;
+    min-width: 160px;
+  }
+  .btn.btn--primary,
+  .btn--primary:link,
+  .btn--primary:visited {
+    background: var(--gm-green);
+    color: #fff !important;
+  }
+</style>
+{% endblock %}

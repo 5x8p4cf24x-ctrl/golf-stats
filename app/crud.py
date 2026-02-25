@@ -117,16 +117,14 @@ def upsert_holes_for_course(db: Session, course_id: int, holes_data):
 
     db.commit()
 
-from datetime import date
-from .golf_calc import course_handicap, strokes_received_per_hole, stableford_points
-
-
 
 
 #---------------------------------------------------------------------------------
 # ------------------------------------- Rounds ------------------------------------
 # --------------------------------------------------------------------------------
 
+from datetime import date
+from .golf_calc import course_handicap, strokes_received_per_hole, stableford_points
 
 
 def create_round(db, round_date, course_id, tee, round_type, player_ids, league_id=None):
@@ -534,6 +532,20 @@ def save_card_for_round_player(db, rp: models.RoundPlayer, holes, gross_by_hole,
 
 def close_round_and_set_winner(db, round_id: int):
     r = get_round(db, round_id)
+
+    # ✅ Si es entrenamiento, NO hay winner ni result
+    if r and getattr(r, "context", None) == "training":
+        r.winner_type = None
+        r.winner_player_ids = None
+
+        # muy importante: borrar resultados previos por si acaso
+        rps = get_round_players(db, round_id)
+        for rp in rps:
+            rp.result = None
+
+        db.commit()
+        return
+
     rps = get_round_players(db, round_id)
 
     max_pts = max(rp.stableford_hcp_total for rp in rps if rp.stableford_hcp_total is not None)
@@ -551,6 +563,7 @@ def close_round_and_set_winner(db, round_id: int):
             rp.result = "tie" if rp in winners else "loss"
 
     db.commit()
+
 def get_leagues(db: Session, only_open: bool = False):
     q = db.query(models.League)
     if only_open:

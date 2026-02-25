@@ -1,0 +1,44 @@
+{% if request.session.get("user_id") and player %}
+
+  {# --- normaliza src de foto --- #}
+  {% set p = (player.photo_url or '') %}
+  {% if p.startswith('http') %}
+    {% set src = p %}
+  {% elif p.startswith('/uploads/') or p.startswith('/static/') %}
+    {% set src = p %}
+  {% elif p.startswith('uploads/') %}
+    {% set src = '/' + p %}
+  {% elif p.startswith('players/') %}
+    {% set src = '/uploads/' + p %}
+  {% elif p %}
+    {# fallback: si viene sin carpeta #}
+    {% set src = '/uploads/players/' + p.lstrip('/') %}
+  {% else %}
+    {% set src = '' %}
+  {% endif %}
+
+  <div class="gm-sessionstrip">
+    <div class="gm-sessionstrip-inner">
+        <div class="gm-wrap">
+            <div class="gm-sessionstrip-left">
+                {% if src %}
+                <img src="{{ src }}" class="gm-session-avatar" alt="{{ player.name }}">
+                {% else %}
+                <div class="gm-session-avatar gm-session-avatar--placeholder">
+                    {{ player.name[0] }}
+                </div>
+                {% endif %}
+
+                <div class="gm-session-meta">
+                <span class="gm-session-name">{{ player.name }}</span>
+                <span class="gm-session-dot">·</span>
+                <span class="gm-session-sub">HCP {{ "%.1f"|format(player.hcp_exact or 0) }}</span>
+                </div>
+            </div>
+
+            <a class="gm-session-cta" href="/play">PLAY</a>
+        </div>
+    </div>    
+  </div>
+
+{% endif %}

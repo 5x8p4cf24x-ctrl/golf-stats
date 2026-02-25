@@ -66,7 +66,7 @@
   <!-- LISTA DE RONDAS -->
   <section class="rounds-list">
     {% for r in rounds %}
-      <a href="/public/rounds/{{ r.id }}" class="round-item">
+      <a href="/public/rounds/{{ r.id }}{% if player %}?player_id={{ player.id }}{% endif %}" class="round-item">
 
         <div class="round-course-avatar">
           {% if r.course.logo_url %}

@@ -1,0 +1,235 @@
+{% extends "public_base.html" %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Jugar", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block title %}Jugar · Golf Mode{% endblock %}
+
+{% block content %}
+<section class="play-wrap">
+
+  {# ===================== EN CURSO (solo si hay entrenamiento abierto) ===================== #}
+  {% if open_training %}
+    <article class="card card--highlight">
+      <div class="card-top">
+        <div class="kicker">En curso</div>
+        <h2 class="card-title">Entrenamiento</h2>
+
+        <p class="card-sub">
+          {{ open_training.round.course.name }}
+          · {{ open_training.round.date.strftime("%d/%m/%Y") }}
+          {% if open_training.hole_label %} · {{ open_training.hole_label }}{% endif %}
+        </p>
+      </div>
+
+      <div class="btn-row">
+        <a class="btn btn--primary"
+          href="/public/live/round/{{ open_training.round_id }}/card?token={{ open_training.edit_token }}">
+          Continuar
+        </a>
+
+        <form method="post" action="/play/training/{{ open_training.round_id }}/cancel" style="margin:0;">
+          <button class="btn btn--danger" type="submit">Cancelar</button>
+        </form>
+      </div>
+    </article>
+  {% endif %}
+
+  {# ===================== TITULO ===================== #}
+  <header class="play-head">
+    <h1 class="play-title">Jugar</h1>
+    <p class="play-hello">Hola {{ player.name }} 👋</p>
+  </header>
+
+  {# ===================== ACCIONES ===================== #}
+  <div class="play-list">
+
+    {# ---------- ENTRENAMIENTO ---------- #}
+    <article class="card action-card">
+      <div class="action-left">
+        <h3 class="action-title">Entrenamiento</h3>
+        <p class="action-sub">Cuenta para estadísticas, no para victorias ni logros.</p>
+      </div>
+
+      <div class="action-right">
+        {% if open_training %}
+          <span class="pill pill--muted">En curso</span>
+        {% else %}
+          <a class="btn btn--primary" href="/play/training">Iniciar</a>
+        {% endif %}
+      </div>
+    </article>
+
+    {# ---------- PARTIDO ---------- #}
+    <a class="card action-card action-card--link" href="/play/matches">
+      <div class="action-left">
+        <h3 class="action-title">Partido</h3>
+        <p class="action-sub">Aquí aparecerán tus partidos abiertos.</p>
+      </div>
+
+      <div class="action-right">
+        {% if open_matches_count and open_matches_count > 0 %}
+          <span class="pill pill--count">{{ open_matches_count }}</span>
+        {% endif %}
+        <span class="chev">›</span>
+      </div>
+    </a>
+
+    {# ---------- COPA ---------- #}
+    <a class="card action-card action-card--link" href="/play/tournaments">
+      <div class="action-left">
+        <h3 class="action-title">Copa</h3>
+        <p class="action-sub">Cruces pendientes de torneos activos.</p>
+      </div>
+
+      <div class="action-right">
+        {% if open_cups_count and open_cups_count > 0 %}
+          <span class="pill pill--count">{{ open_cups_count }}</span>
+        {% endif %}
+        <span class="chev">›</span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<style>
+  :root{
+    --gm-green:#14532d;
+    --gm-border:rgba(0,0,0,.10);
+    --gm-muted:#6b7280;
+    --gm-card:#fff;
+    --gm-danger:#b91c1c;
+  }
+
+  .play-wrap{
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 14px 12px 22px;
+  }
+
+  .play-head{ margin-top: 10px; }
+  .play-title{
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    color: #0f172a;
+  }
+  .play-hello{
+    margin: 6px 0 0;
+    color: var(--gm-muted);
+  }
+
+  .play-list{ display:flex; flex-direction:column; gap:12px; }
+
+  .card{
+    background: var(--gm-card);
+    border: 1px solid var(--gm-border);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  }
+
+  .card--highlight{
+    border-color: rgba(20,83,45,.25);
+    background: rgba(20,83,45,.05);
+  }
+
+  .kicker{
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--gm-green);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .card-title{ margin:0; font-size: 18px; color:#0f172a; }
+  .card-sub{ margin:6px 0 0; color: var(--gm-muted); font-size: 14px; }
+
+  .btn-row{
+    display:flex;
+    gap:10px;
+    margin-top: 12px;
+  }
+
+  .btn{
+    border: 0;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-weight: 900;
+    font-size: 14px;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width: 120px;
+    white-space: nowrap;
+  }
+
+  .btn.btn--primary,
+  .btn--primary:link,
+  .btn--primary:visited {
+    background: var(--gm-green);
+    color: #fff !important;
+  }
+  .btn--danger{ background: var(--gm-danger); color:#fff; }
+
+  .action-card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .action-card--link{ text-decoration:none; color:inherit; }
+
+  .action-left{ min-width:0; }
+  .action-title{ margin:0; font-size: 16px; color:#0f172a; }
+  .action-sub{ margin:6px 0 0; color: var(--gm-muted); font-size: 14px; }
+
+  .action-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 14px;
+    font-weight: 900;
+    font-size: 13px;
+  }
+  .pill--count{
+    background: rgba(0,0,0,.06);
+    color: #0f172a;
+  }
+  .pill--muted{
+    background: rgba(20,83,45,.10);
+    color: var(--gm-green);
+  }
+
+  .chev{
+    font-size: 24px;
+    color: rgba(0,0,0,.35);
+    line-height: 1;
+    margin-left: -2px;
+  }
+
+  @media (min-width: 900px){
+    .play-wrap{ padding: 18px 16px 28px; }
+    .card{ padding: 16px; }
+  }
+</style>
+{% endblock %}

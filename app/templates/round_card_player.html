@@ -21,6 +21,16 @@
 
 {% block content %}
 
+{# =========================
+   NEW: FORM SOLO PARA HCP
+   (fuera del score_form para NO anidar forms)
+   ========================= #}
+<form id="hcp_form"
+      method="post"
+      action="/admin/rounds/{{ round.id }}/player/{{ rp.id }}/hcp"
+      style="display:none;">
+</form>
+
 <form id="score_form"
       class="page-has-sticky-actions"
       method="post"
@@ -82,12 +92,24 @@
     <div class="hcp-row">
       <label for="course_handicap" class="hcp-label">HCP de juego</label>
 
+      {# NEW: este input NO pertenece al score_form, sino al hcp_form #}
       <input id="course_handicap"
              type="number"
              name="course_handicap"
              value="{{ rp.course_handicap }}"
-             class="hcp-input">
+             class="hcp-input"
+             form="hcp_form">
 
+      {# NEW: botón para guardar SOLO el HCP #}
+      <button class="btn-secondary"
+              type="submit"
+              form="hcp_form">
+        Guardar CH
+      </button>
+
+      <span class="muted" style="font-size:12px;">
+        (Esto no guarda los golpes)
+      </span>
     </div>
   </section>
 
@@ -193,8 +215,6 @@
 
 <style>
   .muted{ color: var(--muted); }
-
-  /* Aire entre secciones */
   .card--spaced{ margin-top: 18px; }
 
   .card-head{
@@ -206,17 +226,15 @@
     margin-bottom: 10px;
   }
   .card-title{ margin:0; }
-
   .hint{ margin:6px 0 0 0; font-size:13px; }
 
   .card-actions{
     display:flex;
-    gap:10px;
-    align-items:center;
-    flex-wrap:wrap;
+    gap:8px;
+    width:100%;
+    margin-top:10px;
   }
 
-  /* Estado en pill */
   .status-line{ font-size: 13px; margin-top:6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .status-pill{
     display:inline-flex;
@@ -256,7 +274,6 @@
     padding-bottom:6px;
   }
 
-  /* Barra de acciones tipo app */
   .action-bar{
     margin-top: 14px;
     display:flex;
@@ -289,14 +306,10 @@
     border-color: rgba(0,0,0,.06);
   }
 
-  /* ===== Sticky SOLO en móvil ===== */
   @media (max-width: 560px){
-
-    /* reserva espacio abajo SOLO en esta pantalla */
     .page-has-sticky-actions{
       padding-bottom: 92px;
     }
-
     .action-bar--sticky{
       position: fixed;
       left: 12px;
@@ -315,29 +328,19 @@
       gap:10px;
       justify-content:space-between;
     }
-
-    .action-bar--sticky .action-btn{
-      flex: 1;
-    }
+    .action-bar--sticky .action-btn{ flex: 1; }
   }
+
   .admin-title{
     margin:0;
     font-weight:700;
-    font-size:1.15rem;   /* antes 1.35rem */
+    font-size:1.15rem;
     line-height:1.25;
   }
   .admin-subtitle{
     margin:1;
     font-weight:400;
-    font-size:0.75rem;   /* antes 1.35rem */
-    
-  }
-  /* Botones discretos del bloque link */
-  .card-actions{
-    display:flex;
-    gap:8px;
-    width:100%;
-    margin-top:10px;
+    font-size:0.75rem;
   }
 
   .card-actions .btn-secondary,
@@ -350,29 +353,19 @@
     box-shadow:none;
   }
 
-  /* Regenerar: más neutro */
   .card-actions .btn-secondary{
     background: #f1f5f9;
     color: var(--text);
     border:1px solid var(--border);
   }
+  .card-actions .btn-secondary:hover{ background:#e5e7eb; }
 
-  .card-actions .btn-secondary:hover{
-    background:#e5e7eb;
-  }
-
-  /* Copiar: verde pero suave */
   .card-actions .btn-primary{
     background: rgba(34,197,94,.12);
     color: var(--gm-green);
     border:1px solid rgba(34,197,94,.25);
   }
-
-  .card-actions .btn-primary:hover{
-    background: rgba(34,197,94,.18);
-  }
-
-
+  .card-actions .btn-primary:hover{ background: rgba(34,197,94,.18); }
 </style>
 
 <script>
@@ -382,13 +375,11 @@
       .split(/\r?\n/)
       .map(r => r.split('\t').map(c => c.trim()));
   }
-
   function flattenGrid(grid) {
     const flat = [];
     for (const row of grid) for (const cell of row) flat.push(cell);
     return flat.filter(v => v !== "");
   }
-
   function toBool(v) {
     const s = String(v).trim().toLowerCase();
     return ["1","true","t","x","si","sí","s","y","yes","ok"].includes(s);
