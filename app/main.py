@@ -4246,7 +4246,8 @@ def play_home(
         .filter(
             Round.context == "training",
             RoundPlayer.player_id == player.id,
-            RoundPlayer.player_card_locked == False
+            RoundPlayer.player_card_locked == False,
+            Round.is_cancelled == False,
         )
         .order_by(Round.id.desc())
         .first()
