@@ -4296,11 +4296,19 @@ def play_training_form(
 
 # ___________________________________ Play Matches _____________________________________
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session, joinedload
 from fastapi import Depends, Request
+from fastapi.responses import HTMLResponse
 from starlette.responses import RedirectResponse
 from starlette.templating import Jinja2Templates
+
+def _as_aware_utc(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 @app.get("/play/matches", response_class=HTMLResponse)
 def play_matches(
@@ -4309,7 +4317,7 @@ def play_matches(
     user: User = Depends(get_current_user),
     player: Player = Depends(get_current_player),
 ):
-    cutoff = datetime.utcnow() - timedelta(hours=24)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
 
     my_rps = (
         db.query(RoundPlayer)
@@ -4335,27 +4343,23 @@ def play_matches(
         if not r:
             continue
 
-        # Estado real
-        all_locked = all(x.player_card_locked for x in (r.round_players or []))
-        closed_at = getattr(r, "closed_at", None)
+        closed_at = _as_aware_utc(getattr(r, "closed_at", None))
 
         # ✅ LA ÚNICA VERDAD: cerrada solo si closed_at existe
         is_closed = (closed_at is not None)
 
-        
         if is_closed:
             # cerrada por admin -> aplicamos ventana 24h
             if closed_at < cutoff:
                 continue
             status = "finished"
         else:
-            # no cerrada -> pending o sent
             status = "sent" if rp.player_card_locked else "pending"
 
         open_matches.append({
             "rp": rp,
             "round": r,
-            "status": status,  # pending | sent | finished
+            "status": status,
         })
 
     return templates.TemplateResponse(
@@ -4367,6 +4371,7 @@ def play_matches(
         },
     )
 
+#__________________________ Play Tournaments ____________________________________
 
 @app.get("/play/tournaments", response_class=HTMLResponse)
 def play_tournaments(
@@ -4376,6 +4381,7 @@ def play_tournaments(
 ):
     return templates.TemplateResponse("play_tournaments.html", {"request": request, "player": player})
 
+# __________________________ Play Training __________________________________________
 
 import secrets
 from datetime import date, datetime
