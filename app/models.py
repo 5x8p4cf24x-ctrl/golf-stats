@@ -74,6 +74,7 @@ class Round(Base):
 
     # ✅ NUEVO
     closed_at = Column(DateTime, nullable=True)
+    is_cancelled = Column(Boolean, nullable=False, default=False)  # <-- AÑADIR
 
     course = relationship("Course", back_populates="rounds")
     round_players = relationship("RoundPlayer", back_populates="round")
