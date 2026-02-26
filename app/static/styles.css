@@ -1661,6 +1661,46 @@ body.is-menu-open{
   }
 }
 
+/* =========================================================
+   FORZAR NAV MÓVIL EN DISPOSITIVOS TÁCTILES (portrait+landscape)
+   ========================================================= */
+@media (hover: none) and (pointer: coarse){
+
+  /* Ocultamos el menú desktop siempre en táctil */
+  .gm-topnav{
+    display: none !important;
+  }
+
+  /* Mostramos burger siempre en táctil */
+  .gm-burger{
+    display: inline-flex !important;
+  }
+
+  /* Activamos layout de topbar móvil siempre en táctil */
+  .gm-topbar-inner{
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center !important;
+  }
+
+  .gm-brand{
+    grid-column: 2 !important;
+    justify-self: center !important;
+  }
+
+  .gm-burger{
+    grid-column: 3 !important;
+    justify-self: end !important;
+  }
+
+  /* El sheet del menú móvil debe poder existir también en landscape */
+  .gm-mobile-menu{
+    position: absolute;
+    top: 72px;
+    left: 10px;
+    right: 10px;
+  }
+}
 
 
 /* ============================================================================== */
@@ -4143,7 +4183,8 @@ main.gm-wrap.player-profile-page{
 }
 
 /* Móvil */
-@media (max-width: 900px){
+/* MÓVIL REAL (táctil): portrait + landscape */
+@media (hover: none) and (pointer: coarse){
   .summary-round-wrapper{
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -4264,8 +4305,8 @@ main.gm-wrap.player-profile-page{
   width: 100%;
 }
 
-/* Móvil: scroll horizontal */
-@media (max-width: 900px){
+/* MÓVIL REAL (táctil): portrait + landscape */
+@media (hover: none) and (pointer: coarse){
   .summary-table-wrapper.summary-league-wrapper{
     overflow-x: auto;
     overflow-y: hidden;
@@ -4273,7 +4314,7 @@ main.gm-wrap.player-profile-page{
   }
 
   .summary-table-wrapper.summary-league-wrapper .summary-league-table{
-    width: max-content;   /* ✅ solo móvil */
+    width: max-content;   /* ✅ solo táctil */
     min-width: 980px;     /* ✅ fuerza overflow */
   }
 
