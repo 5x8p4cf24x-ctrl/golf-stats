@@ -195,6 +195,7 @@ class AdminGuardMiddleware(BaseHTTPMiddleware):
 class PlayerInjectMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request.state.player = None
+        request.state.is_admin = False  # ✅ nuevo
 
         # en login/logout no hace falta tocar DB
         if request.url.path in ("/login", "/logout"):
@@ -211,6 +212,7 @@ class PlayerInjectMiddleware(BaseHTTPMiddleware):
                 )
                 if user:
                     request.state.player = user.player  # 1:1 o None
+                    request.state.is_admin = (user.role == "admin")  # ✅ nuevo
             finally:
                 db.close()
 
@@ -4765,6 +4767,87 @@ def public_stats(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+# ===============================
+# MI CUENTA (/account)
+# ===============================
+import os
+import uuid
+from fastapi import Form, UploadFile, File
+from starlette.responses import RedirectResponse
+from starlette.status import HTTP_303_SEE_OTHER
+
+from app.auth.security import hash_password, verify_password
+
+
+@app.get("/account", response_class=HTMLResponse)
+def account_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    return templates.TemplateResponse(
+        "account.html",
+        {"request": request, "user": user, "player": player},
+    )
+
+
+@app.post("/account/profile")
+async def account_profile_update(
+    request: Request,
+    nickname: str = Form(default=""),
+    photo: UploadFile | None = File(default=None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    # 1) nickname
+    player.nickname = (nickname or "").strip() or None
+
+    # 2) foto (opcional)
+    if photo and photo.filename:
+        upload_dir = os.path.join("uploads", "players")
+        os.makedirs(upload_dir, exist_ok=True)
+
+        ext = os.path.splitext(photo.filename)[1].lower()
+        if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+            return RedirectResponse(url="/account?err=bad_image", status_code=HTTP_303_SEE_OTHER)
+
+        fname = f"p{player.id}_{uuid.uuid4().hex}{ext}"
+        path = os.path.join(upload_dir, fname)
+
+        content = await photo.read()
+        with open(path, "wb") as f:
+            f.write(content)
+
+        # guardamos ruta relativa
+        player.photo_url = f"players/{fname}"
+
+    db.commit()
+    return RedirectResponse(url="/account?ok=profile", status_code=HTTP_303_SEE_OTHER)
+
+
+@app.post("/account/password")
+def account_change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password1: str = Form(...),
+    new_password2: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    if not verify_password(current_password, user.password_hash):
+        return RedirectResponse(url="/account?err=bad_current", status_code=HTTP_303_SEE_OTHER)
+
+    if new_password1 != new_password2:
+        return RedirectResponse(url="/account?err=nomatch", status_code=HTTP_303_SEE_OTHER)
+
+    if len(new_password1) < 8:
+        return RedirectResponse(url="/account?err=short", status_code=HTTP_303_SEE_OTHER)
+
+    user.password_hash = hash_password(new_password1)
+    db.commit()
+    return RedirectResponse(url="/account?ok=pass", status_code=HTTP_303_SEE_OTHER)
 
 
 #_______________________________________________________________________________________

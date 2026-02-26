@@ -1044,19 +1044,143 @@ body.gm-body{ padding-top: 78px; }
 }
 
 .gm-session-cta{
-  padding: 5px 12px;
-  border-radius: 999px;
-  background:#14532d;
-  color:#fff !important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:40px;
+  padding:0 22px;
+  border-radius:12px;
+
+  background: rgba(20,83,45,.08);
+  border: 1px solid rgba(20,83,45,.22);
+
+  color:#14532d;
+  font-weight:900;
+  font-size:12px;
+  letter-spacing:.8px;
   text-decoration:none;
-  font-weight:800;
-  font-size:.75rem;
-  letter-spacing:.05em;
-  line-height:1;
+  transition: all .18s ease;
 }
 
 .gm-session-cta:hover{
-  filter: brightness(1.05);
+  background: rgba(20,83,45,.12);
+  border-color: rgba(20,83,45,.30);
+  transform: translateY(-1px);
+}
+
+.gm-session-cta:active{
+  transform: translateY(0);
+}
+
+.gm-session-cta.is-active{
+  background: rgba(20,83,45,.16);
+  border-color: rgba(20,83,45,.45);
+}
+
+/* ============================= */
+/* SESSION STRIP - USER MENU      */
+/* ============================= */
+
+.gm-sessionstrip-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.gm-session-user{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+
+.gm-session-userbtn{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:0;
+  background:transparent;
+  padding:6px 8px;
+  border-radius:12px;
+  cursor:pointer;
+}
+
+.gm-session-userbtn:hover{
+  background: rgba(0,0,0,.04);
+}
+
+.gm-session-userbtn:focus{
+  outline:none;
+  box-shadow: 0 0 0 3px rgba(20,83,45,.15);
+}
+
+.gm-session-caret{
+  font-size:12px;
+  opacity:.65;
+  margin-left:4px;
+}
+
+.gm-user-menu{
+  position:absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 180px;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.10);
+  border-radius:14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.10);
+  padding:6px;
+  display:none;
+  z-index: 50;
+}
+
+.gm-session-user.is-open .gm-user-menu{
+  display:block;
+}
+
+.gm-user-menu-item{
+  display:block;
+  padding:10px 10px;
+  border-radius:12px;
+  text-decoration:none;
+  color: rgba(0,0,0,.85);
+  font-weight:700;
+  font-size:13px;
+}
+
+.gm-user-menu-item:hover{
+  background: rgba(20,83,45,.08);
+  color:#14532d;
+}
+
+.gm-user-menu-item--danger{
+  color:#991b1b;
+}
+
+.gm-user-menu-item--danger:hover{
+  background: rgba(153,27,27,.08);
+}
+
+/* ============================================================================== */
+/* ============================== /ACCOUNT  ==================================== */
+/* ============================================================================== */
+
+.gm-form{
+  display:grid;
+  gap:12px;
+  width:100%;
+  max-width:520px;
+}
+
+@media (max-width: 520px){
+  .gm-form{ max-width:100%; }
+  .gm-form input[type="text"],
+  .gm-form input[type="password"],
+  .gm-form input[type="email"],
+  .gm-form input[type="file"],
+  .gm-form button{
+    width:100%;
+  }
 }
 
 /* ============================================================================== */

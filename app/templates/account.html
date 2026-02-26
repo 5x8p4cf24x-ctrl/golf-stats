@@ -1,0 +1,95 @@
+{% extends "public_base.html" %}
+{% block title %}Mi cuenta{% endblock %}
+
+{% block content %}
+<section class="gm-wrap" style="max-width:760px;margin:18px auto;">
+
+  {# Breadcrumbs #}
+  {% set crumbs = [
+    {"label":"Inicio", "url":"/public"},
+    {"label":"Mi cuenta", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+
+  <header class="card card--spaced" style="margin-bottom:14px;">
+    <h1 style="margin:0 0 6px 0;">Mi cuenta</h1>
+    <p style="margin:0;color:rgba(0,0,0,.65);">Perfil y seguridad.</p>
+  </header>
+
+  {% set ok = request.query_params.get('ok') %}
+  {% set err = request.query_params.get('err') %}
+
+  {% if ok %}
+    <div class="card card--spaced" style="border:1px solid rgba(20,83,45,.25); background:rgba(20,83,45,.06); margin-bottom:14px;">
+      {% if ok == 'profile' %}<strong>✅ Perfil actualizado.</strong>{% endif %}
+      {% if ok == 'pass' %}<strong>✅ Contraseña cambiada.</strong>{% endif %}
+    </div>
+  {% endif %}
+
+  {% if err %}
+    <div class="card card--spaced" style="border:1px solid rgba(185,28,28,.25); background:rgba(185,28,28,.06); margin-bottom:14px;">
+      {% if err == 'bad_current' %}<strong>❌ La contraseña actual no es correcta.</strong>{% endif %}
+      {% if err == 'nomatch' %}<strong>❌ Las nuevas contraseñas no coinciden.</strong>{% endif %}
+      {% if err == 'short' %}<strong>❌ La nueva contraseña debe tener mínimo 8 caracteres.</strong>{% endif %}
+      {% if err == 'bad_image' %}<strong>❌ Imagen no válida. Usa JPG/PNG/WEBP.</strong>{% endif %}
+    </div>
+  {% endif %}
+
+  <!-- PERFIL -->
+  <section class="card card--spaced" style="margin-bottom:14px;">
+    <h2 style="margin:0 0 10px 0;">Perfil</h2>
+
+    <form method="post" action="/account/profile" enctype="multipart/form-data" class="gm-form">
+      <div>
+        <label style="display:block; margin:0 0 6px; font-weight:800;">Apodo</label>
+        <input name="nickname" value="{{ player.nickname or '' }}"
+               style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+      </div>
+
+      <div>
+        <label style="display:block; margin:0 0 6px; font-weight:800;">Imagen</label>
+        <input type="file" name="photo" accept="image/*" style="width:100%;">
+        <p style="margin:6px 0 0;color:rgba(0,0,0,.6);font-size:13px;">
+          JPG/PNG/WEBP. Se mostrará en tu sesión.
+        </p>
+      </div>
+
+      <button type="submit" class="btn btn--primary" style="border-radius:12px;">
+        Guardar cambios
+      </button>
+    </form>
+  </section>
+
+  <!-- SEGURIDAD -->
+  <section class="card card--spaced" style="margin-bottom:14px;">
+    <h2 style="margin:0 0 10px 0;">Seguridad</h2>
+
+    <form method="post" action="/account/password" class="gm-form">
+      <div>
+        <label style="display:block; margin:0 0 6px; font-weight:800;">Contraseña actual</label>
+        <input type="password" name="current_password" required
+               style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+      </div>
+
+      <div>
+        <label style="display:block; margin:0 0 6px; font-weight:800;">Nueva contraseña</label>
+        <input type="password" name="new_password1" required
+               style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+      </div>
+
+      <div>
+        <label style="display:block; margin:0 0 6px; font-weight:800;">Repite nueva contraseña</label>
+        <input type="password" name="new_password2" required
+               style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);">
+      </div>
+
+      <button type="submit" class="btn btn--primary" style="border-radius:12px;">
+        Cambiar contraseña
+      </button>
+    </form>
+  </section>
+
+  {# Logout fuera: ya está en el dropdown del usuario #}
+
+</section>
+{% endblock %}

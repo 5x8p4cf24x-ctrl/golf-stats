@@ -19,26 +19,79 @@
 
   <div class="gm-sessionstrip">
     <div class="gm-sessionstrip-inner">
-        <div class="gm-wrap">
-            <div class="gm-sessionstrip-left">
-                {% if src %}
-                <img src="{{ src }}" class="gm-session-avatar" alt="{{ player.name }}">
-                {% else %}
-                <div class="gm-session-avatar gm-session-avatar--placeholder">
-                    {{ player.name[0] }}
-                </div>
-                {% endif %}
+      <div class="gm-wrap gm-sessionstrip-row">
 
-                <div class="gm-session-meta">
+        <!-- Usuario + dropdown -->
+        <div class="gm-session-user" data-user-menu>
+          <button type="button" class="gm-session-userbtn" aria-haspopup="menu" aria-expanded="false">
+            <span class="gm-sessionstrip-left">
+              {% if src %}
+                <img src="{{ src }}" class="gm-session-avatar" alt="{{ player.name }}">
+              {% else %}
+                <span class="gm-session-avatar gm-session-avatar--placeholder">
+                  {{ player.name[0] }}
+                </span>
+              {% endif %}
+
+              <span class="gm-session-meta">
                 <span class="gm-session-name">{{ player.name }}</span>
                 <span class="gm-session-dot">·</span>
                 <span class="gm-session-sub">HCP {{ "%.1f"|format(player.hcp_exact or 0) }}</span>
-                </div>
-            </div>
+              </span>
+            </span>
 
-            <a class="gm-session-cta" href="/play">PLAY</a>
+            <span class="gm-session-caret" aria-hidden="true">▾</span>
+          </button>
+
+          <div class="gm-user-menu" role="menu">
+            <a class="gm-user-menu-item" href="/account" role="menuitem">Conf. Perfil</a>
+
+            {% if request.state.is_admin %}
+              <a class="gm-user-menu-item" href="/admin" role="menuitem">Ver Admin</a>
+            {% endif %}
+
+            <a class="gm-user-menu-item gm-user-menu-item--danger" href="/logout" role="menuitem">Logout</a>
+          </div>
         </div>
-    </div>    
+
+        <!-- CTA -->
+        <a class="gm-session-cta {% if request.url.path.startswith('/play') %}is-active{% endif %}" href="/play">PLAY</a>
+
+      </div>
+    </div>
   </div>
+
+  <script>
+    (function(){
+      const wrap = document.querySelector('[data-user-menu]');
+      if(!wrap) return;
+
+      const btn = wrap.querySelector('.gm-session-userbtn');
+      const menu = wrap.querySelector('.gm-user-menu');
+
+      function closeMenu(){
+        wrap.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+      function toggleMenu(){
+        const open = wrap.classList.toggle('is-open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      document.addEventListener('click', function(e){
+        if(!wrap.contains(e.target)) closeMenu();
+      });
+
+      document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape') closeMenu();
+      });
+    })();
+  </script>
 
 {% endif %}
