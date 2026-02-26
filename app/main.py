@@ -4460,20 +4460,20 @@ def play_training_cancel(
     user: User = Depends(get_current_user),
     player: Player = Depends(get_current_player),
 ):
-    rp = (
-        db.query(RoundPlayer)
-        .join(Round)
+    r = (
+        db.query(Round)
+        .join(RoundPlayer, RoundPlayer.round_id == Round.id)
         .filter(
-            RoundPlayer.round_id == round_id,
-            RoundPlayer.player_id == player.id,
+            Round.id == round_id,
             Round.context == "training",
-            RoundPlayer.player_card_locked == False,
+            Round.closed_at.is_(None),
+            RoundPlayer.player_id == player.id,
         )
         .first()
     )
 
-    if rp:
-        rp.player_card_locked = True
+    if r and not r.is_cancelled:
+        r.is_cancelled = True
         db.commit()
 
     return RedirectResponse(url="/play", status_code=HTTP_303_SEE_OTHER)
