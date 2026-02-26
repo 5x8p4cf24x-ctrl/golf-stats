@@ -159,6 +159,7 @@ def create_round(db, round_date, course_id, tee, round_type, player_ids, league_
 def get_rounds(db):
     return (
         db.query(models.Round)
+        .filter(models.Round.is_cancelled.is_(False))
         .order_by(models.Round.date.desc(), models.Round.id.desc())
         .all()
     )

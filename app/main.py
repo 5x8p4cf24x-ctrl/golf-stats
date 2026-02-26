@@ -3198,6 +3198,7 @@ def public_rounds_list(
     years_available = sorted({d.year for d in years_available}, reverse=True)
 
     q = db.query(models.Round)
+    q = q.filter(models.Round.is_cancelled.is_(False))
 
     if course_id_int:
         q = q.filter(models.Round.course_id == course_id_int)
