@@ -6037,3 +6037,14 @@ html, body{
   max-width: 100% !important;
   overflow-x: hidden !important;
 }
+
+.summary-table-wrapper.summary-round-wrapper{
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.summary-table-wrapper.summary-round-wrapper .summary-round-table{
+  width: max-content;
+  min-width: 980px;
+}
