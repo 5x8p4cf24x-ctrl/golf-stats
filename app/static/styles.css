@@ -6048,3 +6048,16 @@ html, body{
   width: max-content;
   min-width: 980px;
 }
+
+/* LIGA: scroll horizontal dentro del card (todos los móviles + landscape) */
+.summary-table-wrapper.summary-league-wrapper{
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.summary-table-wrapper.summary-league-wrapper .summary-league-table{
+  width: max-content;
+  min-width: 980px;  /* ajusta si un día cambias columnas */
+}
