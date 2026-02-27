@@ -6036,6 +6036,7 @@ html, body{
 .gm-wrap{
   max-width: 100% !important;
   overflow-x: hidden !important;
+  overflow-y: visible !important;  /* 👈 clave para dropdowns */
 }
 
 .summary-table-wrapper.summary-round-wrapper{
