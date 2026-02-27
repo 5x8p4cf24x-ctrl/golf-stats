@@ -6103,3 +6103,9 @@ html, body{
     right: 10px;
   }
 }
+/* No recortar dropdown del usuario */
+.gm-sessionstrip,
+.gm-sessionstrip-inner,
+.gm-sessionstrip-row{
+  overflow: visible !important;
+}
