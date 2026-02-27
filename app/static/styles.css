@@ -6033,7 +6033,7 @@ html, body{
   overflow-x: hidden;
 }
 
-.gm-wrap, .container, .page, .layout, .main, .content, .gm-main, .gm-container{
+.gm-wrap{
   max-width: 100% !important;
   overflow-x: hidden !important;
 }
