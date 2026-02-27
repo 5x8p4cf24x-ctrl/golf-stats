@@ -1702,30 +1702,7 @@ body.is-menu-open{
   }
 }
 
-/* Probar y luego eliminar */
 
-@media (hover: none) and (pointer: coarse){
-  body::before{
-    content:"TOUCH: coarse";
-    position: fixed; top: 0; left: 0;
-    z-index: 999999;
-    background: #000; color: #fff;
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-}
-
-@media (hover: none) and (pointer: fine){
-  body::before{
-    content:"TOUCH: fine";
-    position: fixed; top: 0; left: 0;
-    z-index: 999999;
-    background: #000; color: #fff;
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-}
-/*****************************************/
 
 /* ============================================================================== */
 /* =========================== PÁGINA DE JUGADORES ============================== */
@@ -6049,4 +6026,33 @@ body.gm-body h1.public-title{
     font-size: var(--cups-chip);
     padding: var(--cups-chip-pad-y) var(--cups-chip-pad-x);
   }
+}
+
+/* Probar y luego eliminar */
+
+@media (hover: none) and (pointer: coarse){
+  body::before{
+    content:"TOUCH: coarse";
+    position: fixed; top: 0; left: 0;
+    z-index: 999999;
+    background: #000; color: #fff;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (hover: none) and (pointer: fine){
+  body::before{
+    content:"TOUCH: fine";
+    position: fixed; top: 0; left: 0;
+    z-index: 999999;
+    background: #000; color: #fff;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+/*****************************************/
+
+html{
+  outline: 8px solid fuchsia !important;
 }
