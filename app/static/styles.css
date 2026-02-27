@@ -6028,3 +6028,12 @@ body.gm-body h1.public-title{
   }
 }
 
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.gm-wrap, .container, .page, .layout, .main, .content, .gm-main, .gm-container{
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
