@@ -6061,3 +6061,45 @@ html, body{
   width: max-content;
   min-width: 980px;  /* ajusta si un día cambias columnas */
 }
+
+/* =========================================================
+   NAV: forzar burger en móviles en HORIZONTAL (landscape)
+   Detectamos “móvil en landscape” por altura baja
+   ========================================================= */
+@media (orientation: landscape) and (max-height: 600px){
+
+  /* Oculta menú desktop */
+  .gm-topnav{
+    display: none !important;
+  }
+
+  /* Muestra burger */
+  .gm-burger{
+    display: inline-flex !important;
+  }
+
+  /* Fuerza layout de topbar en modo móvil */
+  .gm-topbar-inner{
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center !important;
+  }
+
+  .gm-brand{
+    grid-column: 2 !important;
+    justify-self: center !important;
+  }
+
+  .gm-burger{
+    grid-column: 3 !important;
+    justify-self: end !important;
+  }
+
+  /* Asegura que el desplegable exista también en landscape */
+  .gm-mobile-menu{
+    position: absolute;
+    top: 72px;
+    left: 10px;
+    right: 10px;
+  }
+}
