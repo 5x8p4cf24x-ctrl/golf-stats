@@ -42,7 +42,95 @@
     </div>
   </section>
 
-  
+  <!-- ================= RONDAS: BLOQUE LIMPIO ================= -->
+  <section class="admin-rounds-panel">
+
+    <div class="admin-rounds-head">
+      <div>
+        <div class="admin-rounds-title">Rondas</div>
+        <div class="admin-rounds-sub">Resumen por tipo</div>
+      </div>
+
+      <div class="admin-rounds-running">
+        <span>En ejecución</span>
+        <b>{{ kpi_rounds_open }}</b>
+      </div>
+    </div>
+
+    <div class="admin-rounds-cards">
+
+      <!-- ================= TRAINING ================= -->
+      <div class="admin-rounds-card">
+        <div class="admin-rounds-card-title">Training</div>
+
+        <div class="admin-rounds-metrics">
+          <div class="admin-rounds-metric admin-rounds-metric--training">
+            <span>Finalizadas</span>
+            <b>{{ rounds_kpi["Training"]["finished"] }}</b>
+          </div>
+
+          <div class="admin-rounds-metric admin-rounds-metric--training admin-rounds-metric--muted">
+            <span>Canceladas</span>
+            <b>{{ rounds_kpi["Training"]["cancelled"] }}</b>
+          </div>
+        </div>
+
+        {% if rounds_kpi["Training"]["open"] > 0 %}
+          <div class="admin-rounds-foot">
+            Abiertas: {{ rounds_kpi["Training"]["open"] }}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- ================= AMISTOSAS ================= -->
+      <div class="admin-rounds-card">
+        <div class="admin-rounds-card-title">Amistosas</div>
+
+        <div class="admin-rounds-metrics">
+          <div class="admin-rounds-metric admin-rounds-metric--amistosa">
+            <span>Finalizadas</span>
+            <b>{{ rounds_kpi["Amistosa"]["finished"] }}</b>
+          </div>
+
+          <div class="admin-rounds-metric admin-rounds-metric--amistosa admin-rounds-metric--muted">
+            <span>Canceladas</span>
+            <b>{{ rounds_kpi["Amistosa"]["cancelled"] }}</b>
+          </div>
+        </div>
+
+        {% if rounds_kpi["Amistosa"]["open"] > 0 %}
+          <div class="admin-rounds-foot">
+            Abiertas: {{ rounds_kpi["Amistosa"]["open"] }}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- ================= LIGA ================= -->
+      <div class="admin-rounds-card">
+        <div class="admin-rounds-card-title">Liga</div>
+
+        <div class="admin-rounds-metrics">
+          <div class="admin-rounds-metric admin-rounds-metric--liga">
+            <span>Finalizadas</span>
+            <b>{{ rounds_kpi["Liga"]["finished"] }}</b>
+          </div>
+
+          <div class="admin-rounds-metric admin-rounds-metric--liga admin-rounds-metric--muted">
+            <span>Canceladas</span>
+            <b>{{ rounds_kpi["Liga"]["cancelled"] }}</b>
+          </div>
+        </div>
+
+        {% if rounds_kpi["Liga"]["open"] > 0 %}
+          <div class="admin-rounds-foot">
+            Abiertas: {{ rounds_kpi["Liga"]["open"] }}
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </section>
+
   <!-- ================= GRID PRINCIPAL ================= -->
   <section class="admin-dashboard-grid">
 
@@ -73,11 +161,22 @@
 </div>
 
 <style>
-  .admin-title{
-    font-size: clamp(1.8rem, 5.6vw, 2.3rem);
+  /* =========================
+    ADMIN HOME – TYPO
+    ========================= */
+
+  /* Título (mantener 1 línea + tamaño correcto) */
+  .admin-pagehead .admin-title{
+    display:block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    font-size: clamp(1.5rem, 4.2vw, 2.2rem);
     line-height: 1.05;
     letter-spacing: -0.02em;
-    max-width: 16ch; /* ayuda a que no haga 2 líneas tan fácil */
+
+    max-width: none !important;
     margin-bottom:-06px;
   }
 
@@ -86,8 +185,12 @@
     margin-bottom:30px;
   }
 
+  .admin-pagehead{
+    width: 100%;
+  }
+
   /* =========================
-    ADMIN HOME – BASE + LOOK
+    ADMIN HOME – LAYOUT
     ========================= */
 
   .admin-dashboard{
@@ -96,7 +199,10 @@
     padding: 0 2px;
   }
 
-  /* KPI */
+  /* =========================
+    KPI
+    ========================= */
+
   .admin-dashboard-kpis{
     display:grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -129,39 +235,176 @@
     color: var(--gm-green, #14532d);
   }
 
-  /* CTA Nueva partida */
-  .admin-dashboard-primary{
+  /* =========================
+    RONDAS PANEL (COMPACTO + SUTIL + COLORES)
+    ========================= */
+
+  .admin-rounds-panel{
+    margin-top: 6px;
+    margin-bottom: 10px; /* menos scroll */
+    background:#fff;
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:14px;
+    box-shadow: 0 6px 14px rgba(0,0,0,.03);
+    padding:10px;
+  }
+
+  .admin-rounds-head{
     display:flex;
     align-items:center;
-    justify-content:center;
-    width:100%;
-    margin: 10px 0 14px;
-    padding:14px 0;
-    border-radius:14px;
-    text-decoration:none;
-    color:#fff;
+    justify-content:space-between;
+    gap:10px;
+    padding-bottom:8px;
+    border-bottom:1px solid rgba(0,0,0,.06);
+  }
+
+  .admin-rounds-title{
+    font-weight:850;
+    font-size:.95rem;
+    color:var(--gm-green,#14532d);
+    letter-spacing:-.01em;
+  }
+
+  .admin-rounds-sub{
+    font-size:.78rem;
+    color:rgba(0,0,0,.55);
+    margin-top:2px;
+  }
+
+  .admin-rounds-running{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 8px;
+    border-radius:999px;
+    background: rgba(20,83,45,.06);
+    border:1px solid rgba(20,83,45,.12);
+    color:rgba(20,83,45,.9);
+    font-weight:800;
+    font-size:.75rem;
+    white-space:nowrap;
+  }
+
+  .admin-rounds-running b{
+    background:#fff;
+    border:1px solid rgba(20,83,45,.14);
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:.85rem;
     font-weight:900;
-    letter-spacing:.02em;
-    text-transform: lowercase;
-    background: linear-gradient(180deg, rgba(20,83,45,1), rgba(16,70,38,1));
-    box-shadow: 0 10px 24px rgba(20,83,45,.18);
-    border: 1px solid rgba(255,255,255,.10);
-    transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
+    color:var(--gm-green,#14532d);
   }
 
-  .admin-dashboard-primary:hover{
-    filter: brightness(1.03);
-    box-shadow: 0 12px 28px rgba(20,83,45,.22);
+  .admin-rounds-cards{
+    margin-top:10px;
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:8px;
   }
 
-  .admin-dashboard-primary:active{
-    transform: translateY(1px);
+  .admin-rounds-card{
+    border-radius:12px;
+    padding:8px;
+    border:1px solid rgba(0,0,0,.06);
+    background: rgba(0,0,0,.02);
   }
 
-  /* Grid tiles */
+  .admin-rounds-card-title{
+    font-weight:850;
+    font-size:.88rem;
+    margin-bottom:8px;
+  }
+
+  .admin-rounds-metrics{
+    display:grid;
+    gap:6px;
+  }
+
+  .admin-rounds-metric{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:10px;
+    padding:6px 8px;
+    border-radius:10px;
+    background:#fff;
+    border:1px solid rgba(0,0,0,.06);
+  }
+
+  .admin-rounds-metric span{
+    font-size:.70rem;
+    letter-spacing:.08em;
+    text-transform: uppercase;
+    color:rgba(0,0,0,.55);
+    font-weight:800;
+  }
+
+  .admin-rounds-metric b{
+    font-weight:900;
+    font-size:.95rem;
+    color:var(--gm-green,#14532d);
+  }
+
+  .admin-rounds-metric--muted{
+    background: rgba(0,0,0,.03);
+  }
+
+  .admin-rounds-foot{
+    margin-top:6px;
+    font-size:.78rem;
+    color:rgba(0,0,0,.58);
+  }
+
+  /* Cards siempre blancas */
+  .admin-rounds-card{
+    background:#fff;
+    border:1px solid rgba(0,0,0,.06);
+    box-shadow: 0 6px 14px rgba(0,0,0,.02);
+  }
+
+  /* ====== Colores en "pestañas" (métricas) ====== */
+
+  /* LIGA */
+  .admin-rounds-metric--liga{
+    background: #dcfce7;
+    border: 1px solid #86efac;
+  }
+  .admin-rounds-metric--liga span{ color: rgba(21,128,61,.85); }
+  .admin-rounds-metric--liga b{ color: #15803d; }
+
+  /* AMISTOSA */
+  .admin-rounds-metric--amistosa{
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+  }
+  .admin-rounds-metric--amistosa span{ color: rgba(51,65,85,.85); }
+  .admin-rounds-metric--amistosa b{ color: #334155; }
+
+  /* TRAINING */
+  .admin-rounds-metric--training{
+    background: #ffe9c1;
+    border: 1px solid #f8b762;
+  }
+  .admin-rounds-metric--training span{ color: rgba(89,89,89,.85); }
+  .admin-rounds-metric--training b{ color: #595959e3; }
+
+  /* Canceladas: misma paleta pero más suave */
+  .admin-rounds-metric--muted.admin-rounds-metric--liga{
+    background: rgba(220,252,231,.55);
+  }
+  .admin-rounds-metric--muted.admin-rounds-metric--amistosa{
+    background: rgba(241,245,249,.65);
+  }
+  .admin-rounds-metric--muted.admin-rounds-metric--training{
+    background: rgba(255,233,193,.60);
+  }
+
+  /* =========================
+    GRID PRINCIPAL
+    ========================= */
+
   .admin-dashboard-grid{
-    margin-top: 34px;  /* separa KPIs del grid */
-    gap: 12px;         /* un pelín más de aire */
+    margin-top: 14px; /* antes 34px: reduce scroll */
     display:grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap:05px;
@@ -187,14 +430,14 @@
     border-color:rgba(20,83,45,.22);
     box-shadow:0 8px 18px rgba(0,0,0,.05);
   }
-  
-  /* ===== NUEVA PARTIDA DESTACADO ===== */
+
+  /* Nueva partida destacado */
   .admin-dashboard-tile--primary{
-    background:#1f7a3f;            /* verde más claro */
-    color:#fff;
+    background:#1f7a3f;
+    color:#fff !important;
     font-weight:900;
     letter-spacing:.02em;
-    padding:28px 0;                /* más alto */
+    padding:28px 0;
     box-shadow:0 12px 26px rgba(20,83,45,.22);
   }
 
@@ -202,53 +445,32 @@
     background:#228a45;
     border-color:#228a45;
     box-shadow:0 16px 32px rgba(20,83,45,.28);
+    color:#fff !important;
   }
 
-  /* Full width */
   .admin-dashboard-tile--full{
     grid-column:1 / -1;
   }
-  .admin-dashboard-tile--primary{
-    color: #fff !important;
-  }
 
-  .admin-dashboard-tile--primary:hover{
-    color: #fff !important;
-  }
+  /* =========================
+    MÓVIL
+    ========================= */
 
-  /* Móvil */
   @media (max-width:680px){
     .admin-dashboard{
       max-width: 520px;
       padding: 0 6px;
     }
-    .admin-dashboard-primary{
-      padding:13px 0;
-      font-size:1rem;
-    }
+
     .admin-dashboard-tile{
       padding:28px 0;
       font-size:.95rem;
     }
-  }
-  /* ADMIN HOME: título SIEMPRE 1 línea */
-  .admin-pagehead .admin-title{
-    display:block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 
-    /* tamaño más contenido */
-    font-size: clamp(1.5rem, 4.2vw, 2.2rem);
-    line-height: 1.05;
-
-    /* quita límites que lo estrechan */
-    max-width: none !important;
-  }
-
-  /* Asegura que el header no esté estrechándose por layout */
-  .admin-pagehead{
-    width: 100%;
+    .admin-rounds-cards{
+      grid-template-columns: 1fr;
+      gap:8px;
+    }
   }
 </style>
 

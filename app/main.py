@@ -903,7 +903,7 @@ def admin_round_delete(round_id: int, db: Session = Depends(get_db)):
 # ============================== ADMIN: HOME / PANEL ==============================
 # =================================================================================
 
-from sqlalchemy import func
+from sqlalchemy import func, case
 from app import models
 
 
@@ -945,15 +945,59 @@ def admin_home(request: Request, db: Session = Depends(get_db)):
         "tournaments": kpi_tournaments,
     }
 
+    # ================= ROUNDS KPI (DESGLOSE) =================
+    # Categoría: Liga / Training / Amistosa
+    round_category = case(
+        (models.Round.league_id.isnot(None), "Liga"),
+        (models.Round.context == "training", "Training"),
+        else_="Amistosa",
+    )
+
+    # Estado: cancelled / finished / open
+    round_status = case(
+        (models.Round.is_cancelled.is_(True), "cancelled"),
+        (models.Round.closed_at.isnot(None), "finished"),
+        else_="open",
+    )
+
+    rows = (
+        db.query(
+            round_category.label("cat"),
+            round_status.label("status"),
+            func.count(models.Round.id).label("n"),
+        )
+        .group_by("cat", "status")
+        .all()
+    )
+
+    rounds_kpi = {
+        "Training": {"finished": 0, "cancelled": 0, "open": 0},
+        "Amistosa": {"finished": 0, "cancelled": 0, "open": 0},
+        "Liga": {"finished": 0, "cancelled": 0, "open": 0},
+    }
+
+    for cat, status, n in rows:
+        # por si aparece alguna categoría inesperada
+        rounds_kpi.setdefault(cat, {"finished": 0, "cancelled": 0, "open": 0})
+        rounds_kpi[cat][status] = int(n)
+
+    # Abiertas en ejecución (no canceladas y sin closed_at)
+    kpi_rounds_open = (
+        db.query(func.count(models.Round.id))
+        .filter(models.Round.is_cancelled.is_(False))
+        .filter(models.Round.closed_at.is_(None))
+        .scalar() or 0
+    )
+
     return templates.TemplateResponse(
         "admin_home.html",
         {
             "request": request,
             "kpi": kpi,
+            "rounds_kpi": rounds_kpi,
+            "kpi_rounds_open": kpi_rounds_open,
         }
     )
-
-
 
 # ------------------------------------------------------------------------------------------
 # -------------------------------------- ADMIN: ROUNDS -------------------------------------
