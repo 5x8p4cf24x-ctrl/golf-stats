@@ -4904,3 +4904,40 @@ def admin_backfill_closed_at_locked(
         "skipped_not_all_locked": skipped_not_all_locked,
     }
 
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
+
+@app.get("/admin/maintenance/inspect_round/{round_id}")
+def admin_inspect_round(
+    round_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    # Seguridad: solo admin
+    if getattr(user, "role", None) != "admin":
+        return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
+
+    r = db.query(models.Round).filter(models.Round.id == round_id).first()
+    if not r:
+        return {"ok": False, "error": "round_not_found"}
+
+    rps = db.query(models.RoundPlayer).filter(models.RoundPlayer.round_id == round_id).all()
+
+    return {
+        "ok": True,
+        "round": {
+            "id": r.id,
+            "date": str(getattr(r, "date", None)),
+            "closed_at": str(getattr(r, "closed_at", None)),
+        },
+        "round_players": [
+            {
+                "id": rp.id,
+                "player_id": rp.player_id,
+                "player_card_locked": bool(getattr(rp, "player_card_locked", False)),
+                "result": getattr(rp, "result", None),
+            }
+            for rp in rps
+        ],
+    }
