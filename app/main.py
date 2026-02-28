@@ -4853,55 +4853,55 @@ def account_change_password(
 
 
 #_______________________________________________________________________________________
-# MANTENIMIENTO ENDPOINT PARA CERRAR TODAS LAS RONDAS ANTIGUAS EN RENDER
+# MANTENIMIENTO ENDPOINT PARA CERRAR TODAS LAS RONDAS ANTIGUAS EN RENDER (28/02/26)
 #_______________________________________________________________________________________
 
-from datetime import datetime, time
-from fastapi import Depends
-from sqlalchemy.orm import Session
-from starlette.responses import JSONResponse
+# from datetime import datetime, time
+# from fastapi import Depends
+# from sqlalchemy.orm import Session
+# from starlette.responses import JSONResponse
 
-@app.post("/admin/maintenance/backfill_closed_at_locked")
-def admin_backfill_closed_at_locked(
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    # Seguridad mínima (recomendado)
-    if getattr(user, "role", None) != "admin":
-        return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
+# @app.post("/admin/maintenance/backfill_closed_at_locked")
+# def admin_backfill_closed_at_locked(
+#     db: Session = Depends(get_db),
+#     user: User = Depends(get_current_user),
+# ):
+#     # Seguridad mínima (recomendado)
+#     if getattr(user, "role", None) != "admin":
+#         return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
 
-    rounds = db.query(models.Round).filter(models.Round.closed_at.is_(None)).all()
+#     rounds = db.query(models.Round).filter(models.Round.closed_at.is_(None)).all()
 
-    updated = 0
-    skipped_no_players = 0
-    skipped_missing_result = 0
+#     updated = 0
+#     skipped_no_players = 0
+#     skipped_missing_result = 0
 
-    for r in rounds:
-        rps = db.query(models.RoundPlayer).filter(models.RoundPlayer.round_id == r.id).all()
-        if not rps:
-            skipped_no_players += 1
-            continue
+#     for r in rounds:
+#         rps = db.query(models.RoundPlayer).filter(models.RoundPlayer.round_id == r.id).all()
+#         if not rps:
+#             skipped_no_players += 1
+#             continue
 
-        # ✅ Criterio NUEVO: todos tienen result (rondas antiguas terminadas)
-        all_have_result = all((rp.result or "").strip() != "" for rp in rps)
-        if not all_have_result:
-            skipped_missing_result += 1
-            continue
+#         # ✅ Criterio NUEVO: todos tienen result (rondas antiguas terminadas)
+#         all_have_result = all((rp.result or "").strip() != "" for rp in rps)
+#         if not all_have_result:
+#             skipped_missing_result += 1
+#             continue
 
-        # Solo marcamos closed_at (NO logros, NO news)
-        if getattr(r, "date", None):
-            r.closed_at = datetime.combine(r.date, time.min)
-        else:
-            r.closed_at = datetime.utcnow()
+#         # Solo marcamos closed_at (NO logros, NO news)
+#         if getattr(r, "date", None):
+#             r.closed_at = datetime.combine(r.date, time.min)
+#         else:
+#             r.closed_at = datetime.utcnow()
 
-        updated += 1
+#         updated += 1
 
-    db.commit()
+#     db.commit()
 
-    return {
-        "ok": True,
-        "updated": updated,
-        "skipped_no_players": skipped_no_players,
-        "skipped_missing_result": skipped_missing_result,
-        "total_candidates": len(rounds),
-    }
+#     return {
+#         "ok": True,
+#         "updated": updated,
+#         "skipped_no_players": skipped_no_players,
+#         "skipped_missing_result": skipped_missing_result,
+#         "total_candidates": len(rounds),
+#     }
