@@ -919,9 +919,10 @@ def admin_home(request: Request, db: Session = Depends(get_db)):
         .scalar() or 0
     )
 
-    # Rondas totales
+    # Rondas (excluye entrenamientos cancelados)
     kpi_rounds = (
         db.query(func.count(models.Round.id))
+        .filter(models.Round.is_cancelled.is_(False))
         .scalar() or 0
     )
 
