@@ -4866,15 +4866,15 @@ def admin_backfill_closed_at_locked(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    # Si tienes flag admin, valida aquí.
-    # if not user.is_admin:
-    #     return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
+    # Seguridad mínima (recomendado)
+    if getattr(user, "role", None) != "admin":
+        return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
 
     rounds = db.query(models.Round).filter(models.Round.closed_at.is_(None)).all()
 
     updated = 0
     skipped_no_players = 0
-    skipped_not_all_locked = 0
+    skipped_missing_result = 0
 
     for r in rounds:
         rps = db.query(models.RoundPlayer).filter(models.RoundPlayer.round_id == r.id).all()
@@ -4882,12 +4882,13 @@ def admin_backfill_closed_at_locked(
             skipped_no_players += 1
             continue
 
-        all_locked = all(rp.player_card_locked for rp in rps)
-        if not all_locked:
-            skipped_not_all_locked += 1
+        # ✅ Criterio NUEVO: todos tienen result (rondas antiguas terminadas)
+        all_have_result = all((rp.result or "").strip() != "" for rp in rps)
+        if not all_have_result:
+            skipped_missing_result += 1
             continue
 
-        # Solo marcamos closed_at. Usamos fecha de la ronda si existe, si no, "ahora".
+        # Solo marcamos closed_at (NO logros, NO news)
         if getattr(r, "date", None):
             r.closed_at = datetime.combine(r.date, time.min)
         else:
@@ -4901,43 +4902,6 @@ def admin_backfill_closed_at_locked(
         "ok": True,
         "updated": updated,
         "skipped_no_players": skipped_no_players,
-        "skipped_not_all_locked": skipped_not_all_locked,
-    }
-
-from fastapi import Depends
-from sqlalchemy.orm import Session
-from starlette.responses import JSONResponse
-
-@app.get("/admin/maintenance/inspect_round/{round_id}")
-def admin_inspect_round(
-    round_id: int,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    # Seguridad: solo admin
-    if getattr(user, "role", None) != "admin":
-        return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
-
-    r = db.query(models.Round).filter(models.Round.id == round_id).first()
-    if not r:
-        return {"ok": False, "error": "round_not_found"}
-
-    rps = db.query(models.RoundPlayer).filter(models.RoundPlayer.round_id == round_id).all()
-
-    return {
-        "ok": True,
-        "round": {
-            "id": r.id,
-            "date": str(getattr(r, "date", None)),
-            "closed_at": str(getattr(r, "closed_at", None)),
-        },
-        "round_players": [
-            {
-                "id": rp.id,
-                "player_id": rp.player_id,
-                "player_card_locked": bool(getattr(rp, "player_card_locked", False)),
-                "result": getattr(rp, "result", None),
-            }
-            for rp in rps
-        ],
+        "skipped_missing_result": skipped_missing_result,
+        "total_candidates": len(rounds),
     }
