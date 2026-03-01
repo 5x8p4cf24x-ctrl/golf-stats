@@ -1161,27 +1161,7 @@ body.gm-body{ padding-top: 78px; }
   background: rgba(153,27,27,.08);
 }
 
-/* ============================================================================== */
-/* ============================== /ACCOUNT  ==================================== */
-/* ============================================================================== */
 
-.gm-form{
-  display:grid;
-  gap:12px;
-  width:100%;
-  max-width:520px;
-}
-
-@media (max-width: 520px){
-  .gm-form{ max-width:100%; }
-  .gm-form input[type="text"],
-  .gm-form input[type="password"],
-  .gm-form input[type="email"],
-  .gm-form input[type="file"],
-  .gm-form button{
-    width:100%;
-  }
-}
 
 /* ============================================================================== */
 /* ============================== HERO FULL ==================================== */
@@ -6028,39 +6008,56 @@ body.gm-body h1.public-title{
   }
 }
 
+/* =============================
+   FIX MOBILE TABLES (sin romper desktop)
+   ============================= */
+
+/* Desktop (por defecto): NO tocar el ancho del layout */
 html, body{
-  max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: hidden; /* ok global */
 }
 
-.gm-wrap{
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  overflow-y: visible !important;  /* 👈 clave para dropdowns */
-}
+/* IMPORTANTE: NO forzar gm-wrap a 100% globalmente */
+/* .gm-wrap { max-width: 100% !important; }  <-- eliminado */
 
-.summary-table-wrapper.summary-round-wrapper{
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
+/* SOLO MÓVIL: evitar scroll horizontal + permitir scroll en cards */
+@media (max-width: 768px){
 
-.summary-table-wrapper.summary-round-wrapper .summary-round-table{
-  width: max-content;
-  min-width: 980px;
-}
+  html, body{
+    max-width: 100%;
+    overflow-x: hidden;
+  }
 
-/* LIGA: scroll horizontal dentro del card (todos los móviles + landscape) */
-.summary-table-wrapper.summary-league-wrapper{
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
+  .gm-wrap{
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;  /* si lo necesitas en móvil */
+  }
 
-.summary-table-wrapper.summary-league-wrapper .summary-league-table{
-  width: max-content;
-  min-width: 980px;  /* ajusta si un día cambias columnas */
+  /* RONDAS: scroll horizontal dentro del card */
+  .summary-table-wrapper.summary-round-wrapper{
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .summary-table-wrapper.summary-round-wrapper .summary-round-table{
+    width: max-content;
+    min-width: 980px;
+  }
+
+  /* LIGA: scroll horizontal dentro del card */
+  .summary-table-wrapper.summary-league-wrapper{
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .summary-table-wrapper.summary-league-wrapper .summary-league-table{
+    width: max-content;
+    min-width: 980px;
+  }
 }
 
 /* =========================================================
@@ -6104,9 +6101,198 @@ html, body{
     right: 10px;
   }
 }
-/* No recortar dropdown del usuario */
-.gm-sessionstrip,
+
+/* ============================================================================== */
+/* ============================== /ACCOUNT  ==================================== */
+/* ============================================================================== */
+
+.gm-form{
+  display:grid;
+  gap:12px;
+  width:100%;
+  max-width:520px;
+}
+
+@media (max-width: 520px){
+  .gm-form{ max-width:100%; }
+  .gm-form input[type="text"],
+  .gm-form input[type="password"],
+  .gm-form input[type="email"],
+  .gm-form input[type="file"],
+  .gm-form button{
+    width:100%;
+  }
+}
+
+
+/* ============================= */
+/* FIX DEFINITIVO: dropdown por encima de breadcrumbs */
+/* ============================= */
+
+.gm-sessionstrip{
+  position: relative;
+  z-index: 99990;
+}
+
 .gm-sessionstrip-inner,
 .gm-sessionstrip-row{
+  position: relative;
+  z-index: 99990;
   overflow: visible !important;
 }
+
+.gm-session-user{
+  position: relative;
+  z-index: 99991;
+}
+
+.gm-user-menu{
+  position: absolute;
+  z-index: 99999;
+}
+
+/* Baja el contenido (donde vive el breadcrumb) */
+main.gm-wrap,
+.gm-wrap{
+  position: relative;
+  z-index: 1;
+}
+
+.breadcrumbs{
+  position: relative;
+  z-index: 1;
+}
+
+/* =============================
+   GM USER MENU – estilo único para <a> y <button>
+   ============================= */
+
+.gm-user-menu{
+  background:#fff;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.12);
+  overflow:hidden;
+}
+
+/* Base común */
+.gm-user-menu a.gm-user-menu-item,
+.gm-user-menu button.gm-user-menu-item{
+  display:block;
+  width:100%;
+  text-align:left;
+
+  padding: 10px 14px;
+  line-height: 1.15;
+  font-size: .80rem;
+  font-weight: 700;
+
+  color: var(--gm-green, #14532d);
+  text-decoration:none;
+
+  background: transparent;
+  border: 0;
+  margin: 0;
+
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  cursor: pointer;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hover */
+.gm-user-menu a.gm-user-menu-item:hover,
+.gm-user-menu button.gm-user-menu-item:hover{
+  background: rgba(20,83,45,.06);
+}
+
+/* Focus */
+.gm-user-menu a.gm-user-menu-item:focus,
+.gm-user-menu button.gm-user-menu-item:focus{
+  outline: none;
+}
+
+.gm-user-menu a.gm-user-menu-item:focus-visible,
+.gm-user-menu button.gm-user-menu-item:focus-visible{
+  outline: 2px solid rgba(20,83,45,.22);
+  outline-offset: -2px;
+}
+
+/* Primary (Actualizar HCP) */
+.gm-user-menu .gm-user-menu-item--primary{
+  background: #dcfce7;
+  border-left: 3px solid #15803d;
+}
+
+.gm-user-menu .gm-user-menu-item--primary:hover{
+  background: #bbf7d0;
+}
+
+/* Danger (Logout) */
+.gm-user-menu .gm-user-menu-item--danger{
+  color: rgba(185,28,28,.95) !important;
+}
+
+.gm-user-menu .gm-user-menu-item--danger:hover{
+  background: rgba(185,28,28,.06) !important;
+}
+
+/* Toast */
+.gm-toast{
+  position: fixed;
+  left: 50%;
+  top: calc(80px + env(safe-area-inset-top));
+  transform: translateX(-50%) translateY(-6px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 999999;
+
+  max-width: 88%;
+  white-space: nowrap;              /* 👈 fuerza 1 línea */
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  background: #ffffff;
+  border: 1px solid rgba(20,83,45,.28);
+  box-shadow: 0 10px 24px rgba(0,0,0,.10);
+
+  border-radius: 999px;             /* 👈 pill elegante */
+  padding: 8px 14px;                /* 👈 más compacto */
+
+  font-size: .78rem;                /* 👈 más pequeño */
+  font-weight: 600;
+  letter-spacing: .02em;
+
+  text-align: center;
+  color: #14532d;
+
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.gm-toast.is-show{
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.gm-toast.is-ok{
+  border-color: rgba(20,83,45,.35); 
+  color: #14532d;
+}
+
+.gm-toast.is-err{
+  border-color: rgba(185,28,28,.35);
+  color: #991b1b;
+}
+
+/* =============================
+   FIX: en móvil el burger/overlay debe ir por encima del session strip
+   ============================= */
+
+/* Cuando el menú móvil está abierto, subimos overlay + sheet por encima de todo */
+body.is-menu-open .gm-mobile-overlay{ z-index: 300000 !important; }
+body.is-menu-open .gm-mobile-menu{ z-index: 300001 !important; }
+
+/* Y bajamos el session strip mientras el menú está abierto */
+body.is-menu-open .gm-sessionstrip{ z-index: 1000 !important; }
+body.is-menu-open .gm-user-menu{ z-index: 1001 !important; } /* por si estaba abierto */

@@ -44,6 +44,15 @@
           </button>
 
           <div class="gm-user-menu" role="menu">
+
+            <!-- ✅ NUEVO: Actualizar HCP -->
+            <button type="button"
+                    class="gm-user-menu-item gm-user-menu-item--primary"
+                    id="gmUpdateHcpBtn"
+                    role="menuitem">
+              Actualizar HCP (RFEG)
+            </button>
+
             <a class="gm-user-menu-item" href="/account" role="menuitem">Conf. Perfil</a>
 
             {% if request.state.is_admin %}
@@ -68,6 +77,7 @@
 
       const btn = wrap.querySelector('.gm-session-userbtn');
       const menu = wrap.querySelector('.gm-user-menu');
+      const hcpBtn = wrap.querySelector('#gmUpdateHcpBtn');
 
       function closeMenu(){
         wrap.classList.remove('is-open');
@@ -91,6 +101,65 @@
       document.addEventListener('keydown', function(e){
         if(e.key === 'Escape') closeMenu();
       });
+
+      // ---------- Toast helper (si no existe, lo crea) ----------
+      function ensureToast(){
+        let t = document.getElementById('gmToast');
+        if(!t){
+          t = document.createElement('div');
+          t.id = 'gmToast';
+          t.className = 'gm-toast';
+          t.setAttribute('aria-live','polite');
+          document.body.appendChild(t);
+        }
+        return t;
+      }
+
+      function showToast(msg, kind){
+        const el = ensureToast();
+        el.textContent = msg;
+        el.classList.remove('is-show','is-ok','is-err');
+        el.classList.add('is-show', kind === 'ok' ? 'is-ok' : 'is-err');
+        clearTimeout(window.__gmToastT);
+        window.__gmToastT = setTimeout(()=> el.classList.remove('is-show'), 5000);
+      }
+
+      // ---------- HCP update ----------
+      async function updateHcp(){
+        try{
+          const res = await fetch("/account/api/hcp/update", { method: "POST" });
+          const data = await res.json();
+
+          if(!data.ok){
+            const map = {
+              "no_license":"Falta tu licencia RFEG en tu perfil.",
+              "rfeg_not_found":"No se encontró tu licencia en RFEG.",
+              "rfeg_error":"No se pudo conectar con RFEG."
+            };
+            showToast(map[data.error] || "Error actualizando HCP.", "err");
+            return;
+          }
+
+          showToast(`Actualizado desde RFEG · ${data.updated_at}`, "ok");
+          setTimeout(()=> location.reload(), 2500);
+
+        }catch(e){
+          showToast("Error actualizando HCP.", "err");
+        }
+      }
+
+      if(hcpBtn){
+        hcpBtn.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation(); // no cerrar antes de tiempo
+          hcpBtn.disabled = true;
+          updateHcp().finally(()=>{
+            // si no recarga por error, re-enable
+            setTimeout(()=> { hcpBtn.disabled = false; }, 1200);
+          });
+          closeMenu();
+        });
+      }
     })();
   </script>
 

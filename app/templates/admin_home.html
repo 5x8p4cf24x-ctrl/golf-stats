@@ -42,7 +42,7 @@
     </div>
   </section>
 
-  <!-- ================= RONDAS: BLOQUE LIMPIO ================= -->
+  <!-- ================= RONDAS: BLOQUE COMPACTO ================= -->
   <section class="admin-rounds-panel">
 
     <div class="admin-rounds-head">
@@ -63,14 +63,13 @@
       <div class="admin-rounds-card">
         <div class="admin-rounds-card-title">Training</div>
 
-        <div class="admin-rounds-metrics">
-          <div class="admin-rounds-metric admin-rounds-metric--training">
-            <span>Finalizadas</span>
+        <div class="admin-rounds-mini">
+          <div class="admin-rounds-mini-pill admin-rounds-mini-pill--training">
+            <span>F</span>
             <b>{{ rounds_kpi["Training"]["finished"] }}</b>
           </div>
-
-          <div class="admin-rounds-metric admin-rounds-metric--training admin-rounds-metric--muted">
-            <span>Canceladas</span>
+          <div class="admin-rounds-mini-pill admin-rounds-mini-pill--training admin-rounds-mini-pill--muted">
+            <span>C</span>
             <b>{{ rounds_kpi["Training"]["cancelled"] }}</b>
           </div>
         </div>
@@ -86,14 +85,13 @@
       <div class="admin-rounds-card">
         <div class="admin-rounds-card-title">Amistosas</div>
 
-        <div class="admin-rounds-metrics">
-          <div class="admin-rounds-metric admin-rounds-metric--amistosa">
-            <span>Finalizadas</span>
+        <div class="admin-rounds-mini">
+          <div class="admin-rounds-mini-pill admin-rounds-mini-pill--amistosa">
+            <span>F</span>
             <b>{{ rounds_kpi["Amistosa"]["finished"] }}</b>
           </div>
-
-          <div class="admin-rounds-metric admin-rounds-metric--amistosa admin-rounds-metric--muted">
-            <span>Canceladas</span>
+          <div class="admin-rounds-mini-pill admin-rounds-mini-pill--amistosa admin-rounds-mini-pill--muted">
+            <span>C</span>
             <b>{{ rounds_kpi["Amistosa"]["cancelled"] }}</b>
           </div>
         </div>
@@ -109,14 +107,13 @@
       <div class="admin-rounds-card">
         <div class="admin-rounds-card-title">Liga</div>
 
-        <div class="admin-rounds-metrics">
-          <div class="admin-rounds-metric admin-rounds-metric--liga">
-            <span>Finalizadas</span>
+        <div class="admin-rounds-mini">
+          <div class="admin-rounds-mini-pill admin-rounds-mini-pill--liga">
+            <span>F</span>
             <b>{{ rounds_kpi["Liga"]["finished"] }}</b>
           </div>
-
-          <div class="admin-rounds-metric admin-rounds-metric--liga admin-rounds-metric--muted">
-            <span>Canceladas</span>
+          <div class="admin-rounds-mini-pill admin-rounds-mini-pill--liga admin-rounds-mini-pill--muted">
+            <span>C</span>
             <b>{{ rounds_kpi["Liga"]["cancelled"] }}</b>
           </div>
         </div>
@@ -130,7 +127,7 @@
 
     </div>
   </section>
-
+  
   <!-- ================= GRID PRINCIPAL ================= -->
   <section class="admin-dashboard-grid">
 
@@ -165,7 +162,10 @@
     ADMIN HOME – TYPO
     ========================= */
 
-  /* Título (mantener 1 línea + tamaño correcto) */
+  .admin-pagehead{
+    width: 100%;
+  }
+
   .admin-pagehead .admin-title{
     display:block;
     white-space: nowrap;
@@ -183,10 +183,6 @@
   .admin-subtitle{
     font-size:.90rem;
     margin-bottom:30px;
-  }
-
-  .admin-pagehead{
-    width: 100%;
   }
 
   /* =========================
@@ -236,12 +232,12 @@
   }
 
   /* =========================
-    RONDAS PANEL (COMPACTO + SUTIL + COLORES)
+    RONDAS PANEL (COMPACTO)
     ========================= */
 
   .admin-rounds-panel{
     margin-top: 6px;
-    margin-bottom: 10px; /* menos scroll */
+    margin-bottom: 10px;
     background:#fff;
     border:1px solid rgba(0,0,0,.06);
     border-radius:14px;
@@ -303,51 +299,77 @@
   }
 
   .admin-rounds-card{
+    background:#fff;
+    border:1px solid rgba(0,0,0,.06);
+    box-shadow: 0 6px 14px rgba(0,0,0,.02);
     border-radius:12px;
     padding:8px;
-    border:1px solid rgba(0,0,0,.06);
-    background: rgba(0,0,0,.02);
+    min-width:0;
   }
 
   .admin-rounds-card-title{
     font-weight:850;
     font-size:.88rem;
     margin-bottom:8px;
+    color: var(--gm-green,#14532d);
   }
 
-  .admin-rounds-metrics{
-    display:grid;
-    gap:6px;
-  }
-
-  .admin-rounds-metric{
+  /* Mini pills */
+  .admin-rounds-mini{
     display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:10px;
-    padding:6px 8px;
-    border-radius:10px;
-    background:#fff;
-    border:1px solid rgba(0,0,0,.06);
+    gap:8px;
   }
 
-  .admin-rounds-metric span{
-    font-size:.70rem;
+  .admin-rounds-mini-pill{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:7px 10px;
+    border-radius:10px;
+    border:1px solid rgba(0,0,0,.06);
+    background:#fff;
+    min-width:0;
+  }
+
+  .admin-rounds-mini-pill span{
+    font-size:.72rem;
+    font-weight:900;
     letter-spacing:.08em;
     text-transform: uppercase;
-    color:rgba(0,0,0,.55);
-    font-weight:800;
+    opacity:.9;
   }
 
-  .admin-rounds-metric b{
-    font-weight:900;
+  .admin-rounds-mini-pill b{
+    font-weight:950;
     font-size:.95rem;
-    color:var(--gm-green,#14532d);
   }
 
-  .admin-rounds-metric--muted{
-    background: rgba(0,0,0,.03);
+  .admin-rounds-mini-pill--muted{
+    opacity:.75;
   }
+
+  /* Colores por tipo */
+  .admin-rounds-mini-pill--liga{
+    background:#dcfce7;
+    border-color:#86efac;
+  }
+  .admin-rounds-mini-pill--liga span,
+  .admin-rounds-mini-pill--liga b{ color:#15803d; }
+
+  .admin-rounds-mini-pill--amistosa{
+    background:#f1f5f9;
+    border-color:#cbd5e1;
+  }
+  .admin-rounds-mini-pill--amistosa span,
+  .admin-rounds-mini-pill--amistosa b{ color:#334155; }
+
+  .admin-rounds-mini-pill--training{
+    background:#ffe9c1;
+    border-color:#f8b762;
+  }
+  .admin-rounds-mini-pill--training span,
+  .admin-rounds-mini-pill--training b{ color:#595959e3; }
 
   .admin-rounds-foot{
     margin-top:6px;
@@ -355,56 +377,12 @@
     color:rgba(0,0,0,.58);
   }
 
-  /* Cards siempre blancas */
-  .admin-rounds-card{
-    background:#fff;
-    border:1px solid rgba(0,0,0,.06);
-    box-shadow: 0 6px 14px rgba(0,0,0,.02);
-  }
-
-  /* ====== Colores en "pestañas" (métricas) ====== */
-
-  /* LIGA */
-  .admin-rounds-metric--liga{
-    background: #dcfce7;
-    border: 1px solid #86efac;
-  }
-  .admin-rounds-metric--liga span{ color: rgba(21,128,61,.85); }
-  .admin-rounds-metric--liga b{ color: #15803d; }
-
-  /* AMISTOSA */
-  .admin-rounds-metric--amistosa{
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-  }
-  .admin-rounds-metric--amistosa span{ color: rgba(51,65,85,.85); }
-  .admin-rounds-metric--amistosa b{ color: #334155; }
-
-  /* TRAINING */
-  .admin-rounds-metric--training{
-    background: #ffe9c1;
-    border: 1px solid #f8b762;
-  }
-  .admin-rounds-metric--training span{ color: rgba(89,89,89,.85); }
-  .admin-rounds-metric--training b{ color: #595959e3; }
-
-  /* Canceladas: misma paleta pero más suave */
-  .admin-rounds-metric--muted.admin-rounds-metric--liga{
-    background: rgba(220,252,231,.55);
-  }
-  .admin-rounds-metric--muted.admin-rounds-metric--amistosa{
-    background: rgba(241,245,249,.65);
-  }
-  .admin-rounds-metric--muted.admin-rounds-metric--training{
-    background: rgba(255,233,193,.60);
-  }
-
   /* =========================
     GRID PRINCIPAL
     ========================= */
 
   .admin-dashboard-grid{
-    margin-top: 14px; /* antes 34px: reduce scroll */
+    margin-top: 14px;
     display:grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap:05px;
@@ -431,7 +409,6 @@
     box-shadow:0 8px 18px rgba(0,0,0,.05);
   }
 
-  /* Nueva partida destacado */
   .admin-dashboard-tile--primary{
     background:#1f7a3f;
     color:#fff !important;
@@ -462,14 +439,30 @@
       padding: 0 6px;
     }
 
+    /* Mantén 3 cards en fila para “cuadraditos” */
+    .admin-rounds-cards{
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:8px;
+    }
+
+    /* Dentro del cuadrado, pills en vertical para ahorrar ancho */
+    .admin-rounds-mini{
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .admin-rounds-mini-pill{
+      padding:6px 8px;
+      border-radius:9px;
+    }
+
+    .admin-rounds-mini-pill b{
+      font-size:.90rem;
+    }
+
     .admin-dashboard-tile{
       padding:28px 0;
       font-size:.95rem;
-    }
-
-    .admin-rounds-cards{
-      grid-template-columns: 1fr;
-      gap:8px;
     }
   }
 </style>

@@ -36,6 +36,7 @@ from app.auth.dependencies import get_current_user, get_current_player, get_curr
 from sqlalchemy.orm import joinedload
 from app.auth.routes import router as auth_router
 from starlette.responses import HTMLResponse
+from starlette.responses import JSONResponse
 from fastapi import Query
 
 
@@ -4896,15 +4897,44 @@ def account_change_password(
     db.commit()
     return RedirectResponse(url="/account?ok=pass", status_code=HTTP_303_SEE_OTHER)
 
+@app.post("/account/api/hcp/update")
+def account_api_update_hcp(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    lic = (getattr(player, "license_number", None) or "").strip()
+    if not lic:
+        return JSONResponse({"ok": False, "error": "no_license"}, status_code=400)
+
+    try:
+        data = fetch_rfeg_handicap(lic)
+        new_hcp = float(data["handicap"])
+
+        player.hcp_exact = new_hcp
+        ts = datetime.utcnow()
+        if hasattr(player, "hcp_updated_at"):
+            player.hcp_updated_at = ts
+
+        db.commit()
+
+        return {
+            "ok": True,
+            "handicap": new_hcp,
+            "updated_at": ts.strftime("%d/%m/%y"),
+        }
+
+    except LookupError:
+        return JSONResponse({"ok": False, "error": "rfeg_not_found"}, status_code=404)
+    except Exception:
+        return JSONResponse({"ok": False, "error": "rfeg_error"}, status_code=500)
+
 
 #_______________________________________________________________________________________
 # MANTENIMIENTO ENDPOINT PARA CERRAR TODAS LAS RONDAS ANTIGUAS EN RENDER (28/02/26)
 #_______________________________________________________________________________________
 
-# from datetime import datetime, time
-# from fastapi import Depends
-# from sqlalchemy.orm import Session
-# from starlette.responses import JSONResponse
+
 
 # @app.post("/admin/maintenance/backfill_closed_at_locked")
 # def admin_backfill_closed_at_locked(
