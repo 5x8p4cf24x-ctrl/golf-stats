@@ -183,8 +183,9 @@ def send_round_summary_email_for_player(
     rnd = build_round_snapshot(db, round_id=r.id, player_id=rp.player_id)
     holes_out, holes_in = build_email_scorecard_rows(rnd)
 
-    # URL pública
-    round_url = f"/public/rounds/{r.id}"
+    # URL pública absoluta de la ronda
+    base_url = (os.getenv("PUBLIC_BASE_URL") or "").rstrip("/")
+    round_url = f"{base_url}/public/rounds/{r.id}"
 
     # Subject
     course_name = r.course.name if getattr(r, "course", None) and r.course.name else "tu ronda"
@@ -1647,15 +1648,15 @@ def admin_email_preview(request: Request):
         {"n": i, "par": p, "gross": g, "diff_label": d, "bg": bg, "fg": fg, "pts": pts, "putts": pu,
          "fir": fir, "gir": gir}
         for i, p, g, d, bg, fg, pts, pu, fir, gir in [
-            (1,4,5,"+1","#d9e1f2","#000",2,2,"miss","miss"),
-            (2,3,4,"+1","#d9e1f2","#000",2,2,"na","miss"),
-            (3,4,5,"+1","#d9e1f2","#000",2,2,"hit","hit"),
-            (4,5,6,"+1","#d9e1f2","#000",2,1,"miss","miss"),
-            (5,4,6,"+2","#f2f2f2","#000",1,2,"miss","miss"),
-            (6,4,6,"+2","#f2f2f2","#000",1,2,"miss","miss"),
-            (7,3,4,"+1","#d9e1f2","#000",2,1,"na","miss"),
-            (8,4,5,"+1","#d9e1f2","#000",2,2,"miss","miss"),
-            (9,5,6,"+1","#d9e1f2","#000",2,2,"miss","miss"),
+            (1,4,5,"+1","#bbdefb","#000",2,2,"miss","miss"),
+            (2,3,4,"+1","#bbdefb","#000",2,2,"na","miss"),
+            (3,4,5,"+1","#bbdefb","#000",2,2,"hit","hit"),
+            (4,5,6,"+1","#bbdefb","#000",2,1,"miss","miss"),
+            (5,4,6,"+2","#e0e0e0","#000",1,2,"miss","miss"),
+            (6,4,6,"+2","#e0e0e0","#000",1,2,"miss","miss"),
+            (7,3,4,"+1","#bbdefb","#000",2,1,"na","miss"),
+            (8,4,5,"+1","#bbdefb","#000",2,2,"miss","miss"),
+            (9,5,6,"+1","#bbdefb","#000",2,2,"miss","miss"),
         ]
     ]
 
@@ -1663,15 +1664,15 @@ def admin_email_preview(request: Request):
         {"n": i, "par": p, "gross": g, "diff_label": d, "bg": bg, "fg": fg, "pts": pts, "putts": pu,
          "fir": fir, "gir": gir}
         for i, p, g, d, bg, fg, pts, pu, fir, gir in [
-            (10,4,6,"+2","#f2f2f2","#000",1,2,"na","miss"),
-            (11,5,5,"E","#e2f0d9","#000",2,1,"hit","miss"),
-            (12,3,6,"+3","#e0e0e0","#000",0,3,"na","miss"),
-            (13,4,3,"-1","#ffe4d6","#000",4,1,"hit","hit"),
-            (14,4,5,"+1","#d9e1f2","#000",2,2,"miss","miss"),
-            (15,4,5,"+1","#d9e1f2","#000",2,2,"hit","miss"),
-            (16,5,6,"+1","#d9e1f2","#000",2,2,"miss","miss"),
-            (17,3,4,"+1","#d9e1f2","#000",2,2,"na","miss"),
-            (18,4,6,"+2","#f2f2f2","#000",1,2,"miss","miss"),
+            (10,4,6,"+2","#e0e0e0","#000",1,2,"na","miss"),
+            (11,5,5,"E","#c8e6c9","#000",2,1,"hit","miss"),
+            (12,3,6,"+3","#bdbdbd","#000",0,3,"na","miss"),
+            (13,4,3,"-1","#ff8a80","#000",4,1,"hit","hit"),
+            (14,4,5,"+1","#bbdefb","#000",2,2,"miss","miss"),
+            (15,4,5,"+1","#bbdefb","#000",2,2,"hit","miss"),
+            (16,5,6,"+1","#bbdefb","#000",2,2,"miss","miss"),
+            (17,3,4,"+1","#bbdefb","#000",2,2,"na","miss"),
+            (18,4,6,"+2","#e0e0e0","#000",1,2,"miss","miss"),
         ]
     ]
     

@@ -16,44 +16,39 @@ def _diff_label(diff: int | None) -> str:
 
 
 def _color_for_diff(diff: int | None, gross: int | None = None) -> tuple[str, str]:
-    """
-    Devuelve (background, text_color)
-    Usando EXACTAMENTE los colores de la web.
-    """
-
     if diff is None:
         return ("#ffffff", "#6b7280")
 
-    # HIO
+    # Hole in one
     if gross == 1:
-        return ("#ffc000", "#000000")
+        return ("#f4b400", "#000000")
 
-    # Albatros (<= -3)
+    # Albatros
     if diff <= -3:
-        return ("#ffe5b4", "#000000")
+        return ("#ffd6cc", "#000000")
 
     # Eagle
     if diff == -2:
-        return ("#fff7cc", "#000000")
+        return ("#ffb3a6", "#000000")
 
-    # Birdie
+    # Birdie → rojo
     if diff == -1:
-        return ("#ffe4d6", "#000000")
+        return ("#ff8a80", "#000000")
 
-    # Par
+    # Par → verde
     if diff == 0:
-        return ("#e2f0d9", "#000000")
+        return ("#c8e6c9", "#000000")
 
-    # Bogey
+    # Bogey → azul
     if diff == 1:
-        return ("#d9e1f2", "#000000")
+        return ("#bbdefb", "#000000")
 
-    # Doble bogey
+    # Doble bogey → gris
     if diff == 2:
-        return ("#f2f2f2", "#000000")
+        return ("#e0e0e0", "#000000")
 
-    # > doble bogey
-    return ("#e0e0e0", "#000000")
+    # Triple o peor → gris oscuro
+    return ("#bdbdbd", "#000000")
 
 
 def _flag(v: bool | None) -> str:
