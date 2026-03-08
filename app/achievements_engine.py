@@ -349,25 +349,97 @@ def eval_streak_and_par_achievements(stats_rows) -> dict:
         "five_par_or_better_streak": five_par_or_better_streak,
     }
 
+def _achievement_name_by_id(db: Session, achievement_id: int | None) -> str | None:
+    if not achievement_id:
+        return None
+    ach = db.query(models.Achievement).filter(models.Achievement.id == achievement_id).first()
+    return ach.name if ach else None
 
+
+def _compute_near_achievements_for_round(
+    db: Session,
+    rp: models.RoundPlayer,
+) -> list[dict]:
+    """
+    Near achievements simples y útiles para email/insights.
+    De momento:
+    - break_100
+    - break_90
+    - break_80
+    - hcp18 (quedarse cerca de jugar como HCP 18)
+    """
+    near: list[dict] = []
+
+    # Score bruto cerca de 100 / 90 / 80
+    if rp.gross_total is not None:
+        gross = rp.gross_total
+
+        if gross >= 100 and gross <= 102:
+            near.append({"type": "break_100", "distance": gross - 99})
+
+        if gross >= 90 and gross <= 92:
+            near.append({"type": "break_90", "distance": gross - 89})
+
+        if gross >= 80 and gross <= 82:
+            near.append({"type": "break_80", "distance": gross - 79})
+
+    # Cerca de jugar como HCP 18
+    level_hcp = compute_level_hcp_for_round_player(db, rp)
+    if level_hcp is not None and level_hcp > 18.0 and level_hcp <= 20.0:
+        near.append({"type": "hcp18", "distance": round(level_hcp - 18.0, 1)})
+
+    return near
 
 # ============================================================
 # Entry points
 # ============================================================
 
-def evaluate_achievements_on_round_close(db: Session, round_id: int, emit_news: bool = True) -> None:
+def evaluate_achievements_on_round_close(
+    db: Session,
+    round_id: int,
+    emit_news: bool = True,
+) -> dict[int, dict]:
     """
     Se llama al cerrar ronda. Evalúa logros automáticos.
     Crea news SOLO cuando un logro pasa de locked/unlocked=False -> True (did_unlock=True)
     y SOLO si emit_news=True.
+
+    Devuelve:
+    {
+        player_id: {
+            "unlocked_ids": [...],
+            "unlocked_names": [...],
+            "near": [...]
+        }
+    }
     """
+
+    result: dict[int, dict] = {}
+
+    def ensure_player_bucket(player_id: int) -> None:
+        if player_id not in result:
+            result[player_id] = {
+                "unlocked_ids": [],
+                "unlocked_names": [],
+                "near": [],
+            }
 
     def set_and_news(player_id: int, achievement_id: int | None, achieved: bool) -> None:
         if not achievement_id:
             return
+
         did = set_achievement_auto(db, player_id, achievement_id, achieved)
-        if did and emit_news:
-            emit_achievement_news(db, player_id, achievement_id)
+
+        if did:
+            ensure_player_bucket(player_id)
+            result[player_id]["unlocked_ids"].append(achievement_id)
+
+            ach_name = _achievement_name_by_id(db, achievement_id)
+            if ach_name:
+                result[player_id]["unlocked_names"].append(ach_name)
+
+            if emit_news:
+                emit_achievement_news(db, player_id, achievement_id)
 
     # IDs logros (score bruto)
     ach_100 = find_achievement_id_by_number(db, 4)
@@ -401,7 +473,6 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int, emit_news: 
     ach_addict100 = find_achievement_id_by_number(db, 20)
     ach_all = find_achievement_id_by_number(db, 24)
 
-    # ✅ OJO: NO return temprano por un subset (antes te cortaba cosas)
     if not any([
         ach_100, ach_90, ach_80,
         ach_b10, ach_b25, ach_b50,
@@ -412,7 +483,7 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int, emit_news: 
         ach_addict100,
         ach_all,
     ]):
-        return
+        return result
 
     rps = (
         db.query(models.RoundPlayer)
@@ -425,7 +496,9 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int, emit_news: 
     for rp in rps:
         if not rp.player_id:
             continue
+
         player_id = rp.player_id
+        ensure_player_bucket(player_id)
 
         # 04/05/06 (bruto)
         if rp.gross_total is not None:
@@ -460,34 +533,33 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int, emit_news: 
             ach_fir70, ach_gir50, ach_par3g,
             ach_bbb, ach_par3, ach_par5, ach_streak5
         ])
-        if not needs_rows:
-            continue
 
-        stats_rows = get_round_hole_stats(db, round_id, player_id)
+        if needs_rows:
+            stats_rows = get_round_hole_stats(db, round_id, player_id)
 
-        # 07/11/12/16/17
-        if any([ach_out, ach_no3, ach_3pf, ach_hio, ach_eag]):
-            flags = eval_round_flags(stats_rows)
-            set_and_news(player_id, ach_out, flags["desde_fuera"])
-            set_and_news(player_id, ach_no3, flags["no_triple_bogey"])
-            set_and_news(player_id, ach_3pf, flags["tripateo_free"])
-            set_and_news(player_id, ach_hio, flags["hole_in_one"])
-            set_and_news(player_id, ach_eag, flags["eagle"])
+            # 07/11/12/16/17
+            if any([ach_out, ach_no3, ach_3pf, ach_hio, ach_eag]):
+                flags = eval_round_flags(stats_rows)
+                set_and_news(player_id, ach_out, flags["desde_fuera"])
+                set_and_news(player_id, ach_no3, flags["no_triple_bogey"])
+                set_and_news(player_id, ach_3pf, flags["tripateo_free"])
+                set_and_news(player_id, ach_hio, flags["hole_in_one"])
+                set_and_news(player_id, ach_eag, flags["eagle"])
 
-        # 09/10/19
-        if any([ach_fir70, ach_gir50, ach_par3g]):
-            fg = eval_fir_gir_achievements(stats_rows)
-            set_and_news(player_id, ach_fir70, fg["fir_70"])
-            set_and_news(player_id, ach_gir50, fg["gir_50"])
-            set_and_news(player_id, ach_par3g, fg["par3_all_gir"])
+            # 09/10/19
+            if any([ach_fir70, ach_gir50, ach_par3g]):
+                fg = eval_fir_gir_achievements(stats_rows)
+                set_and_news(player_id, ach_fir70, fg["fir_70"])
+                set_and_news(player_id, ach_gir50, fg["gir_50"])
+                set_and_news(player_id, ach_par3g, fg["par3_all_gir"])
 
-        # 18/21/22/23
-        if any([ach_bbb, ach_par3, ach_par5, ach_streak5]):
-            sp = eval_streak_and_par_achievements(stats_rows)
-            set_and_news(player_id, ach_bbb, sp["birdie3plus_in_round"])
-            set_and_news(player_id, ach_par3, sp["par3_all_par_or_better"])
-            set_and_news(player_id, ach_par5, sp["par5_all_par_or_better"])
-            set_and_news(player_id, ach_streak5, sp["five_par_or_better_streak"])
+            # 18/21/22/23
+            if any([ach_bbb, ach_par3, ach_par5, ach_streak5]):
+                sp = eval_streak_and_par_achievements(stats_rows)
+                set_and_news(player_id, ach_bbb, sp["birdie3plus_in_round"])
+                set_and_news(player_id, ach_par3, sp["par3_all_par_or_better"])
+                set_and_news(player_id, ach_par5, sp["par5_all_par_or_better"])
+                set_and_news(player_id, ach_streak5, sp["five_par_or_better_streak"])
 
         # 08 HCP 18 (nivel juego real de esa ronda)
         if ach_hcp18:
@@ -495,6 +567,10 @@ def evaluate_achievements_on_round_close(db: Session, round_id: int, emit_news: 
             if level_hcp is not None:
                 set_and_news(player_id, ach_hcp18, level_hcp <= 18.0)
 
+        # Near achievements para insights/email
+        result[player_id]["near"] = _compute_near_achievements_for_round(db, rp)
+
+    return result
 
 # ============================================================
 # Liga: logros 01/02/03

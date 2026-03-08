@@ -38,6 +38,11 @@ from app.auth.routes import router as auth_router
 from starlette.responses import HTMLResponse
 from starlette.responses import JSONResponse
 from fastapi import Query
+from app.insights.engine import generate_round_insights, build_round_snapshot
+from app.insights.email_scorecard import build_email_scorecard_rows
+from app.insights.email_render import render_round_email_html
+from app.insights.types import AchievementsContext
+from app.utils.email import send_user_email
 
 
 
@@ -108,6 +113,146 @@ def ensure_player_hcp_updated_at_column():
 
 ensure_player_hcp_updated_at_column()
 
+def send_round_summary_email_for_player(
+    *,
+    db: Session,
+    request: Request,
+    round_obj,
+    rp,
+    achievements_result: dict[int, dict] | None = None,
+) -> bool:
+    """
+    Genera y envía el resumen de ronda a UN jugador.
+    Devuelve True si se envió correctamente.
+    """
+    achievements_result = achievements_result or {}
+
+    # Seguridad básica
+    if not rp or not getattr(rp, "player", None):
+        print("⚠️ No se envía email: RoundPlayer sin player relacionado")
+        return False
+
+    player = rp.player
+
+    user_obj = getattr(player, "user", None) if player else None
+    to_email = (getattr(user_obj, "email", None) or "").strip()
+
+    if not to_email:
+        print(
+            f"⚠️ No se envía email: jugador sin user.email "
+            f"({getattr(player, 'name', 'Jugador')})"
+        )
+        return False
+
+    r = round_obj
+    if not r:
+        print("⚠️ No se envía email: round_obj vacío")
+        return False
+
+    # Tipo de ronda
+    if getattr(r, "league_id", None) is not None:
+        round_type = "Liga"
+    elif (getattr(r, "context", None) or "").lower() == "training":
+        round_type = "Training"
+    else:
+        round_type = "Amistosa"
+
+    # Contexto real de logros para este jugador
+    player_ach = achievements_result.get(rp.player_id, {}) if rp.player_id else {}
+
+    unlocked_ids = player_ach.get("unlocked_ids", [])
+    unlocked_names = player_ach.get("unlocked_names", [])
+    near = player_ach.get("near", [])
+
+    ach_ctx = AchievementsContext(
+        round_type=round_type,
+        unlocked_ids=unlocked_ids,
+        unlocked_names=unlocked_names,
+        near=near,
+    )
+
+    # Insights
+    tips = generate_round_insights(
+        db=db,
+        player_id=rp.player_id,
+        round_id=r.id,
+        achievements_ctx=ach_ctx,
+    )
+
+    # Snapshot + scorecard
+    rnd = build_round_snapshot(db, round_id=r.id, player_id=rp.player_id)
+    holes_out, holes_in = build_email_scorecard_rows(rnd)
+
+    # URL pública
+    round_url = f"/public/rounds/{r.id}"
+
+    # Subject
+    course_name = r.course.name if getattr(r, "course", None) and r.course.name else "tu ronda"
+    subject = f"Resumen de tu vuelta · {course_name}"
+
+    # Texto plano fallback
+    text_lines = [
+        f"Hola {player.name.split(' ')[0]},",
+        "",
+        f"Aquí tienes tu última vuelta en {course_name}.",
+        f"Fecha: {r.date.strftime('%Y-%m-%d') if r.date else '-'}",
+        f"Golpes: {rp.gross_total if rp.gross_total is not None else '-'}",
+        f"Stableford: {rp.stableford_hcp_total if rp.stableford_hcp_total is not None else '-'}",
+        f"HCP juego: {rp.course_handicap if rp.course_handicap is not None else '-'}",
+        f"Nivel juego: {f'{rnd.play_level:.1f}' if rnd.play_level is not None else '-'}",
+        "",
+    ]
+
+    if unlocked_names:
+        text_lines.append("Logros desbloqueados:")
+        for ach in unlocked_names:
+            text_lines.append(f"- {ach}")
+        text_lines.append("")
+
+    if tips:
+        text_lines.append("Insights:")
+        for tip in tips[:4]:
+            text_lines.append(f"- {tip}")
+        text_lines.append("")
+
+    text_lines.append(f"Ver ronda: {round_url}")
+    text_body = "\n".join(text_lines)
+
+    # HTML
+    html = render_round_email_html(
+        request=request,
+        player_name=player.name if player.name else "Jugador",
+        course_name=course_name,
+        round_date=(r.date.strftime("%Y-%m-%d") if r.date else ""),
+        gross_total=str(rp.gross_total or "-"),
+        course_hcp=str(rp.course_handicap or "-"),
+        play_level=(f"{rnd.play_level:.1f}" if rnd.play_level is not None else "-"),
+        gir_pct=(f"{rnd.gir_pct:.0f}%" if rnd.gir_pct is not None else "-"),
+        fir_pct=(f"{rnd.fir_pct:.0f}%" if rnd.fir_pct is not None else "-"),
+        putts_total=str(rp.putts_total or "-"),
+        putts_per_hole=(f"{rnd.putts_per_hole:.2f}" if rnd.putts_per_hole is not None else "-"),
+        stableford=str(rp.stableford_hcp_total or "-"),
+        tips=tips,
+        round_url=round_url,
+        achievements=unlocked_names,
+        holes_out=holes_out,
+        holes_in=holes_in,
+    )
+
+    ok = send_user_email(
+        to_email=to_email,
+        subject=subject,
+        body=text_body,
+        html=html,
+    )
+
+    print(
+        f"ROUND SUMMARY EMAIL -> player={player.name} "
+        f"email={to_email} sent={ok} "
+        f"tips={len(tips)} ach={len(unlocked_names)}"
+    )
+
+    return ok
 
 import os
 from fastapi import FastAPI, Form, Request, Depends
@@ -1373,6 +1518,7 @@ from app.auth.dependencies import get_current_user
 @app.post("/admin/rounds/{round_id}/close")
 def admin_close_round(
     round_id: int,
+    request: Request,   # 👈 AÑADE ESTO
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -1406,8 +1552,9 @@ def admin_close_round(
         if r and getattr(r, "context", None) == "training":
             return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=HTTP_303_SEE_OTHER)
 
+        achievements_result = {}
         if os.getenv("ACHIEVEMENTS_AUTO", "0") == "1":
-            evaluate_achievements_on_round_close(db, round_id, emit_news=True)
+            achievements_result = evaluate_achievements_on_round_close(db, round_id, emit_news=True)
 
         # ---- NEWS ----
         r = crud.get_round(db, round_id)
@@ -1463,7 +1610,103 @@ def admin_close_round(
             related_url=f"/public/rounds/{round_id}",
         )
 
+        achievements_result = achievements_result if 'achievements_result' in locals() else {}
+
+        # ✅ RECARGAR antes de enviar emails
+        r = crud.get_round(db, round_id)
+        rps = crud.get_round_players(db, round_id)
+
+        # ========================= ROUND SUMMARY EMAILS =========================
+        if os.getenv("EMAIL_ROUND_SUMMARY_ENABLED", "0") == "1":
+            for rp in rps:
+                try:
+                    send_round_summary_email_for_player(
+                        db=db,
+                        request=request,
+                        round_obj=r,
+                        rp=rp,
+                        achievements_result=achievements_result,
+                    )
+                except Exception as e:
+                    player_name = rp.player.name if getattr(rp, "player", None) else f"player_id={rp.player_id}"
+                    print(f"ERROR sending round summary email to {player_name}: {e}")
+        else:
+            print("⚠️ ROUND SUMMARY EMAILS desactivados (EMAIL_ROUND_SUMMARY_ENABLED != 1)")
+        # ======================================================================
+
+
     return RedirectResponse(f"/admin/rounds/{round_id}/summary", status_code=HTTP_303_SEE_OTHER)
+
+from fastapi.responses import HTMLResponse
+from datetime import datetime
+
+@app.get("/admin/email-preview", response_class=HTMLResponse)
+def admin_email_preview(request: Request):
+    # Datos fake para iterar diseño rápido
+    holes_out = [
+        {"n": i, "par": p, "gross": g, "diff_label": d, "bg": bg, "fg": fg, "pts": pts, "putts": pu,
+         "fir": fir, "gir": gir}
+        for i, p, g, d, bg, fg, pts, pu, fir, gir in [
+            (1,4,5,"+1","#d9e1f2","#000",2,2,"miss","miss"),
+            (2,3,4,"+1","#d9e1f2","#000",2,2,"na","miss"),
+            (3,4,5,"+1","#d9e1f2","#000",2,2,"hit","hit"),
+            (4,5,6,"+1","#d9e1f2","#000",2,1,"miss","miss"),
+            (5,4,6,"+2","#f2f2f2","#000",1,2,"miss","miss"),
+            (6,4,6,"+2","#f2f2f2","#000",1,2,"miss","miss"),
+            (7,3,4,"+1","#d9e1f2","#000",2,1,"na","miss"),
+            (8,4,5,"+1","#d9e1f2","#000",2,2,"miss","miss"),
+            (9,5,6,"+1","#d9e1f2","#000",2,2,"miss","miss"),
+        ]
+    ]
+
+    holes_in = [
+        {"n": i, "par": p, "gross": g, "diff_label": d, "bg": bg, "fg": fg, "pts": pts, "putts": pu,
+         "fir": fir, "gir": gir}
+        for i, p, g, d, bg, fg, pts, pu, fir, gir in [
+            (10,4,6,"+2","#f2f2f2","#000",1,2,"na","miss"),
+            (11,5,5,"E","#e2f0d9","#000",2,1,"hit","miss"),
+            (12,3,6,"+3","#e0e0e0","#000",0,3,"na","miss"),
+            (13,4,3,"-1","#ffe4d6","#000",4,1,"hit","hit"),
+            (14,4,5,"+1","#d9e1f2","#000",2,2,"miss","miss"),
+            (15,4,5,"+1","#d9e1f2","#000",2,2,"hit","miss"),
+            (16,5,6,"+1","#d9e1f2","#000",2,2,"miss","miss"),
+            (17,3,4,"+1","#d9e1f2","#000",2,2,"na","miss"),
+            (18,4,6,"+2","#f2f2f2","#000",1,2,"miss","miss"),
+        ]
+    ]
+    
+    ctx = {
+        "request": request,
+        "logo_url": str(request.url_for("static", path="LogoGMwhite.png")),
+        "player_name": "Sergio Moliner",
+        "course_name": "Club de Golf Vallromanes",
+        "course_hcp": "24",
+        "round_date": datetime.now().strftime("%Y-%m-%d"),
+        "gross_total": "92",
+        "stableford": "40",
+        "play_level": "17.4",
+        "putts_total": "33",
+        "putts_per_hole": "1.83",
+        "fir_pct": "29%",
+        "gir_pct": "11%",
+        "tips": [
+            "🔥 Has jugado como HCP 17.4 (tu HCP de juego era 24).",
+            "📉 92 golpes: 4 menos que tu media.",
+            "🐦 Birdie en la vuelta (hoy: 1). Eso siempre cambia el día.",
+            "🛡️ Sin desastres: no hubo triples o peor. Tarjeta muy viva.",
+        ],
+        "round_url": "https://golfmode.example/round/123",
+        "achievements": [
+            "04. Bajar de 100",
+            "16. 0 Triple Bogey",
+            "22. Rey del Par5",
+        ],
+        "holes_out": holes_out,
+        "holes_in": holes_in,
+    }
+
+    return templates.TemplateResponse("emails/round_summary.html", ctx)
+
 # ===========================================================================================
 # ----------------------------------- ADMIN: LEAGUES ----------------------------------------
 # ===========================================================================================
