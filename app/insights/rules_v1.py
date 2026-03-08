@@ -155,7 +155,22 @@ def rule_no_triple_plus(hist: HistorySnapshot, rnd: RoundSnapshot) -> Optional[I
 
 def rule_damage_control_no_points(hist: HistorySnapshot, rnd: RoundSnapshot) -> Optional[InsightCandidate]:
     n0 = _holes_no_points(rnd)
-    if n0 is not None and n0 <= 2:
+
+    if n0 is None:
+        return None
+
+    # Caso perfecto: ningún hoyo sin puntuar
+    if n0 == 0:
+        return _cand(
+            "damage_control_perfect",
+            "narrativa_resiliencia",
+            70,
+            "🛡️ Tarjeta muy viva: has puntuado en todos los hoyos.",
+            {},
+        )
+
+    # Caso bueno: pocos hoyos sin puntuar
+    if n0 <= 2:
         return _cand(
             "damage_control",
             "narrativa_resiliencia",
@@ -163,6 +178,7 @@ def rule_damage_control_no_points(hist: HistorySnapshot, rnd: RoundSnapshot) -> 
             "💪 Daño minimizado: solo {n0} hoyos sin puntuar.",
             {"n0": n0},
         )
+
     return None
 
 

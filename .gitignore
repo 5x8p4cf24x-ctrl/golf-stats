@@ -26,3 +26,5 @@ run_local.ps1
 
 # Uploads (user content)
 app/static/uploads/
+
+app/static/email_preview.html
