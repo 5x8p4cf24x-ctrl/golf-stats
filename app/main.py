@@ -3332,7 +3332,9 @@ def build_rankings_data(db: Session):
     for p in players:
         rps = (
             db.query(models.RoundPlayer)
+            .join(models.RoundPlayer.round)
             .filter(models.RoundPlayer.player_id == p.id)
+            .filter(models.Round.is_cancelled.is_(False))
             .all()
         )
 
@@ -3370,7 +3372,9 @@ def build_rankings_data(db: Session):
             holes = rp.round.course.holes
             par_map = {h.number: h.par for h in holes}
             for s in rp.hole_scores:
-                d = s.gross_strokes - par_map[s.hole_number]
+                if s.gross_strokes is None:
+                    continue
+                d = s.gross_strokes - par_map.get(s.hole_number, 0)
                 if s.gross_strokes == 1:
                     birdies += 1
                 elif d == -1:
@@ -3414,12 +3418,11 @@ def build_rankings_data(db: Session):
         "by_eagles": by_eagles
     }
 
+
 @app.get("/rankings", response_class=HTMLResponse)
 def rankings(request: Request, db: Session = Depends(get_db)):
     data = build_rankings_data(db)
     return templates.TemplateResponse("rankings.html", {"request": request, **data})
-
-
 
 
 
@@ -4805,6 +4808,7 @@ def public_stats(
     years = [
         int(y[0]) for y in (
             db.query(extract("year", Round.date))
+              .filter(Round.is_cancelled.is_(False))
               .distinct()
               .order_by(extract("year", Round.date).desc())
               .all()
@@ -4818,6 +4822,7 @@ def public_stats(
           .join(RoundPlayer.round)     # -> Round
           .join(RoundPlayer.player)    # -> Player
           .join(Round.course)          # -> Course
+          .filter(Round.is_cancelled.is_(False))
     )
 
     if player_id_i is not None:
@@ -4849,7 +4854,7 @@ def public_stats(
         c = r.course
         p = rp.player
 
-        # Nivel de juego (Lvl Jug.) igual que en Liga detail
+        # Nivel de juego (Lvl Jug.)
         level_hcp_round = None
         if (
             rp.gross_total is not None
@@ -4866,9 +4871,8 @@ def public_stats(
             "player_name": p.name if p else "-",
             "player_id": p.id if p else None,
             "tournament_name": (r.league.name if r.league else r.type),
-
             "hcp": rp.course_handicap,
-            "play_level": level_hcp_round,   # ✅ Lvl Jug correcto
+            "play_level": level_hcp_round,
             "total": rp.gross_total,
             "points": rp.stableford_hcp_total,
         }
@@ -4879,8 +4883,7 @@ def public_stats(
 
         rounds_rows.append(row)
 
-
-    # ---- Par por hoyo por campo (para colorear resultados y calcular birdies) ----
+    # ---- Par por hoyo por campo ----
     course_ids = sorted({rp.round.course_id for rp in round_players if rp.round and rp.round.course_id})
     hole_par_by_course: dict[int, dict[int, int]] = {}
 
@@ -4893,7 +4896,7 @@ def public_stats(
         for h in holes:
             hole_par_by_course.setdefault(h.course_id, {})[h.number] = h.par
 
-    # ---- Birdies totales en el set (golpes = par-1) ----
+    # ---- Birdies totales en el set ----
     birdies_total = 0
     for rr in rounds_rows:
         cid = rr.get("course_id")
@@ -4906,7 +4909,7 @@ def public_stats(
             if s_h is not None and p_h is not None and (s_h - p_h) == -1:
                 birdies_total += 1
 
-   # ---- KPIs sobre el set filtrado ----
+    # ---- KPIs sobre el set filtrado ----
     play_level_expr = (
         (RoundPlayer.gross_total - Course.rating_yellow) * 113.0 / Course.slope_yellow
     )
@@ -4914,8 +4917,6 @@ def public_stats(
     stats_q = (
         db.query(
             func.count(RoundPlayer.id).label("rounds_count"),
-
-            # ✅ HCP medio de juego (Lvl Jug.) = media del cálculo
             func.avg(
                 case(
                     (
@@ -4930,16 +4931,14 @@ def public_stats(
                     else_=None,
                 )
             ).label("avg_play_level"),
-
-            # (si además quieres mantener el avg del hcp asignado)
             func.avg(RoundPlayer.course_handicap).label("avg_course_hcp"),
-
             func.avg(RoundPlayer.gross_total).label("avg_gross"),
             func.avg(RoundPlayer.net_total).label("avg_net"),
             func.avg(RoundPlayer.stableford_hcp_total).label("avg_stb"),
         )
-        .join(RoundPlayer.round)   # Round
-        .join(Round.course)        # ✅ Course (para rating/slope)
+        .join(RoundPlayer.round)
+        .join(Round.course)
+        .filter(Round.is_cancelled.is_(False))
     )
 
     if player_id_i is not None:
@@ -4951,17 +4950,7 @@ def public_stats(
 
     s = stats_q.one()
 
-
-    if player_id_i is not None:
-        stats_q = stats_q.filter(RoundPlayer.player_id == player_id_i)
-    if course_id_i is not None:
-        stats_q = stats_q.filter(Round.course_id == course_id_i)
-    if year_i is not None:
-        stats_q = stats_q.filter(extract("year", Round.date) == year_i)
-
-    s = stats_q.one()
-
-    # ---- FIR / GIR (calculado desde HoleScore) ----
+    # ---- FIR / GIR ----
     fir_pct = None
     gir_pct = None
 
@@ -5001,13 +4990,8 @@ def public_stats(
 
     stats = {
         "rounds_count": int(s.rounds_count or 0),
-
-        # ✅ ahora este es el KPI de “HCP Medio de Juego”
         "avg_hcp": float(s.avg_play_level) if s.avg_play_level is not None else None,
-
-        # opcional: si quieres mostrar también el HCP de juego asignado en otra parte
         "avg_course_hcp": float(s.avg_course_hcp) if s.avg_course_hcp is not None else None,
-
         "avg_gross": float(s.avg_gross) if s.avg_gross is not None else None,
         "avg_net": float(s.avg_net) if s.avg_net is not None else None,
         "avg_stb": float(s.avg_stb) if s.avg_stb is not None else None,
@@ -5016,27 +5000,23 @@ def public_stats(
         "birdies": int(birdies_total),
     }
 
-
-   # ---- Mejor vuelta (por Total golpes brutos, desempate por más puntos) ----
+    # ---- Mejor vuelta ----
     best_round = None
     if rounds_rows:
         def best_key(rw: dict):
             tot = rw.get("total")
             pts = rw.get("points")
 
-            # total: cuanto más bajo mejor; si falta, lo mandamos al final
             tot_sort = tot if tot is not None else 10**9
-
-            # points: cuanto más alto mejor (solo para desempatar)
             pts_sort = -(pts if pts is not None else -1)
 
-            # date: más reciente mejor (opcional, tercer desempate)
             dt = rw.get("date")
             dt_sort = -(dt.toordinal() if dt is not None else 0)
 
             return (tot_sort, pts_sort, dt_sort)
 
-    best_round = min(rounds_rows, key=best_key)
+        best_round = min(rounds_rows, key=best_key)
+
     return templates.TemplateResponse("public_stats.html", {
         "request": request,
         "players": players,
@@ -5050,7 +5030,6 @@ def public_stats(
         "hole_par_by_course": hole_par_by_course,
         "best_round": best_round,
     })
-
 
 
 # ---------------------------------------------------------------------------
