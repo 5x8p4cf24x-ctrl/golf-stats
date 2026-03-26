@@ -3,6 +3,14 @@ from . import models, schemas
 from collections import defaultdict
 from .models import News
 from datetime import datetime
+from app.models import (
+    Tournament,
+    TournamentTeam,
+    TournamentTeamPlayer,
+    TournamentStage,
+    TournamentMatch,
+    TournamentMatchParticipant,
+)
 
 
 
@@ -885,3 +893,291 @@ def delete_news(db: Session, news_id: int):
 
 def get_news_by_id(db: Session, news_id: int):
     return db.query(News).filter(News.id == news_id).first()
+
+
+# ======================================================================================
+#                                   Tournament Teams
+# ======================================================================================
+
+def create_team_tournament(db, name, date, image_path=None):
+    t = Tournament(
+        name=name,
+        date=date,
+        mode="team",
+        status="draft",
+        image_path=image_path,
+        course_id=1  # temporal (no se usa en team realmente)
+    )
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+    return t
+
+def create_team(db, tournament_id, side, name, logo_path=None):
+    team = TournamentTeam(
+        tournament_id=tournament_id,
+        side=side,
+        name=name,
+        logo_path=logo_path
+    )
+    db.add(team)
+    db.commit()
+    db.refresh(team)
+    return team
+
+def add_player_to_team(db, team_id, player_id):
+    tp = TournamentTeamPlayer(
+        team_id=team_id,
+        player_id=player_id
+    )
+    db.add(tp)
+    db.commit()
+    return tp
+
+def create_stage(db, tournament_id, order_index, modality, course_id, name=None):
+    stage = TournamentStage(
+        tournament_id=tournament_id,
+        order_index=order_index,
+        modality=modality,
+        course_id=course_id,
+        name=name or f"Round {order_index}"
+    )
+    db.add(stage)
+    db.commit()
+    db.refresh(stage)
+    return stage
+
+def generate_matches_for_stage(db, stage: TournamentStage):
+    db.refresh(stage)
+    tournament = stage.tournament
+
+    team_a = next(t for t in tournament.teams if t.side == "A")
+    team_b = next(t for t in tournament.teams if t.side == "B")
+
+    players_a = team_a.players
+    players_b = team_b.players
+
+    if len(players_a) != len(players_b):
+        raise ValueError("Los dos equipos deben tener el mismo número de jugadores")
+
+    num_players = len(players_a)
+
+    if stage.modality == "individual":
+        matches_count = num_players
+        side_size = 1
+    else:
+        if num_players % 2 != 0:
+            raise ValueError("En modalidades por parejas el número de jugadores debe ser par")
+        matches_count = num_players // 2
+        side_size = 2
+
+    matches = []
+    for i in range(matches_count):
+        m = TournamentMatch(
+            tournament_id=tournament.id,
+            round=f"S{stage.order_index}",   # <- importante por compatibilidad con legacy
+            position=i + 1,
+            stage_id=stage.id,
+            team_a_id=team_a.id,
+            team_b_id=team_b.id,
+            side_size=side_size,
+            match_mode=stage.modality,
+            status="draft",
+        )
+        db.add(m)
+        matches.append(m)
+
+    db.commit()
+
+    for m in matches:
+        db.refresh(m)
+
+    return matches
+
+def set_match_participants(
+    db,
+    match_id: int,
+    side_a_player_ids: list[int],
+    side_b_player_ids: list[int],
+):
+    match = (
+        db.query(models.TournamentMatch)
+        .filter(models.TournamentMatch.id == match_id)
+        .first()
+    )
+    if not match:
+        raise ValueError("Match no encontrado")
+
+    expected_size = match.side_size or 1
+
+    if len(side_a_player_ids) != expected_size:
+        raise ValueError(f"El lado A debe tener {expected_size} jugador(es)")
+
+    if len(side_b_player_ids) != expected_size:
+        raise ValueError(f"El lado B debe tener {expected_size} jugador(es)")
+
+    all_ids = side_a_player_ids + side_b_player_ids
+    if len(all_ids) != len(set(all_ids)):
+        raise ValueError("No se puede repetir un jugador dentro del mismo match")
+
+    (
+        db.query(models.TournamentMatchParticipant)
+        .filter(models.TournamentMatchParticipant.match_id == match_id)
+        .delete(synchronize_session=False)
+    )
+
+    for idx, player_id in enumerate(side_a_player_ids, start=1):
+        db.add(models.TournamentMatchParticipant(
+            match_id=match_id,
+            player_id=player_id,
+            side="A",
+            slot=idx,
+        ))
+
+    for idx, player_id in enumerate(side_b_player_ids, start=1):
+        db.add(models.TournamentMatchParticipant(
+            match_id=match_id,
+            player_id=player_id,
+            side="B",
+            slot=idx,
+        ))
+
+    match.status = "ready"
+
+    db.commit()
+    db.refresh(match)
+    return match
+
+def generate_stage_matches_with_participants(db, tournament_id: int, stage_id: int):
+    stage = (
+        db.query(models.TournamentStage)
+        .filter(
+            models.TournamentStage.id == stage_id,
+            models.TournamentStage.tournament_id == tournament_id,
+        )
+        .first()
+    )
+    if not stage:
+        raise ValueError("Stage no encontrado")
+
+    tournament = (
+        db.query(models.Tournament)
+        .filter(models.Tournament.id == tournament_id)
+        .first()
+    )
+    if not tournament:
+        raise ValueError("Torneo no encontrado")
+
+    team_a = (
+        db.query(models.TournamentTeam)
+        .filter(
+            models.TournamentTeam.tournament_id == tournament_id,
+            models.TournamentTeam.side == "A",
+        )
+        .first()
+    )
+    team_b = (
+        db.query(models.TournamentTeam)
+        .filter(
+            models.TournamentTeam.tournament_id == tournament_id,
+            models.TournamentTeam.side == "B",
+        )
+        .first()
+    )
+
+    if not team_a or not team_b:
+        raise ValueError("El torneo debe tener equipo A y equipo B")
+
+    team_a_players = (
+        db.query(models.TournamentTeamPlayer)
+        .filter(models.TournamentTeamPlayer.team_id == team_a.id)
+        .order_by(models.TournamentTeamPlayer.id.asc())
+        .all()
+    )
+    team_b_players = (
+        db.query(models.TournamentTeamPlayer)
+        .filter(models.TournamentTeamPlayer.team_id == team_b.id)
+        .order_by(models.TournamentTeamPlayer.id.asc())
+        .all()
+    )
+
+    a_ids = [tp.player_id for tp in team_a_players]
+    b_ids = [tp.player_id for tp in team_b_players]
+
+    if not a_ids or not b_ids:
+        raise ValueError("Ambos equipos deben tener jugadores")
+
+    if len(a_ids) != len(b_ids):
+        raise ValueError("Ambos equipos deben tener el mismo número de jugadores")
+
+    # No regenerar si ya existen matches en esta ronda
+    existing = (
+        db.query(models.TournamentMatch)
+        .filter(models.TournamentMatch.stage_id == stage_id)
+        .count()
+    )
+    if existing > 0:
+        raise ValueError("Esta ronda ya tiene partidos generados")
+
+    modality = (stage.modality or "").lower().strip()
+
+    if modality == "individual":
+        side_size = 1
+        matches_count = len(a_ids)
+    else:
+        if len(a_ids) % 2 != 0:
+            raise ValueError("En modalidades por parejas el número de jugadores debe ser par")
+        side_size = 2
+        matches_count = len(a_ids) // 2
+
+    created_matches = []
+
+    for i in range(matches_count):
+        match = models.TournamentMatch(
+            tournament_id=tournament_id,
+            round=f"S{stage.order_index}",   # compatibilidad legacy
+            position=i + 1,
+            stage_id=stage.id,
+            team_a_id=team_a.id,
+            team_b_id=team_b.id,
+            side_size=side_size,
+            match_mode=modality,
+            status="draft",
+        )
+        db.add(match)
+        db.flush()  # para tener match.id sin commit
+
+        if side_size == 1:
+            side_a_ids = [a_ids[i]]
+            side_b_ids = [b_ids[i]]
+        else:
+            start = i * 2
+            side_a_ids = [a_ids[start], a_ids[start + 1]]
+            side_b_ids = [b_ids[start], b_ids[start + 1]]
+
+        for slot, player_id in enumerate(side_a_ids, start=1):
+            db.add(models.TournamentMatchParticipant(
+                match_id=match.id,
+                player_id=player_id,
+                side="A",
+                slot=slot,
+            ))
+
+        for slot, player_id in enumerate(side_b_ids, start=1):
+            db.add(models.TournamentMatchParticipant(
+                match_id=match.id,
+                player_id=player_id,
+                side="B",
+                slot=slot,
+            ))
+
+        match.status = "ready"
+        created_matches.append(match)
+
+    stage.status = "ready"
+    db.commit()
+
+    for m in created_matches:
+        db.refresh(m)
+
+    return created_matches

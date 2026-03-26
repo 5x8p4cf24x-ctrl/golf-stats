@@ -1,4 +1,5 @@
 {% extends "public_base.html" %}
+
 {% block breadcrumbs %}
   {% set crumbs = [
     {"label":"Inicio", "url":"/public"},
@@ -17,8 +18,69 @@
     <p style="margin:6px 0 0;color:rgba(0,0,0,.6);">{{ player.name }}</p>
   </header>
 
-  <section style="padding:16px;border-radius:18px;border:1px solid rgba(0,0,0,.10);background:#fff;">
-    <p style="margin:0;color:rgba(0,0,0,.6);">No tienes torneos activos.</p>
-  </section>
+  {% if team_matches %}
+    {% for m in team_matches %}
+      {% set side_a = m.participants | selectattr("side", "equalto", "A") | list %}
+      {% set side_b = m.participants | selectattr("side", "equalto", "B") | list %}
+
+      <a href="/play/tournament-match/{{ m.id }}"
+         style="display:block;text-decoration:none;color:inherit;margin-bottom:12px;">
+        <section style="padding:16px;border-radius:18px;border:1px solid rgba(0,0,0,.10);background:#fff;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px;">
+            <div>
+              <div style="font-size:12px;color:rgba(0,0,0,.55);">
+                {{ m.tournament.name }}
+                {% if m.stage %}
+                  · {{ m.stage.name or ("Ronda " ~ m.stage.order_index) }}
+                {% endif %}
+              </div>
+              <div style="margin-top:4px;font-weight:800;color:var(--gm-green,#14532d);">
+                {{ m.match_mode|upper if m.match_mode else "MATCH" }}
+              </div>
+            </div>
+
+            <div style="font-size:12px;color:rgba(0,0,0,.55);white-space:nowrap;">
+              {{ m.status|upper }}
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;">
+            <div>
+              <div style="font-size:12px;color:rgba(0,0,0,.5);margin-bottom:4px;">
+                {{ m.team_a.name if m.team_a else "Lado A" }}
+              </div>
+              {% for p in side_a|sort(attribute="slot") %}
+                <div>{{ p.player.name }}</div>
+              {% endfor %}
+            </div>
+
+            <div style="font-weight:800;color:rgba(0,0,0,.45);">VS</div>
+
+            <div>
+              <div style="font-size:12px;color:rgba(0,0,0,.5);margin-bottom:4px;">
+                {{ m.team_b.name if m.team_b else "Lado B" }}
+              </div>
+              {% for p in side_b|sort(attribute="slot") %}
+                <div>{{ p.player.name }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div style="margin-top:10px;font-size:12px;color:rgba(0,0,0,.55);">
+            {% if m.stage and m.stage.course %}
+              {{ m.stage.course.name }}
+            {% endif %}
+            {% if m.result_text %}
+              · {{ m.result_text }}
+            {% endif %}
+          </div>
+        </section>
+      </a>
+    {% endfor %}
+  {% else %}
+    <section style="padding:16px;border-radius:18px;border:1px solid rgba(0,0,0,.10);background:#fff;">
+      <p style="margin:0;color:rgba(0,0,0,.6);">No tienes torneos activos.</p>
+    </section>
+  {% endif %}
 </div>
 {% endblock %}

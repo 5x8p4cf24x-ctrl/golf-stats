@@ -16,7 +16,7 @@
   <header class="public-header">
     <h1 class="public-title">Copas</h1>
     <p class="public-subtitle">
-      Torneos cortos en matchplay. Cuadros eliminatorios hasta la final.
+      Torneos de matchplay en formato individual o por equipos.
     </p>
   </header>
 
@@ -48,17 +48,18 @@
           </div>
         </div>
 
-        {# 👉 AQUÍ VA EL ESTADO, YA FUERA DEL TEXTO #}
-        <div class="round-status">
+        <div class="round-status round-status--inline">
           {% if st.finished %}
-            <span class="badge badge--finished">🏆 Finalizada · {{ st.champion or "—" }}</span>
+            <span class="badge badge--finished badge--sm">
+              🏆 Finalizada{% if st.champion %} · {{ st.champion }}{% endif %}
+            </span>
           {% else %}
-            <span class="badge badge--live">🟢 En vigor</span>
+            <span class="badge badge--live badge--sm">🟢 En vigor</span>
           {% endif %}
-        </div>
 
-        <div class="round-type-chip {{ t.mode }}">
-          {% if t.mode == "individual" %}individual{% else %}equipos{% endif %}
+          <span class="badge badge--mode badge--sm {% if t.mode == 'individual' %}badge--mode-individual{% else %}badge--mode-team{% endif %}">
+            {% if t.mode == "individual" %}Individual{% else %}Equipos{% endif %}
+          </span>
         </div>
 
       </a>

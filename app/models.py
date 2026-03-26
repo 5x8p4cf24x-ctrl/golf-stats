@@ -206,6 +206,7 @@ class News(Base):
     published = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+
 # =====================================================================================
 # ================================= TOURNAMENTS =======================================
 # =====================================================================================
@@ -218,8 +219,10 @@ class Tournament(Base):
     name = Column(String, nullable=False)
     date = Column(Date, nullable=False)
 
+    # Para torneos individuales sigue siendo útil.
+    # En torneos team, el campo principal estará en cada stage.
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
-    
+
     mode = Column(String, nullable=False)  # "individual" | "team"
     status = Column(String, nullable=False, default="draft")  # draft|published|finished
 
@@ -241,6 +244,18 @@ class Tournament(Base):
         cascade="all, delete-orphan"
     )
 
+    teams = relationship(
+        "TournamentTeam",
+        back_populates="tournament",
+        cascade="all, delete-orphan"
+    )
+
+    stages = relationship(
+        "TournamentStage",
+        back_populates="tournament",
+        cascade="all, delete-orphan"
+    )
+
 
 class TournamentParticipant(Base):
     __tablename__ = "tournament_participants"
@@ -256,6 +271,68 @@ class TournamentParticipant(Base):
     player = relationship("Player")
 
 
+class TournamentTeam(Base):
+    __tablename__ = "tournament_teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
+    side = Column(String(1), nullable=False)  # "A" | "B"
+
+    name = Column(String, nullable=False)
+    logo_path = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    tournament = relationship("Tournament", back_populates="teams")
+
+    players = relationship(
+        "TournamentTeamPlayer",
+        back_populates="team",
+        cascade="all, delete-orphan"
+    )
+
+
+class TournamentTeamPlayer(Base):
+    __tablename__ = "tournament_team_players"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    team_id = Column(Integer, ForeignKey("tournament_teams.id"), nullable=False)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    team = relationship("TournamentTeam", back_populates="players")
+    player = relationship("Player")
+
+
+class TournamentStage(Base):
+    __tablename__ = "tournament_stages"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
+
+    order_index = Column(Integer, nullable=False)   # 1, 2, 3...
+    name = Column(String, nullable=True)            # opcional: "Round 1"
+    modality = Column(String, nullable=False)       # individual|fourball|foursome|greensome|scramble
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+
+    status = Column(String, nullable=False, default="draft")  # draft|ready|live|finished
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    tournament = relationship("Tournament", back_populates="stages")
+    course = relationship("Course")
+
+    matches = relationship(
+        "TournamentMatch",
+        back_populates="stage",
+        cascade="all, delete-orphan"
+    )
+
+
 class TournamentMatch(Base):
     __tablename__ = "tournament_matches"
 
@@ -263,32 +340,86 @@ class TournamentMatch(Base):
 
     tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
 
-    round = Column(String, nullable=False)   # "R16", "QF", "SF", "F"
+    # -----------------------------
+    # LEGACY INDIVIDUAL MODE
+    # -----------------------------
+    round = Column(String, nullable=True)   # "R16", "QF", "SF", "F"
     position = Column(Integer, nullable=False)
 
     player_a_id = Column(Integer, ForeignKey("players.id"), nullable=True)
     player_b_id = Column(Integer, ForeignKey("players.id"), nullable=True)
 
     winner_id = Column(Integer, ForeignKey("players.id"), nullable=True)
-    result_text = Column(String, nullable=True)  # "3&2"
 
-    # ✅ NUEVO: link secreto para editar desde móvil
+    # -----------------------------
+    # TEAM MODE / COMMON EXTENSION
+    # -----------------------------
+    stage_id = Column(Integer, ForeignKey("tournament_stages.id"), nullable=True)
+
+    team_a_id = Column(Integer, ForeignKey("tournament_teams.id"), nullable=True)
+    team_b_id = Column(Integer, ForeignKey("tournament_teams.id"), nullable=True)
+
+    side_size = Column(Integer, nullable=True)   # 1 o 2
+    match_mode = Column(String, nullable=True)   # individual|fourball|foursome|greensome|scramble
+
+    status = Column(String, nullable=False, default="draft")  # draft|ready|live|finished
+
+    winner_side = Column(String, nullable=True)  # "A" | "B" | "AS"
+    points_a = Column(Float, nullable=True)
+    points_b = Column(Float, nullable=True)
+
+    result_text = Column(String, nullable=True)  # "3&2", "1UP", "HALVED"
+
+    # link secreto para editar desde móvil
     edit_token = Column(String, nullable=True, index=True)
 
-    # ✅ Opcional: auditoría
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    started_at = Column(DateTime, nullable=True)
+    closed_at = Column(DateTime, nullable=True)
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False
+    )
 
     tournament = relationship("Tournament", back_populates="matches")
+    stage = relationship("TournamentStage", back_populates="matches")
 
     player_a = relationship("Player", foreign_keys=[player_a_id])
     player_b = relationship("Player", foreign_keys=[player_b_id])
     winner = relationship("Player", foreign_keys=[winner_id])
+
+    team_a = relationship("TournamentTeam", foreign_keys=[team_a_id])
+    team_b = relationship("TournamentTeam", foreign_keys=[team_b_id])
 
     hole_results = relationship(
         "TournamentMatchHole",
         back_populates="match",
         cascade="all, delete-orphan"
     )
+
+    participants = relationship(
+        "TournamentMatchParticipant",
+        back_populates="match",
+        cascade="all, delete-orphan"
+    )
+
+
+class TournamentMatchParticipant(Base):
+    __tablename__ = "tournament_match_participants"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    match_id = Column(Integer, ForeignKey("tournament_matches.id"), nullable=False)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
+
+    side = Column(String(1), nullable=False)  # "A" | "B"
+    slot = Column(Integer, nullable=False)    # 1 o 2
+
+    match = relationship("TournamentMatch", back_populates="participants")
+    player = relationship("Player")
+
 
 class TournamentMatchHole(Base):
     __tablename__ = "tournament_match_holes"
@@ -300,6 +431,7 @@ class TournamentMatchHole(Base):
     outcome = Column(String, nullable=False)       # "A" | "B" | "AS"
 
     match = relationship("TournamentMatch", back_populates="hole_results")
+
 
 
 class User(Base):

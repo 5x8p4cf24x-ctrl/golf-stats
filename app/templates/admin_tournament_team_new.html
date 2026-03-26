@@ -1,0 +1,875 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin · Nueva Copa por Equipos{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead admin-pagehead--teamcup">
+    <h1 class="admin-title admin-title--teamcup">Nueva Copa por Equipos</h1>
+    <p class="admin-subtitle admin-subtitle--teamcup">Crea el torneo, define los equipos y configura las rondas.</p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Copas", "url":"/admin/tournaments"},
+    {"label":"Nueva Copa", "url":"/admin/tournaments/new"},
+    {"label":"Equipos", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+
+<section class="card admin-form-card card--spaced">
+  <form method="post" action="/admin/tournaments/new/team" enctype="multipart/form-data" id="teamTournamentForm">
+    <div class="admin-form-grid team-form-grid" style="max-width:1100px;">
+
+      <!-- ===================== DATOS TORNEO ===================== -->
+      <div class="admin-field admin-span-2">
+        <label>Nombre del torneo *</label>
+        <input name="name" type="text" required placeholder="Ej: Ryder GolfMode 2026">
+      </div>
+
+      <div class="admin-field">
+        <label>Fecha inicio *</label>
+        <input name="date" type="date" required>
+      </div>
+
+      <div class="admin-field">
+        <label>Imagen del torneo (opcional)</label>
+        <input class="file-input-compact" type="file" name="image" accept="image/*">
+      </div>
+
+      <!-- ===================== EQUIPOS ===================== -->
+      <div class="admin-span-2 team-blocks-wrap">
+        <div class="team-blocks">
+          <!-- TEAM A -->
+          <div class="team-card team-card--a">
+            <div class="team-card-head">
+              <div class="team-logo-preview" id="teamALogoPreview">
+                <span id="teamAInitials">A</span>
+              </div>
+
+              <div class="team-card-meta">
+                <div class="team-card-title" id="teamATitle">Equipo A</div>
+              </div>
+            </div>
+
+            <div class="admin-field">
+              <label>Nombre equipo A *</label>
+              <input
+                name="team_a_name"
+                id="team_a_name"
+                type="text"
+                required
+                placeholder="Ej: Team Catalunya"
+              >
+            </div>
+
+            <div class="admin-field">
+              <label>Escudo equipo A (opcional)</label>
+              <input class="file-input-compact" type="file" name="team_a_logo" id="team_a_logo" accept="image/*">
+            </div>
+
+            <div class="admin-field">
+              <label>Jugadores Equipo A *</label>
+
+              <div class="players-list" id="teamAPlayersGrid">
+                {% for p in players %}
+                  <button type="button" class="player-row" data-player-id="{{ p.id }}" data-team="A">
+                    <span class="player-row-check"></span>
+                    <span class="player-row-name">{{ p.name }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+
+              <input type="hidden" name="team_a_player_ids" id="team_a_player_ids">
+            </div>
+          </div>
+
+          <!-- TEAM B -->
+          <div class="team-card team-card--b">
+            <div class="team-card-head">
+              <div class="team-logo-preview" id="teamBLogoPreview">
+                <span id="teamBInitials">B</span>
+              </div>
+
+              <div class="team-card-meta">
+                <div class="team-card-title" id="teamBTitle">Equipo B</div>
+              </div>
+            </div>
+
+            <div class="admin-field">
+              <label>Nombre equipo B *</label>
+              <input
+                name="team_b_name"
+                id="team_b_name"
+                type="text"
+                required
+                placeholder="Ej: Team Internacional"
+              >
+            </div>
+
+            <div class="admin-field">
+              <label>Escudo equipo B (opcional)</label>
+              <input class="file-input-compact" type="file" name="team_b_logo" id="team_b_logo" accept="image/*">
+            </div>
+
+            <div class="admin-field">
+              <label>Jugadores Equipo B *</label>
+
+              <div class="players-list" id="teamBPlayersGrid">
+                {% for p in players %}
+                  <button type="button" class="player-row" data-player-id="{{ p.id }}" data-team="B">
+                    <span class="player-row-check"></span>
+                    <span class="player-row-name">{{ p.name }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+
+              <input type="hidden" name="team_b_player_ids" id="team_b_player_ids">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== RONDAS ===================== -->
+      <div class="admin-span-2">
+        <div class="rounds-box">
+          <div class="rounds-head">
+            <div>
+              <h3 class="rounds-title">Rondas</h3>
+              <p class="rounds-sub">Define el orden, campo y modalidad de cada ronda.</p>
+            </div>
+
+            <button type="button" class="btn-gm" id="addStageBtn">+ Nueva ronda</button>
+          </div>
+
+          <div id="stagesContainer">
+            <div class="stage-row" data-stage-index="1">
+              <div class="stage-row-top">
+                <div class="stage-badge">Ronda 1</div>
+              </div>
+
+              <div class="stage-grid">
+                <div class="admin-field">
+                  <label>Nombre ronda 1</label>
+                  <input
+                    type="text"
+                    name="stage_name_1"
+                    placeholder="Ej: Fourball mañana"
+                    value="Round 1"
+                  >
+                </div>
+
+                <div class="admin-field">
+                  <label>Campo ronda 1 *</label>
+                  <select name="stage_course_id_1" required>
+                    {% for c in courses %}
+                      <option value="{{ c.id }}">{{ c.name }}{% if c.city %} ({{ c.city }}){% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="admin-field">
+                  <label>Modalidad ronda 1 *</label>
+                  <select name="stage_modality_1" required>
+                    <option value="fourball">Fourball</option>
+                    <option value="foursome">Foursome</option>
+                    <option value="greensome">Greensome</option>
+                    <option value="scramble">Scramble</option>
+                    <option value="individual">Individual</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" name="stages_count" id="stages_count" value="1">
+        </div>
+      </div>
+
+      <!-- ===================== ACTIONS ===================== -->
+      <div class="admin-form-actions admin-span-2">
+        <a class="btn-gm btn-gm--outline" href="/admin/tournaments/new">Volver</a>
+        <button class="btn-gm" type="submit">Crear Copa por Equipos</button>
+      </div>
+
+    </div>
+  </form>
+</section>
+
+<style>
+  .card--spaced{
+    margin-top:16px;
+  }
+
+  .admin-pagehead--teamcup{
+    margin-bottom:10px;
+  }
+
+  .admin-title--teamcup{
+    font-size: clamp(1.55rem, 2.8vw, 1.95rem);
+    line-height: 1.08;
+    margin: 0 0 4px 0;
+    letter-spacing: -.01em;
+    white-space: nowrap;
+  }
+
+  .admin-subtitle--teamcup{
+    margin: 0;
+    font-size: .9rem;
+    line-height: 1.28;
+    color: rgba(0,0,0,.58);
+  }
+
+  .team-form-grid{
+    align-items:start;
+  }
+
+  .team-form-grid > .admin-field{
+    display:flex;
+    flex-direction:column;
+    align-self:start;
+  }
+
+  .team-form-grid > .admin-field label{
+    font-size:.88rem;
+    font-weight:800;
+    margin-bottom:6px;
+    line-height:1.2;
+  }
+
+  .team-form-grid > .admin-field input[type="date"],
+  .team-form-grid > .admin-field input[type="file"],
+  .team-form-grid > .admin-field input[type="text"],
+  .team-form-grid > .admin-field select{
+    width:100%;
+    min-height:42px;
+    font-size:.94rem;
+    padding:10px 12px;
+    border-radius:14px;
+  }
+
+  .team-form-grid > .admin-field input::placeholder{
+    font-size:.92rem;
+  }
+
+  .file-input-compact{
+    font-size:.87rem !important;
+    padding:8px 10px !important;
+  }
+
+  .file-input-compact::file-selector-button{
+    padding:6px 10px;
+    margin-right:10px;
+    border:1px solid rgba(0,0,0,.10);
+    border-radius:10px;
+    background:#f3f4f6;
+    color:#334155;
+    font-size:.78rem;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .file-input-compact::-webkit-file-upload-button{
+    padding:6px 10px;
+    margin-right:10px;
+    border:1px solid rgba(0,0,0,.10);
+    border-radius:10px;
+    background:#f3f4f6;
+    color:#334155;
+    font-size:.78rem;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .team-blocks-wrap{
+    width: 100%;
+    min-width: 0;
+  }
+
+  .team-blocks{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+    width: 100%;
+    align-items: start;
+  }
+
+  .team-card{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:14px;
+    background:#fff;
+    min-width:0;
+  }
+
+  .team-card--a{
+    border-color:rgba(37,99,235,.40);
+  }
+
+  .team-card--b{
+    border-color:rgba(220,38,38,.40);
+  }
+
+  .team-card .admin-field{
+    margin-bottom: 9px;
+  }
+
+  .team-card .admin-field:last-child{
+    margin-bottom: 0;
+  }
+
+  .team-card-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  .team-logo-preview{
+    width:54px;
+    height:54px;
+    border-radius:14px;
+    border:1px solid rgba(0,0,0,.08);
+    background:rgba(20,83,45,.07);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    flex:0 0 auto;
+  }
+
+  .team-logo-preview img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .team-logo-preview span{
+    font-weight:1000;
+    font-size:1rem;
+    color:#14532d;
+    letter-spacing:.03em;
+  }
+
+  .team-card-meta{
+    min-width:0;
+  }
+
+  .team-card-kicker{
+    display:none;
+  }
+
+  .team-card-title{
+    font-size:.95rem;
+    font-weight:1000;
+    color:#14532d;
+    margin-top:0;
+    line-height:1.1;
+  }
+
+  /* ===== LISTA JUGADORES ===== */
+  .players-list{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:13px;
+    background:#fff;
+    padding:7px;
+    max-height:220px;
+    overflow:auto;
+    display:grid;
+    gap:6px;
+  }
+
+  .player-row{
+    width:100%;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+    border-radius:11px;
+    padding:8px 10px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    cursor:pointer;
+    text-align:left;
+    transition:all .15s ease;
+  }
+
+  .player-row:hover{
+    border-color:rgba(20,83,45,.24);
+  }
+
+  .player-row-check{
+    width:15px;
+    height:15px;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,.16);
+    background:#fff;
+    flex:0 0 auto;
+  }
+
+  .player-row-name{
+    font-size:.86rem;
+    font-weight:700;
+    color:#0f172a;
+    line-height:1.15;
+  }
+
+  .player-row.active-A{
+    background:rgba(37,99,235,.08);
+    border-color:rgba(37,99,235,.24);
+  }
+
+  .player-row.active-A .player-row-check{
+    background:#2563eb;
+    border-color:#2563eb;
+  }
+
+  .player-row.active-B{
+    background:rgba(220,38,38,.08);
+    border-color:rgba(220,38,38,.24);
+  }
+
+  .player-row.active-B .player-row-check{
+    background:#dc2626;
+    border-color:#dc2626;
+  }
+
+  .player-row.disabled{
+    opacity:.42;
+    cursor:not-allowed;
+    background:#f8fafc;
+    border-color:rgba(0,0,0,.06);
+  }
+
+  .player-row.disabled:hover{
+    border-color:rgba(0,0,0,.06);
+  }
+
+  .rounds-box{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:16px;
+    padding:14px;
+    background:#fff;
+  }
+
+  .rounds-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+
+  .rounds-title{
+    margin:0;
+    font-size:.96rem;
+    font-weight:1000;
+    color:#14532d;
+    line-height:1.1;
+  }
+
+  .rounds-sub{
+    margin:4px 0 0 0;
+    color:rgba(0,0,0,.55);
+    font-size:.84rem;
+    line-height:1.25;
+  }
+
+  .rounds-head .btn-gm{
+    min-height:38px;
+    padding:8px 12px;
+    border-radius:12px;
+    font-size:.88rem;
+  }
+
+  .stage-row{
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    padding:12px;
+    background:#fff;
+    margin-bottom:10px;
+  }
+
+  .stage-row:last-child{
+    margin-bottom:0;
+  }
+
+  .stage-row-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  .stage-badge{
+    display:inline-flex;
+    align-items:center;
+    border-radius:999px;
+    padding:5px 9px;
+    background:rgba(20,83,45,.08);
+    color:#14532d;
+    border:1px solid rgba(20,83,45,.16);
+    font-size:.74rem;
+    font-weight:900;
+  }
+
+  .stage-remove{
+    border:none;
+    background:transparent;
+    color:#b91c1c;
+    font-weight:900;
+    cursor:pointer;
+    font-size:.8rem;
+  }
+
+  .stage-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+  }
+
+  .stage-grid .admin-field label{
+    font-size:.84rem;
+    margin-bottom:5px;
+  }
+
+  .stage-grid input,
+  .stage-grid select{
+    min-height:40px;
+    font-size:.92rem;
+    padding:9px 11px;
+  }
+
+  .admin-form-actions{
+    margin-top:2px;
+  }
+
+  .admin-form-actions .btn-gm{
+    min-height:40px;
+    padding:9px 14px;
+    border-radius:12px;
+    font-size:.92rem;
+  }
+
+  @media (max-width: 900px){
+    .team-blocks{
+      grid-template-columns:1fr;
+    }
+
+    .stage-grid{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width: 640px){
+    .admin-title--teamcup{
+      font-size:1.34rem;
+    }
+
+    .admin-subtitle--teamcup{
+      font-size:.86rem;
+    }
+
+    .team-card{
+      padding:12px;
+    }
+
+    .team-logo-preview{
+      width:48px;
+      height:48px;
+      border-radius:12px;
+    }
+
+    .team-card-title{
+      font-size:.92rem;
+    }
+
+    .players-list{
+      max-height:200px;
+    }
+
+    .player-row{
+      padding:7px 9px;
+    }
+
+    .player-row-name{
+      font-size:.83rem;
+    }
+
+    .rounds-box{
+      padding:12px;
+    }
+
+    .stage-row{
+      padding:10px;
+    }
+  }
+</style>
+
+<script>
+(function(){
+  const teamANameInput = document.getElementById('team_a_name');
+  const teamBNameInput = document.getElementById('team_b_name');
+
+  const teamATitle = document.getElementById('teamATitle');
+  const teamBTitle = document.getElementById('teamBTitle');
+
+  const teamALogoInput = document.getElementById('team_a_logo');
+  const teamBLogoInput = document.getElementById('team_b_logo');
+
+  const teamALogoPreview = document.getElementById('teamALogoPreview');
+  const teamBLogoPreview = document.getElementById('teamBLogoPreview');
+
+  const teamAInitials = document.getElementById('teamAInitials');
+  const teamBInitials = document.getElementById('teamBInitials');
+
+  const teamAHidden = document.getElementById('team_a_player_ids');
+  const teamBHidden = document.getElementById('team_b_player_ids');
+
+  const teamARows = document.querySelectorAll('#teamAPlayersGrid .player-row');
+  const teamBRows = document.querySelectorAll('#teamBPlayersGrid .player-row');
+
+  const addStageBtn = document.getElementById('addStageBtn');
+  const stagesContainer = document.getElementById('stagesContainer');
+  const stagesCountInput = document.getElementById('stages_count');
+
+  const courseOptionsHtml = `{% for c in courses %}<option value="{{ c.id }}">{{ c.name }}{% if c.city %} ({{ c.city }}){% endif %}</option>{% endfor %}`;
+  const modalityOptionsHtml = `
+    <option value="fourball">Fourball</option>
+    <option value="foursome">Foursome</option>
+    <option value="greensome">Greensome</option>
+    <option value="scramble">Scramble</option>
+    <option value="individual">Individual</option>
+  `;
+
+  function getInitials(name, fallback){
+    const value = (name || '').trim();
+    if(!value) return fallback;
+
+    const parts = value.split(/\s+/).filter(Boolean);
+    if(parts.length === 1){
+      return parts[0].slice(0, 1).toUpperCase();
+    }
+
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  function updateTeamNamePreview(){
+    const aName = teamANameInput.value.trim();
+    const bName = teamBNameInput.value.trim();
+
+    teamATitle.textContent = aName || 'Equipo A';
+    teamBTitle.textContent = bName || 'Equipo B';
+
+    if(!teamALogoPreview.querySelector('img')){
+      teamAInitials.textContent = getInitials(aName, 'A');
+    }
+    if(!teamBLogoPreview.querySelector('img')){
+      teamBInitials.textContent = getInitials(bName, 'B');
+    }
+  }
+
+  function renderLogoPreview(input, previewBox, initialsNode, fallbackText){
+    const file = input.files && input.files[0];
+
+    if(!file){
+      previewBox.innerHTML = `<span>${initialsNode.textContent || fallbackText}</span>`;
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+      previewBox.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function selectedValuesFromRows(rows, activeClass){
+    return Array.from(rows)
+      .filter(row => row.classList.contains(activeClass))
+      .map(row => row.dataset.playerId);
+  }
+
+  function updateHiddenInputs(){
+    const selectedA = selectedValuesFromRows(teamARows, 'active-A');
+    const selectedB = selectedValuesFromRows(teamBRows, 'active-B');
+
+    teamAHidden.value = selectedA.join(',');
+    teamBHidden.value = selectedB.join(',');
+  }
+
+  function syncPlayerSelectors(){
+    const selectedA = new Set(selectedValuesFromRows(teamARows, 'active-A'));
+    const selectedB = new Set(selectedValuesFromRows(teamBRows, 'active-B'));
+
+    teamARows.forEach(row => {
+      const id = row.dataset.playerId;
+      if(selectedB.has(id) && !row.classList.contains('active-A')){
+        row.classList.add('disabled');
+      } else {
+        row.classList.remove('disabled');
+      }
+    });
+
+    teamBRows.forEach(row => {
+      const id = row.dataset.playerId;
+      if(selectedA.has(id) && !row.classList.contains('active-B')){
+        row.classList.add('disabled');
+      } else {
+        row.classList.remove('disabled');
+      }
+    });
+  }
+
+  function reindexStages(){
+    const stageRows = Array.from(stagesContainer.querySelectorAll('.stage-row'));
+
+    stageRows.forEach((row, idx) => {
+      const n = idx + 1;
+      row.dataset.stageIndex = n;
+
+      const badge = row.querySelector('.stage-badge');
+      if(badge) badge.textContent = `Ronda ${n}`;
+
+      const nameInput = row.querySelector('[data-role="stage-name"]');
+      const courseSelect = row.querySelector('[data-role="stage-course"]');
+      const modalitySelect = row.querySelector('[data-role="stage-modality"]');
+
+      if(nameInput){
+        nameInput.name = `stage_name_${n}`;
+        if(!nameInput.value || /^Round \d+$/i.test(nameInput.value.trim())){
+          nameInput.value = `Round ${n}`;
+        }
+        const label = row.querySelector('[data-label="stage-name"]');
+        if(label) label.textContent = `Nombre ronda ${n}`;
+      }
+
+      if(courseSelect){
+        courseSelect.name = `stage_course_id_${n}`;
+        const label = row.querySelector('[data-label="stage-course"]');
+        if(label) label.textContent = `Campo ronda ${n} *`;
+      }
+
+      if(modalitySelect){
+        modalitySelect.name = `stage_modality_${n}`;
+        const label = row.querySelector('[data-label="stage-modality"]');
+        if(label) label.textContent = `Modalidad ronda ${n} *`;
+      }
+
+      const removeBtn = row.querySelector('.stage-remove');
+      if(removeBtn){
+        removeBtn.style.display = stageRows.length > 1 ? 'inline-block' : 'none';
+      }
+    });
+
+    stagesCountInput.value = stageRows.length;
+  }
+
+  function createStageRow(index){
+    const wrapper = document.createElement('div');
+    wrapper.className = 'stage-row';
+    wrapper.dataset.stageIndex = index;
+
+    wrapper.innerHTML = `
+      <div class="stage-row-top">
+        <div class="stage-badge">Ronda ${index}</div>
+        <button type="button" class="stage-remove">Eliminar</button>
+      </div>
+
+      <div class="stage-grid">
+        <div class="admin-field">
+          <label data-label="stage-name">Nombre ronda ${index}</label>
+          <input
+            type="text"
+            name="stage_name_${index}"
+            data-role="stage-name"
+            placeholder="Ej: Fourball mañana"
+            value="Round ${index}"
+          >
+        </div>
+
+        <div class="admin-field">
+          <label data-label="stage-course">Campo ronda ${index} *</label>
+          <select name="stage_course_id_${index}" data-role="stage-course" required>
+            ${courseOptionsHtml}
+          </select>
+        </div>
+
+        <div class="admin-field">
+          <label data-label="stage-modality">Modalidad ronda ${index} *</label>
+          <select name="stage_modality_${index}" data-role="stage-modality" required>
+            ${modalityOptionsHtml}
+          </select>
+        </div>
+      </div>
+    `;
+
+    wrapper.querySelector('.stage-remove').addEventListener('click', function(){
+      wrapper.remove();
+      reindexStages();
+    });
+
+    return wrapper;
+  }
+
+  teamARows.forEach(row => {
+    row.addEventListener('click', function(){
+      if(row.classList.contains('disabled')) return;
+      row.classList.toggle('active-A');
+      updateHiddenInputs();
+      syncPlayerSelectors();
+    });
+  });
+
+  teamBRows.forEach(row => {
+    row.addEventListener('click', function(){
+      if(row.classList.contains('disabled')) return;
+      row.classList.toggle('active-B');
+      updateHiddenInputs();
+      syncPlayerSelectors();
+    });
+  });
+
+  teamANameInput.addEventListener('input', function(){
+    if(!teamALogoPreview.querySelector('img')){
+      teamAInitials.textContent = getInitials(teamANameInput.value, 'A');
+    }
+    updateTeamNamePreview();
+  });
+
+  teamBNameInput.addEventListener('input', function(){
+    if(!teamBLogoPreview.querySelector('img')){
+      teamBInitials.textContent = getInitials(teamBNameInput.value, 'B');
+    }
+    updateTeamNamePreview();
+  });
+
+  teamALogoInput.addEventListener('change', function(){
+    teamAInitials.textContent = getInitials(teamANameInput.value, 'A');
+    renderLogoPreview(teamALogoInput, teamALogoPreview, teamAInitials, 'A');
+  });
+
+  teamBLogoInput.addEventListener('change', function(){
+    teamBInitials.textContent = getInitials(teamBNameInput.value, 'B');
+    renderLogoPreview(teamBLogoInput, teamBLogoPreview, teamBInitials, 'B');
+  });
+
+  addStageBtn.addEventListener('click', function(){
+    const nextIndex = stagesContainer.querySelectorAll('.stage-row').length + 1;
+    stagesContainer.appendChild(createStageRow(nextIndex));
+    reindexStages();
+  });
+
+  updateTeamNamePreview();
+  updateHiddenInputs();
+  syncPlayerSelectors();
+  reindexStages();
+})();
+</script>
+
+{% endblock %}

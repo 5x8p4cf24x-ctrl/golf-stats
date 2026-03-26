@@ -1,0 +1,147 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin · Nueva Copa{% endblock %}
+
+{% block page_header %}
+  <header class="admin-pagehead admin-pagehead--tournament-new">
+    <h1 class="admin-title admin-title--tournament-new">Nueva Copa</h1>
+    <p class="admin-subtitle admin-subtitle--tournament-new">
+      Elige el tipo de torneo que quieres crear.
+    </p>
+  </header>
+{% endblock %}
+
+{% block breadcrumbs %}
+  {% set crumbs = [
+    {"label":"Admin", "url":"/admin"},
+    {"label":"Copas", "url":"/admin/tournaments"},
+    {"label":"Nueva Copa", "url": None}
+  ] %}
+  {% include "components/breadcrumbs.html" %}
+{% endblock %}
+
+{% block content %}
+<section class="card card--spaced tournament-mode-picker">
+  <div class="tournament-mode-grid">
+
+    <a href="/admin/tournaments/new/individual"
+       class="tournament-mode-card tournament-mode-card--individual">
+      <div class="tournament-mode-eyebrow">Modo actual</div>
+      <div class="tournament-mode-title">Torneo individual</div>
+      <div class="tournament-mode-desc">
+        Cuadro eliminatorio clásico con cruces 1 vs 1.
+      </div>
+    </a>
+
+    <a href="/admin/tournaments/new/team"
+       class="tournament-mode-card tournament-mode-card--team">
+      <div class="tournament-mode-eyebrow">Nuevo</div>
+      <div class="tournament-mode-title">Torneo por equipos</div>
+      <div class="tournament-mode-desc">
+        Dos equipos, varias rondas y partidos por modalidad.
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<style>
+  .card--spaced{
+    margin-top: 18px;
+  }
+
+  .admin-pagehead--tournament-new{
+    margin-bottom: 10px;
+  }
+
+  .admin-title--tournament-new{
+    font-size: clamp(1.9rem, 3vw, 2.25rem);
+    line-height: 1.05;
+    margin-bottom: 4px;
+  }
+
+  .admin-subtitle--tournament-new{
+    margin-top: 0;
+    font-size: .98rem;
+    line-height: 1.35;
+  }
+
+  .tournament-mode-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .tournament-mode-card{
+    display: block;
+    text-decoration: none;
+    border-radius: 20px;
+    padding: 20px;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 10px 24px rgba(0,0,0,.10);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  }
+
+  .tournament-mode-card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(0,0,0,.14);
+    filter: brightness(1.02);
+  }
+
+  .tournament-mode-card--individual{
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  }
+
+  .tournament-mode-card--team{
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  }
+
+  .tournament-mode-eyebrow{
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    opacity: .88;
+    margin-bottom: 10px;
+    color: rgba(255,255,255,.88);
+  }
+
+  .tournament-mode-title{
+    font-size: 1.22rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    color: #fff;
+  }
+
+  .tournament-mode-desc{
+    font-size: .98rem;
+    line-height: 1.4;
+    color: rgba(255,255,255,.92);
+    max-width: 32ch;
+  }
+
+  @media (max-width: 640px){
+    .admin-title--tournament-new{
+      font-size: 1.65rem;
+      margin-bottom: 2px;
+    }
+
+    .admin-subtitle--tournament-new{
+      font-size: .94rem;
+    }
+
+    .tournament-mode-card{
+      padding: 18px;
+      border-radius: 18px;
+    }
+
+    .tournament-mode-title{
+      font-size: 1.1rem;
+    }
+
+    .tournament-mode-desc{
+      font-size: .95rem;
+    }
+  }
+</style>
+{% endblock %}

@@ -1,9 +1,9 @@
 {% extends "admin_base.html" %}
-{% block title %}Admin · Nueva Copa{% endblock %}
+{% block title %}Admin · Nueva Copa Individual{% endblock %}
 
 {% block page_header %}
   <header class="admin-pagehead">
-    <h1 class="admin-title">Nueva Copa (Individual)</h1>
+    <h1 class="admin-title">Nueva Copa Individual</h1>
     <p class="admin-subtitle">Crea el torneo y selecciona hasta 16 jugadores.</p>
   </header>
 {% endblock %}
@@ -12,7 +12,8 @@
   {% set crumbs = [
     {"label":"Admin", "url":"/admin"},
     {"label":"Copas", "url":"/admin/tournaments"},
-    {"label":"Nueva Copa", "url": None}
+    {"label":"Nueva Copa", "url":"/admin/tournaments/new"},
+    {"label":"Individual", "url": None}
   ] %}
   {% include "components/breadcrumbs.html" %}
 {% endblock %}
@@ -63,7 +64,7 @@
         </div>
 
         <div class="admin-form-actions admin-span-2">
-          <a class="btn-gm btn-gm--outline" href="/admin/tournaments">Cancelar</a>
+          <a class="btn-gm btn-gm--outline" href="/admin/tournaments/new">Volver</a>
           <button class="btn-gm" type="submit">Crear Copa</button>
         </div>
 

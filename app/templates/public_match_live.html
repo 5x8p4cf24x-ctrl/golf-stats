@@ -4,13 +4,33 @@
 {% block container_class %}rounds-page{% endblock %}
 
 {% block head_extra %}
+
 <style>
   :root{
     --bd: rgba(0,0,0,.10);
     --txt: rgba(0,0,0,.82);
     --mut: rgba(0,0,0,.55);
     --green: var(--gm-green, #14532d);
+
+    /* default = individual legacy */
+    --side-a-bg: rgba(220,38,38,.10);
+    --side-b-bg: rgba(37,99,235,.10);
+    --side-a-dot: #dc2626;
+    --side-b-dot: #2563eb;
+    --side-a-choice: rgba(220,38,38,.14);
+    --side-b-choice: rgba(37,99,235,.14);
   }
+
+  {% if is_team_mode %}
+  :root{
+    --side-a-bg: rgba(37,99,235,.10);
+    --side-b-bg: rgba(220,38,38,.10);
+    --side-a-dot: #2563eb;
+    --side-b-dot: #dc2626;
+    --side-a-choice: rgba(37,99,235,.14);
+    --side-b-choice: rgba(220,38,38,.14);
+  }
+  {% endif %}
 
   .live-wrap{ max-width: 520px; margin: 0 auto; }
 
@@ -75,8 +95,8 @@
   }
   .pill span:last-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-  .pill.a{ background: rgba(220,38,38,.10); }
-  .pill.b{ background: rgba(37,99,235,.10); }
+  .pill.a{ background: var(--side-a-bg); }
+  .pill.b{ background: var(--side-b-bg); }
 
   .dot{
     width: 5px;
@@ -86,8 +106,8 @@
     flex: 0 0 auto;
   }
 
-  .dot.a{ background:#dc2626; }   /* rojo */
-  .dot.b{ background:#2563eb; }   /* azul */
+  .dot.a{ background: var(--side-a-dot); }
+  .dot.b{ background: var(--side-b-dot); }
 
   .vs{
     font-weight: 900;
@@ -124,8 +144,8 @@
     gap: 6px;
     white-space:nowrap;
   }
-  .lead-pill.a{ background: rgba(220,38,38,.10); }
-  .lead-pill.b{ background: rgba(37,99,235,.10); }
+  .lead-pill.a{ background: var(--side-a-bg); }
+  .lead-pill.b{ background: var(--side-b-bg); }
   .lead-pill.as{ background: rgba(0,0,0,.05); }
 
   .helper{
@@ -191,7 +211,7 @@
 
   .choice{
     border-radius: 14px;
-    border: 1px solid var(---gm-green);
+    border: 1px solid var(--gm-green);
     background:#fff;
     padding: 11px 8px;
     font-weight: 700;
@@ -204,9 +224,9 @@
     font-size: .75rem;
   }
 
-  .choice.a.is-on{ background: rgba(220,38,38,.14); }
+  .choice.a.is-on{ background: var(--side-a-choice); }
   .choice.as.is-on{ background: rgba(0,0,0,.06); }
-  .choice.b.is-on{ background: rgba(37,99,235,.14); }
+  .choice.b.is-on{ background: var(--side-b-choice); }
 
   /* Modal */
   .modal-back{
@@ -268,10 +288,11 @@
 
 {% block content %}
 <div class="live-wrap">
-
+  
   <section class="live-card">
     <div class="live-header">
       <h1 class="live-title">Live match</h1>
+      
       {% if not match.winner_id %}
         <a class="btn-ghost" href="/public/tournaments/{{ tournament_id }}">Salir</a>
       {% endif %}

@@ -33,7 +33,7 @@ from app.db import get_db
 from app.models import User
 from app.auth.security import verify_password
 from app.auth.dependencies import get_current_user, get_current_player, get_current_player_optional
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from app.auth.routes import router as auth_router
 from starlette.responses import HTMLResponse
 from starlette.responses import JSONResponse
@@ -43,6 +43,8 @@ from app.insights.email_scorecard import build_email_scorecard_rows
 from app.insights.email_render import render_round_email_html
 from app.insights.types import AchievementsContext
 from app.utils.email import send_user_email
+from app import crud
+from app import models
 
 
 
@@ -2063,6 +2065,44 @@ def _next_round(r: str) -> str | None:
 def _round_size(r: str) -> int:
     return {"R16": 8, "QF": 4, "SF": 2, "F": 1}[r]
 
+def _refresh_team_tournament_status(db: Session, tournament_id: int):
+    tournament = (
+        db.query(models.Tournament)
+        .options(
+            joinedload(models.Tournament.stages)
+            .joinedload(models.TournamentStage.matches)
+        )
+        .filter(models.Tournament.id == tournament_id)
+        .first()
+    )
+
+    if not tournament:
+        print("REFRESH TEAM STATUS: tournament not found", tournament_id)
+        return
+
+    all_matches = []
+    for st in tournament.stages or []:
+        all_matches.extend(st.matches or [])
+
+    print("REFRESH TEAM STATUS:", tournament_id, "matches:", len(all_matches))
+
+    if not all_matches:
+        tournament.status = "draft"
+        db.commit()
+        print("REFRESH TEAM STATUS -> draft")
+        return
+
+    all_finished = all(m.status == "finished" for m in all_matches)
+    print("REFRESH TEAM STATUS all_finished:", all_finished)
+
+    if all_finished:
+        tournament.status = "finished"
+    else:
+        tournament.status = "live"
+
+    db.commit()
+    print("REFRESH TEAM STATUS saved:", tournament.status)
+
 
 @app.get("/admin/tournaments", response_class=HTMLResponse)
 def admin_tournaments_list(request: Request, db: Session = Depends(get_db)):
@@ -2074,7 +2114,14 @@ def admin_tournaments_list(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/admin/tournaments/new", response_class=HTMLResponse)
-def admin_tournament_new_form(request: Request, db: Session = Depends(get_db)):
+def admin_tournament_new_mode(request: Request):
+    return templates.TemplateResponse(
+        "admin_tournament_new_mode.html",
+        {"request": request},
+    )
+
+@app.get("/admin/tournaments/new/individual", response_class=HTMLResponse)
+def admin_tournament_new_form_individual(request: Request, db: Session = Depends(get_db)):
     players = crud.get_players(db)
     courses = crud.get_courses(db)
     return templates.TemplateResponse(
@@ -2082,6 +2129,18 @@ def admin_tournament_new_form(request: Request, db: Session = Depends(get_db)):
         {"request": request, "players": players, "courses": courses},
     )
 
+@app.get("/admin/tournaments/new/team", response_class=HTMLResponse)
+def admin_tournament_new_form_team(request: Request, db: Session = Depends(get_db)):
+    players = crud.get_players(db)
+    courses = crud.get_courses(db)
+    return templates.TemplateResponse(
+        "admin_tournament_team_new.html",
+        {
+            "request": request,
+            "players": players,
+            "courses": courses,
+        },
+    )
 
 @app.post("/admin/tournaments/new")
 async def admin_tournament_new(
@@ -2131,27 +2190,82 @@ def admin_tournament_delete(tournament_id: int, db: Session = Depends(get_db)):
 
     image_path = getattr(t, "image_path", None)
 
-    # borrar hijos explícitamente
-    db.query(models.TournamentMatchHole).filter(
-        models.TournamentMatchHole.match_id.in_(
-            db.query(models.TournamentMatch.id).filter(models.TournamentMatch.tournament_id == tournament_id)
+    # =========================
+    # TEAM MODE children
+    # =========================
+
+    # ids de matches team
+    team_match_ids = [
+        x[0] for x in (
+            db.query(models.TournamentMatch.id)
+            .filter(models.TournamentMatch.tournament_id == tournament_id)
+            .all()
         )
-    ).delete(synchronize_session=False)
+    ]
+
+    if team_match_ids:
+        db.query(models.TournamentMatchHole).filter(
+            models.TournamentMatchHole.match_id.in_(team_match_ids)
+        ).delete(synchronize_session=False)
+
+        db.query(models.TournamentMatchParticipant).filter(
+            models.TournamentMatchParticipant.match_id.in_(team_match_ids)
+        ).delete(synchronize_session=False)
 
     db.query(models.TournamentMatch).filter(
         models.TournamentMatch.tournament_id == tournament_id
     ).delete(synchronize_session=False)
 
+    # team players
+    team_ids = [
+        x[0] for x in (
+            db.query(models.TournamentTeam.id)
+            .filter(models.TournamentTeam.tournament_id == tournament_id)
+            .all()
+        )
+    ]
+
+    if team_ids:
+        db.query(models.TournamentTeamPlayer).filter(
+            models.TournamentTeamPlayer.team_id.in_(team_ids)
+        ).delete(synchronize_session=False)
+
+    db.query(models.TournamentTeam).filter(
+        models.TournamentTeam.tournament_id == tournament_id
+    ).delete(synchronize_session=False)
+
+    db.query(models.TournamentStage).filter(
+        models.TournamentStage.tournament_id == tournament_id
+    ).delete(synchronize_session=False)
+
+    # =========================
+    # INDIVIDUAL MODE children
+    # =========================
+    indiv_match_ids = [
+        x[0] for x in (
+            db.query(models.TournamentMatch.id)
+            .filter(models.TournamentMatch.tournament_id == tournament_id)
+            .all()
+        )
+    ]
+
+    if indiv_match_ids:
+        db.query(models.TournamentMatchHole).filter(
+            models.TournamentMatchHole.match_id.in_(indiv_match_ids)
+        ).delete(synchronize_session=False)
+
     db.query(models.TournamentParticipant).filter(
         models.TournamentParticipant.tournament_id == tournament_id
     ).delete(synchronize_session=False)
 
-    # borrar torneo sin cascade
-    db.query(models.Tournament).filter(models.Tournament.id == tournament_id).delete(synchronize_session=False)
+    # torneo
+    db.query(models.Tournament).filter(
+        models.Tournament.id == tournament_id
+    ).delete(synchronize_session=False)
 
     db.commit()
 
-    # borrar imagen del disco
+    # borrar imagen torneo disco
     try:
         if image_path and isinstance(image_path, str) and image_path.startswith("/uploads/tournaments/"):
             rel = image_path.replace("/uploads/", "")
@@ -2163,42 +2277,378 @@ def admin_tournament_delete(tournament_id: int, db: Session = Depends(get_db)):
 
     return RedirectResponse("/admin/tournaments", status_code=303)
 
+@app.post("/admin/tournaments/new/team")
+async def admin_tournament_new_team(
+    request: Request,
+    image: UploadFile | None = File(None),
+    team_a_logo: UploadFile | None = File(None),
+    team_b_logo: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    form = await request.form()
+
+    name = (form.get("name") or "").strip()
+    date_str = (form.get("date") or "").strip()
+
+    team_a_name = (form.get("team_a_name") or "").strip()
+    team_b_name = (form.get("team_b_name") or "").strip()
+
+    team_a_player_ids_raw = (form.get("team_a_player_ids") or "").strip()
+    team_b_player_ids_raw = (form.get("team_b_player_ids") or "").strip()
+
+    stages_count_raw = (form.get("stages_count") or "1").strip()
+
+    # -----------------------------
+    # Helpers
+    # -----------------------------
+    def parse_csv_ids(raw: str) -> list[int]:
+        out = []
+        for part in raw.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                out.append(int(part))
+            except ValueError:
+                continue
+        return out
+
+    async def save_optional_upload(upload: UploadFile | None, prefix: str) -> str | None:
+        if not upload or not upload.filename:
+            return None
+
+        filename = f"{prefix}_{uuid4().hex}_{upload.filename}"
+        dest_path = UPLOAD_TOURNAMENTS_DIR / filename
+
+        with open(dest_path, "wb") as f:
+            f.write(await upload.read())
+
+        return f"/uploads/tournaments/{filename}"
+
+    # -----------------------------
+    # Validaciones base
+    # -----------------------------
+    if not name:
+        raise HTTPException(status_code=400, detail="Nombre del torneo obligatorio")
+
+    if not date_str:
+        raise HTTPException(status_code=400, detail="Fecha obligatoria")
+
+    if not team_a_name or not team_b_name:
+        raise HTTPException(status_code=400, detail="Los nombres de los equipos son obligatorios")
+
+    try:
+        tournament_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Fecha inválida")
+
+    team_a_player_ids = parse_csv_ids(team_a_player_ids_raw)
+    team_b_player_ids = parse_csv_ids(team_b_player_ids_raw)
+
+    if len(team_a_player_ids) < 2 or len(team_b_player_ids) < 2:
+        raise HTTPException(status_code=400, detail="Cada equipo debe tener al menos 2 jugadores")
+
+    if len(team_a_player_ids) != len(team_b_player_ids):
+        raise HTTPException(status_code=400, detail="Ambos equipos deben tener el mismo número de jugadores")
+
+    repeated = set(team_a_player_ids).intersection(set(team_b_player_ids))
+    if repeated:
+        raise HTTPException(status_code=400, detail="Un jugador no puede estar en ambos equipos")
+
+    try:
+        stages_count = int(stages_count_raw)
+    except ValueError:
+        stages_count = 1
+
+    if stages_count < 1:
+        raise HTTPException(status_code=400, detail="Debe existir al menos una ronda")
+
+    # -----------------------------
+    # Leer y validar rondas
+    # -----------------------------
+    stages_payload = []
+
+    for i in range(1, stages_count + 1):
+        stage_name = (form.get(f"stage_name_{i}") or "").strip()
+        stage_course_id_raw = (form.get(f"stage_course_id_{i}") or "").strip()
+        stage_modality = (form.get(f"stage_modality_{i}") or "").strip().lower()
+
+        if not stage_course_id_raw:
+            raise HTTPException(status_code=400, detail=f"Falta el campo de la ronda {i}")
+
+        try:
+            stage_course_id = int(stage_course_id_raw)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Campo inválido en la ronda {i}")
+
+        if stage_modality not in {"fourball", "foursome", "greensome", "scramble", "individual"}:
+            raise HTTPException(status_code=400, detail=f"Modalidad inválida en la ronda {i}")
+
+        # En modalidades por parejas, número de jugadores par
+        if stage_modality != "individual" and (len(team_a_player_ids) % 2 != 0):
+            raise HTTPException(
+                status_code=400,
+                detail=f"En la ronda {i}, la modalidad por parejas requiere número par de jugadores por equipo"
+            )
+
+        # Validar que el campo exista
+        course_exists = db.query(models.Course).filter(models.Course.id == stage_course_id).first()
+        if not course_exists:
+            raise HTTPException(status_code=400, detail=f"El campo de la ronda {i} no existe")
+
+        stages_payload.append({
+            "order_index": i,
+            "name": stage_name or f"Round {i}",
+            "course_id": stage_course_id,
+            "modality": stage_modality,
+        })
+
+    # -----------------------------
+    # Guardar uploads
+    # -----------------------------
+    image_path = await save_optional_upload(image, "tournament")
+    team_a_logo_path = await save_optional_upload(team_a_logo, "teamA")
+    team_b_logo_path = await save_optional_upload(team_b_logo, "teamB")
+
+    # -----------------------------
+    # Crear torneo
+    # course_id legacy = primer stage
+    # -----------------------------
+    first_stage_course_id = stages_payload[0]["course_id"]
+
+    t = models.Tournament(
+        name=name,
+        date=tournament_date,
+        course_id=first_stage_course_id,  # legacy
+        mode="team",
+        status="draft",
+        image_path=image_path,
+    )
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+
+    # -----------------------------
+    # Crear equipos
+    # -----------------------------
+    team_a = models.TournamentTeam(
+        tournament_id=t.id,
+        side="A",
+        name=team_a_name,
+        logo_path=team_a_logo_path,
+    )
+    team_b = models.TournamentTeam(
+        tournament_id=t.id,
+        side="B",
+        name=team_b_name,
+        logo_path=team_b_logo_path,
+    )
+    db.add(team_a)
+    db.add(team_b)
+    db.commit()
+    db.refresh(team_a)
+    db.refresh(team_b)
+
+    # -----------------------------
+    # Jugadores de cada equipo
+    # -----------------------------
+    for pid in team_a_player_ids:
+        db.add(models.TournamentTeamPlayer(
+            team_id=team_a.id,
+            player_id=pid,
+        ))
+
+    for pid in team_b_player_ids:
+        db.add(models.TournamentTeamPlayer(
+            team_id=team_b.id,
+            player_id=pid,
+        ))
+
+    db.commit()
+
+    # -----------------------------
+    # Crear rondas
+    # -----------------------------
+    for st in stages_payload:
+        db.add(models.TournamentStage(
+            tournament_id=t.id,
+            order_index=st["order_index"],
+            name=st["name"],
+            modality=st["modality"],
+            course_id=st["course_id"],
+            status="draft",
+        ))
+    
+    created_teams = (
+        db.query(models.TournamentTeam)
+        .filter(models.TournamentTeam.tournament_id == t.id)
+        .all()
+    )
+
+    created_stages = (
+        db.query(models.TournamentStage)
+        .filter(models.TournamentStage.tournament_id == t.id)
+        .order_by(models.TournamentStage.order_index.asc())
+        .all()
+    )
+
+    print("\n===== DEBUG TOURNAMENT =====")
+    print("TOURNAMENT:", t.id, t.name)
+
+    print("TEAMS:")
+    for x in created_teams:
+        print(f" - id={x.id}, side={x.side}, name={x.name}, tournament_id={x.tournament_id}")
+
+    print("STAGES:")
+    for x in created_stages:
+        print(f" - id={x.id}, order={x.order_index}, name={x.name}, modality={x.modality}, tournament_id={x.tournament_id}")
+
+    print("===== END DEBUG =====\n")
+
+    db.commit()
+
+    return RedirectResponse(f"/admin/tournaments/{t.id}", status_code=303)
 
 
 @app.get("/admin/tournaments/{tournament_id}", response_class=HTMLResponse)
 def admin_tournament_detail(tournament_id: int, request: Request, db: Session = Depends(get_db)):
-    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    t = (
+        db.query(models.Tournament)
+        .options(
+            joinedload(models.Tournament.course),
+
+            selectinload(models.Tournament.teams)
+            .selectinload(models.TournamentTeam.players)
+            .joinedload(models.TournamentTeamPlayer.player),
+
+            selectinload(models.Tournament.stages)
+            .joinedload(models.TournamentStage.course),
+
+            selectinload(models.Tournament.stages)
+            .selectinload(models.TournamentStage.matches)
+            .selectinload(models.TournamentMatch.participants)
+            .joinedload(models.TournamentMatchParticipant.player),
+
+            selectinload(models.Tournament.stages)
+            .selectinload(models.TournamentStage.matches)
+            .joinedload(models.TournamentMatch.team_a),
+
+            selectinload(models.Tournament.stages)
+            .selectinload(models.TournamentStage.matches)
+            .joinedload(models.TournamentMatch.team_b),
+        )
+        .filter(models.Tournament.id == tournament_id)
+        .first()
+    )
+
     if not t:
         return HTMLResponse("Copa no encontrada", status_code=404)
 
-    participants = (
-        db.query(models.TournamentParticipant)
-        .filter(models.TournamentParticipant.tournament_id == tournament_id)
-        .all()
-    )
+    # -----------------------------
+    # MODO INDIVIDUAL (lo actual)
+    # -----------------------------
+    if t.mode == "individual":
+        participants = t.participants
 
-    matches = (
-        db.query(models.TournamentMatch)
-        .filter(models.TournamentMatch.tournament_id == tournament_id)
-        .order_by(models.TournamentMatch.round, models.TournamentMatch.position)
-        .all()
-    )
+        matches = (
+            db.query(models.TournamentMatch)
+            .filter(models.TournamentMatch.tournament_id == tournament_id)
+            .order_by(models.TournamentMatch.round, models.TournamentMatch.position)
+            .all()
+        )
 
-    matches_by_round: dict[str, list] = {}
-    for m in matches:
-        matches_by_round.setdefault(m.round, []).append(m)
+        matches_by_round: dict[str, list] = {}
+        for m in matches:
+            matches_by_round.setdefault(m.round, []).append(m)
+
+        return templates.TemplateResponse(
+            "admin_tournament_detail.html",
+            {
+                "request": request,
+                "tournament": t,
+                "participants": participants,
+                "matches_by_round": matches_by_round,
+                "matches_count": len(matches),
+            },
+        )
+
+    # -----------------------------
+    # MODO TEAM (nuevo)
+    # -----------------------------
+    teams = sorted(t.teams, key=lambda x: x.side)
+    stages = sorted(t.stages, key=lambda x: x.order_index)
+
+    total_points_a = 0.0
+    total_points_b = 0.0
+    total_matches = 0
+
+    for st in stages:
+        st.matches = sorted(st.matches, key=lambda x: x.position)
+
+        for m in st.matches:
+            total_matches += 1
+            total_points_a += float(m.points_a or 0)
+            total_points_b += float(m.points_b or 0)
+    
+    print("TEAMS RAW:", [(x.id, x.side, x.name) for x in t.teams])
+    print("STAGES RAW:", [(x.id, x.order_index, x.name) for x in t.stages])
 
     return templates.TemplateResponse(
-        "admin_tournament_detail.html",
+        "admin_tournament_team_detail.html",
         {
             "request": request,
             "tournament": t,
-            "participants": participants,
-            "matches_by_round": matches_by_round,
-            "matches_count": len(matches),
+            "teams": teams,
+            "stages": stages,
+            "matches_count": total_matches,
+            "total_points_a": total_points_a,
+            "total_points_b": total_points_b,
         },
     )
 
+@app.post("/admin/tournaments/{tournament_id}/stages/{stage_id}/generate")
+def admin_tournament_stage_generate(
+    tournament_id: int,
+    stage_id: int,
+    db: Session = Depends(get_db),
+):
+    t = (
+        db.query(models.Tournament)
+        .filter(models.Tournament.id == tournament_id)
+        .first()
+    )
+    if not t:
+        return RedirectResponse("/admin/tournaments", status_code=303)
+
+    if t.mode != "team":
+        return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
+
+    stage = (
+        db.query(models.TournamentStage)
+        .filter(
+            models.TournamentStage.id == stage_id,
+            models.TournamentStage.tournament_id == tournament_id,
+        )
+        .first()
+    )
+    if not stage:
+        return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
+
+    # si ya hay partidos, no regenerar
+    existing = (
+        db.query(models.TournamentMatch)
+        .filter(models.TournamentMatch.stage_id == stage.id)
+        .count()
+    )
+    if existing > 0:
+        return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
+
+    try:
+        crud.generate_stage_matches_with_participants(db, tournament_id, stage_id)
+    except Exception as e:
+        print("ERROR generating stage matches:", e)
+
+    return RedirectResponse(f"/admin/tournaments/{tournament_id}", status_code=303)
 
 @app.post("/admin/tournaments/{tournament_id}/generate")
 def admin_tournament_generate(tournament_id: int, db: Session = Depends(get_db)):
@@ -2619,6 +3069,175 @@ def _compute_matchplay_timeline(outcomes: dict[int, str]) -> list[dict]:
 
     return timeline
 
+@app.get("/admin/tournament-match/{match_id}/edit", response_class=HTMLResponse)
+def admin_tournament_match_edit(
+    match_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    match = (
+        db.query(models.TournamentMatch)
+        .options(
+            joinedload(models.TournamentMatch.participants)
+            .joinedload(models.TournamentMatchParticipant.player),
+            joinedload(models.TournamentMatch.hole_results),
+            joinedload(models.TournamentMatch.stage),
+            joinedload(models.TournamentMatch.tournament),
+        )
+        .filter(models.TournamentMatch.id == match_id)
+        .first()
+    )
+
+    if not match:
+        return HTMLResponse("Match no encontrado", status_code=404)
+
+    by_hole = {h.hole_number: h.outcome for h in match.hole_results}
+
+    side_a = sorted([p for p in match.participants if p.side == "A"], key=lambda x: x.slot)
+    side_b = sorted([p for p in match.participants if p.side == "B"], key=lambda x: x.slot)
+
+    return templates.TemplateResponse(
+        "admin_tournament_match_edit.html",
+        {
+            "request": request,
+            "match": match,
+            "side_a": side_a,
+            "side_b": side_b,
+            "by_hole": by_hole,
+        },
+    )
+
+@app.post("/admin/tournament-match/{match_id}/edit")
+async def admin_tournament_match_edit_post(
+    match_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    match = (
+        db.query(models.TournamentMatch)
+        .options(
+            joinedload(models.TournamentMatch.participants),
+            joinedload(models.TournamentMatch.hole_results),
+            joinedload(models.TournamentMatch.tournament),
+        )
+        .filter(models.TournamentMatch.id == match_id)
+        .first()
+    )
+
+    if not match:
+        raise HTTPException(status_code=404, detail="Match no encontrado")
+
+    form = await request.form()
+
+    # leer hoyos
+    posted: dict[int, str] = {}
+    for i in range(1, 19):
+        v = (form.get(f"o_{i}") or "").strip().upper()
+        if v in ("A", "B", "AS"):
+            posted[i] = v
+
+    # calcular resultado
+    winner_side, result_text, finished, closed_hole = _compute_team_matchplay_result(posted)
+
+    # recortar hoyos si el partido terminó antes
+    posted_to_save = posted
+    if finished and closed_hole is not None:
+        posted_to_save = {h: o for h, o in posted.items() if h <= closed_hole}
+
+    # borrar hoyos anteriores
+    (
+        db.query(models.TournamentMatchHole)
+        .filter(models.TournamentMatchHole.match_id == match.id)
+        .delete(synchronize_session=False)
+    )
+
+    # guardar nuevos hoyos
+    for hole_number, outcome in posted_to_save.items():
+        db.add(
+            models.TournamentMatchHole(
+                match_id=match.id,
+                hole_number=hole_number,
+                outcome=outcome,
+            )
+        )
+
+    # marcar inicio si procede
+    if posted_to_save and not match.started_at:
+        match.started_at = datetime.utcnow()
+
+    # estado final
+    if finished:
+        match.winner_side = winner_side
+        match.result_text = result_text
+        match.status = "finished"
+        match.closed_at = datetime.utcnow()
+
+        if winner_side == "A":
+            match.points_a = 1.0
+            match.points_b = 0.0
+        elif winner_side == "B":
+            match.points_a = 0.0
+            match.points_b = 1.0
+        else:
+            # empate final
+            match.points_a = 0.5
+            match.points_b = 0.5
+    else:
+        match.winner_side = None
+        match.result_text = result_text
+        match.status = "live" if posted_to_save else "ready"
+        match.closed_at = None
+        match.points_a = None
+        match.points_b = None
+
+    db.commit()
+    _refresh_team_tournament_status(db, match.tournament_id)
+
+    # redirigir a la copa
+    return RedirectResponse(
+        url=f"/admin/tournaments/{match.tournament.id}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/tournaments/{tournament_id}/matches/{match_id}/reopen-team")
+def admin_reopen_team_match(
+    tournament_id: int,
+    match_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    match = (
+        db.query(models.TournamentMatch)
+        .filter(models.TournamentMatch.id == match_id)
+        .first()
+    )
+
+    if not match:
+        raise HTTPException(status_code=404, detail="Match no encontrado")
+
+    (
+        db.query(models.TournamentMatchHole)
+        .filter(models.TournamentMatchHole.match_id == match.id)
+        .delete(synchronize_session=False)
+    )
+
+    match.winner_side = None
+    match.result_text = None
+    match.status = "ready"
+    match.closed_at = None
+    match.points_a = None
+    match.points_b = None
+    match.started_at = None
+
+    db.commit()
+    _refresh_team_tournament_status(db, match.tournament_id)
+
+    return RedirectResponse(
+        url=f"/admin/tournament-match/{match_id}/edit",
+        status_code=303,
+    )
 
 
 # ===========================================================================================
@@ -2651,17 +3270,23 @@ def public_tournaments_list(request: Request, db: Session = Depends(get_db)):
         final_by_tid = {m.tournament_id: m for m in finals}
 
         for t in tournaments:
-            fm = final_by_tid.get(t.id)
-            if fm and fm.winner_id:
+            if t.mode == "team":
                 status_by_tournament[t.id] = {
-                    "finished": True,
-                    "champion": fm.winner.name if fm.winner else None,
-                }
-            else:
-                status_by_tournament[t.id] = {
-                    "finished": False,
+                    "finished": (t.status == "finished"),
                     "champion": None,
                 }
+            else:
+                fm = final_by_tid.get(t.id)
+                if fm and fm.winner_id:
+                    status_by_tournament[t.id] = {
+                        "finished": True,
+                        "champion": fm.winner.name if fm.winner else None,
+                    }
+                else:
+                    status_by_tournament[t.id] = {
+                        "finished": False,
+                        "champion": None,
+                    }
 
     return templates.TemplateResponse(
         "public_tournaments.html",
@@ -2676,72 +3301,217 @@ def public_tournaments_list(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/public/tournaments/{tournament_id}", response_class=HTMLResponse)
 def public_tournament_detail(tournament_id: int, request: Request, db: Session = Depends(get_db)):
-    t = db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+    t = (
+        db.query(models.Tournament)
+        .options(
+            joinedload(models.Tournament.course),
+
+            joinedload(models.Tournament.teams)
+            .joinedload(models.TournamentTeam.players)
+            .joinedload(models.TournamentTeamPlayer.player),
+
+            joinedload(models.Tournament.stages)
+            .joinedload(models.TournamentStage.course),
+
+            joinedload(models.Tournament.stages)
+            .joinedload(models.TournamentStage.matches)
+            .joinedload(models.TournamentMatch.participants)
+            .joinedload(models.TournamentMatchParticipant.player),
+
+            joinedload(models.Tournament.stages)
+            .joinedload(models.TournamentStage.matches)
+            .joinedload(models.TournamentMatch.team_a),
+
+            joinedload(models.Tournament.stages)
+            .joinedload(models.TournamentStage.matches)
+            .joinedload(models.TournamentMatch.team_b),
+
+            joinedload(models.Tournament.stages)
+            .joinedload(models.TournamentStage.matches)
+            .joinedload(models.TournamentMatch.hole_results),
+        )
+        .filter(models.Tournament.id == tournament_id)
+        .first()
+    )
+
     if not t:
         return HTMLResponse("Copa no encontrada", status_code=404)
 
-    matches = (
-        db.query(models.TournamentMatch)
-        .filter(models.TournamentMatch.tournament_id == tournament_id)
-        .order_by(models.TournamentMatch.round, models.TournamentMatch.position)
-        .all()
+    # ==========================================================
+    # INDIVIDUAL
+    # ==========================================================
+    if t.mode == "individual":
+        matches = (
+            db.query(models.TournamentMatch)
+            .filter(models.TournamentMatch.tournament_id == tournament_id)
+            .order_by(models.TournamentMatch.round, models.TournamentMatch.position)
+            .all()
+        )
+
+        matches_by_round: dict[str, list] = {}
+        for m in matches:
+            matches_by_round.setdefault(m.round, []).append(m)
+
+        champion = None
+        final_match = None
+        if matches_by_round.get("F"):
+            final_match = matches_by_round["F"][0]
+            if final_match.winner_id:
+                champion = final_match.winner
+
+        match_timelines: dict[int, list[dict]] = {}
+        for m in matches:
+            holes = (
+                db.query(models.TournamentMatchHole)
+                .filter(models.TournamentMatchHole.match_id == m.id)
+                .all()
+            )
+            outcomes = {h.hole_number: h.outcome for h in holes}
+            match_timelines[m.id] = _compute_matchplay_timeline(outcomes)
+
+        finished_matches = [m for m in matches if m.winner_id is not None]
+
+        finished_ids = [m.id for m in finished_matches]
+        holes_by_match: dict[int, dict[int, str]] = {}
+
+        if finished_ids:
+            holes = (
+                db.query(models.TournamentMatchHole)
+                .filter(models.TournamentMatchHole.match_id.in_(finished_ids))
+                .all()
+            )
+            for h in holes:
+                holes_by_match.setdefault(h.match_id, {})[h.hole_number] = h.outcome
+
+        status_label = "Cerrada" if champion else "En vigor"
+
+        return templates.TemplateResponse(
+            "public_tournament_detail.html",
+            {
+                "request": request,
+                "tournament": t,
+                "matches_by_round": matches_by_round,
+                "champion": champion,
+                "final_match": final_match,
+                "status_label": status_label,
+                "finished_matches": finished_matches,
+                "holes_by_match": holes_by_match,
+                "match_timelines": match_timelines,
+            }
+        )
+
+    # ==========================================================
+    # TEAM MODE
+    # ==========================================================
+    def _team_match_leader_from_holes(match) -> str | None:
+        up = 0
+        holes = sorted(match.hole_results or [], key=lambda h: h.hole_number)
+
+        for h in holes:
+            if h.outcome == "A":
+                up += 1
+            elif h.outcome == "B":
+                up -= 1
+
+        if up > 0:
+            return "A"
+        if up < 0:
+            return "B"
+        return None
+
+    teams = sorted(t.teams, key=lambda x: x.side)
+    stages = sorted(t.stages, key=lambda x: x.order_index)
+
+    total_points_a = 0.0
+    total_points_b = 0.0
+    finished_matches = 0
+    total_matches = 0
+
+    match_hole_labels: dict[int, str | None] = {}
+    match_leader_side: dict[int, str | None] = {}
+
+    for st in stages:
+        st.matches = sorted(st.matches, key=lambda x: x.position)
+
+        for m in st.matches:
+            total_matches += 1
+
+            if m.status == "finished":
+                finished_matches += 1
+                total_points_a += float(m.points_a or 0)
+                total_points_b += float(m.points_b or 0)
+
+            # etiqueta visual para el centro del match
+            hole_count = len(m.hole_results or [])
+
+            if m.status == "finished":
+                match_hole_labels[m.id] = "FINAL"
+            elif hole_count > 0:
+                match_hole_labels[m.id] = f"THRU {hole_count}"
+            else:
+                match_hole_labels[m.id] = None
+
+            # lado que va ganando visualmente
+            if m.winner_side == "A":
+                match_leader_side[m.id] = "A"
+            elif m.winner_side == "B":
+                match_leader_side[m.id] = "B"
+            else:
+                match_leader_side[m.id] = _team_match_leader_from_holes(m)
+
+    print("====== DEBUG TEAM TOURNAMENT ======")
+    for st in stages:
+        for m in st.matches:
+            print(
+                "MATCH:",
+                m.id,
+                "| result:", m.result_text,
+                "| status:", m.status,
+                "| winner:", m.winner_side,
+                "| pts:", m.points_a, m.points_b
+            )
+
+    print("TOURNAMENT STATUS:", t.status)
+    print("FINISHED MATCHES:", finished_matches, "TOTAL:", total_matches)
+
+    # ==========================================================
+    # BARRA DE PUNTOS (segmentada por medios puntos)
+    # ==========================================================
+    total_points_available = float(total_matches)
+    total_segments = int(total_points_available * 2)
+
+    segments_a = int(round(float(total_points_a) * 2))
+    segments_b = int(round(float(total_points_b) * 2))
+    segments_remaining = max(0, total_segments - segments_a - segments_b)
+
+    status_label = (
+        "Cerrada"
+        if (
+            t.status == "finished"
+            or (total_matches > 0 and finished_matches == total_matches)
+        )
+        else "En vigor"
     )
 
-    matches_by_round: dict[str, list] = {}
-    for m in matches:
-        matches_by_round.setdefault(m.round, []).append(m)
-
-    # campeón (ganador de la final)
-    champion = None
-    final_match = None
-    if matches_by_round.get("F"):
-        final_match = matches_by_round["F"][0]
-        if final_match.winner_id:
-            champion = final_match.winner
-    
-    # --- timeline hoyo a hoyo por partido ---
-    match_timelines: dict[int, list[dict]] = {}
-
-    for m in matches:
-        holes = (
-            db.query(models.TournamentMatchHole)
-            .filter(models.TournamentMatchHole.match_id == m.id)
-            .all()
-        )
-        outcomes = {h.hole_number: h.outcome for h in holes}
-        match_timelines[m.id] = _compute_matchplay_timeline(outcomes)
-
-    # Partidos finalizados (para listado "jugados")
-    finished_matches = [m for m in matches if m.winner_id is not None]
-
-    # Hoyo-a-hoyo SOLO para partidos finalizados (o si quieres también en juego, quita el filtro)
-    finished_ids = [m.id for m in finished_matches]
-    holes_by_match: dict[int, dict[int, str]] = {}
-
-    if finished_ids:
-        holes = (
-            db.query(models.TournamentMatchHole)
-            .filter(models.TournamentMatchHole.match_id.in_(finished_ids))
-            .all()
-        )
-        for h in holes:
-            holes_by_match.setdefault(h.match_id, {})[h.hole_number] = h.outcome
-
-    # Estado visible en public (en vigor / cerrada)
-    status_label = "Cerrada" if champion else "En vigor"
-
     return templates.TemplateResponse(
-        "public_tournament_detail.html",
+        "public_tournament_team_detail.html",
         {
             "request": request,
             "tournament": t,
-            "matches_by_round": matches_by_round,
-            "champion": champion,
-            "final_match": final_match,
-            "status_label": status_label,
+            "teams": teams,
+            "stages": stages,
+            "total_points_a": total_points_a,
+            "total_points_b": total_points_b,
             "finished_matches": finished_matches,
-            "holes_by_match": holes_by_match,
-            "match_timelines": match_timelines,
+            "total_matches": total_matches,
+            "status_label": status_label,
+            "match_hole_labels": match_hole_labels,
+            "match_leader_side": match_leader_side,
+            "total_points_available": total_points_available,
+            "total_segments": total_segments,
+            "segments_a": segments_a,
+            "segments_b": segments_b,
+            "segments_remaining": segments_remaining,
         }
     )
 
@@ -2774,6 +3544,8 @@ def public_match_live_form(
     )
     by_hole = {h.hole_number: h.outcome for h in holes}
 
+    is_team_mode = bool(getattr(m, "stage_id", None))
+
     return templates.TemplateResponse(
         "public_match_live.html",
         {
@@ -2783,9 +3555,9 @@ def public_match_live_form(
             "by_hole": by_hole,
             "token": token,
             "done": (done == 1),
+            "is_team_mode": is_team_mode,
         },
     )
-
 
 
 
@@ -4562,7 +5334,28 @@ def play_home(
             open_training.hole_label = f"Siguiente: Hoyo {next_hole}"
 
     open_matches_count = 0
-    open_cups_count = 0
+
+    team_matches = (
+        db.query(models.TournamentMatch)
+        .join(
+            models.TournamentMatchParticipant,
+            models.TournamentMatch.id == models.TournamentMatchParticipant.match_id,
+        )
+        .join(
+            models.Tournament,
+            models.Tournament.id == models.TournamentMatch.tournament_id,
+        )
+        .filter(
+            models.TournamentMatchParticipant.player_id == player.id,
+            models.Tournament.mode == "team",
+            models.Tournament.status != "finished",
+            models.TournamentMatch.status.in_(["ready", "live", "playing"]),
+        )
+        .distinct()
+        .all()
+    )
+
+    open_cups_count = len(team_matches)
 
     return templates.TemplateResponse(
         "play_home.html",
@@ -4673,10 +5466,259 @@ def play_matches(
 @app.get("/play/tournaments", response_class=HTMLResponse)
 def play_tournaments(
     request: Request,
+    db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
     player: Player = Depends(get_current_player),
 ):
-    return templates.TemplateResponse("play_tournaments.html", {"request": request, "player": player})
+    team_matches = (
+        db.query(models.TournamentMatch)
+        .join(
+            models.TournamentMatchParticipant,
+            models.TournamentMatch.id == models.TournamentMatchParticipant.match_id,
+        )
+        .join(
+            models.Tournament,
+            models.Tournament.id == models.TournamentMatch.tournament_id,
+        )
+        # 🔑 JOIN necesario para poder ordenar por ronda
+        .join(
+            models.TournamentStage,
+            models.TournamentMatch.stage_id == models.TournamentStage.id,
+        )
+        .options(
+            joinedload(models.TournamentMatch.participants)
+            .joinedload(models.TournamentMatchParticipant.player),
+            joinedload(models.TournamentMatch.stage)
+            .joinedload(models.TournamentStage.course),
+            joinedload(models.TournamentMatch.tournament),
+            joinedload(models.TournamentMatch.team_a),
+            joinedload(models.TournamentMatch.team_b),
+        )
+        .filter(
+            models.TournamentMatchParticipant.player_id == player.id,
+            models.Tournament.mode == "team",
+            models.Tournament.status != "finished",
+            models.TournamentMatch.status.in_(["ready", "live", "playing"]),
+        )
+        .order_by(
+            models.TournamentMatch.stage_id.asc(),
+            models.TournamentMatch.id.asc()
+        )
+        .distinct()
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "play_tournaments.html",
+        {
+            "request": request,
+            "player": player,
+            "team_matches": team_matches,
+        },
+    )
+
+# __________________________ Play Tournament Match Live __________________________
+
+def _compute_team_matchplay_result(outcomes: dict[int, str]):
+    """
+    outcomes: {1:"A"/"B"/"AS", ...}
+
+    Devuelve:
+      winner_side: "A" | "B" | None
+      result_text: "AS" | "1UP" | "3&2" | None
+      finished: bool
+      closed_hole: int | None
+    """
+    up = 0
+    last_hole_played = 0
+
+    for h in sorted(outcomes.keys()):
+        o = outcomes[h]
+        if o == "A":
+            up += 1
+        elif o == "B":
+            up -= 1
+
+        last_hole_played = h
+        holes_remaining = 18 - h
+
+        # cierre anticipado (tipo 3&2, 4&3…)
+        if abs(up) > holes_remaining:
+            winner_side = "A" if up > 0 else "B"
+            result_text = f"{abs(up)}&{holes_remaining}"
+            return winner_side, result_text, True, h
+
+    if last_hole_played > 0:
+        # partido completo (18 hoyos)
+        if last_hole_played == 18:
+            if up == 0:
+                return None, "AS", True, 18
+            winner_side = "A" if up > 0 else "B"
+            return winner_side, f"{abs(up)}UP", True, 18
+
+        # aún en juego
+        if up == 0:
+            return None, "AS", False, None
+
+        return None, f"{abs(up)}UP", False, None
+
+    return None, None, False, None
+
+
+@app.get("/play/tournament-match/{match_id}", response_class=HTMLResponse)
+def play_tournament_match(
+    match_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    match = (
+        db.query(models.TournamentMatch)
+        .options(
+            joinedload(models.TournamentMatch.participants)
+            .joinedload(models.TournamentMatchParticipant.player),
+            joinedload(models.TournamentMatch.hole_results),
+            joinedload(models.TournamentMatch.stage)
+            .joinedload(models.TournamentStage.course),
+            joinedload(models.TournamentMatch.tournament),
+            joinedload(models.TournamentMatch.team_a),
+            joinedload(models.TournamentMatch.team_b),
+        )
+        .filter(models.TournamentMatch.id == match_id)
+        .first()
+    )
+
+    if not match:
+        return HTMLResponse("Match no encontrado", status_code=404)
+
+    player_ids = [p.player_id for p in match.participants]
+    if player.id not in player_ids:
+        return HTMLResponse("No autorizado", status_code=403)
+
+    by_hole = {h.hole_number: h.outcome for h in match.hole_results}
+
+    side_a = sorted([p for p in match.participants if p.side == "A"], key=lambda x: x.slot)
+    side_b = sorted([p for p in match.participants if p.side == "B"], key=lambda x: x.slot)
+
+    is_team_mode = bool(getattr(match, "stage_id", None))
+
+    return templates.TemplateResponse(
+        "play_tournament_match.html",
+        {
+            "request": request,
+            "player": player,
+            "match": match,
+            "side_a": side_a,
+            "side_b": side_b,
+            "by_hole": by_hole,
+            "is_team_mode": is_team_mode,
+        },
+    )
+
+
+@app.post("/play/tournament-match/{match_id}/live")
+async def play_tournament_match_live(
+    match_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    player: Player = Depends(get_current_player),
+):
+    match = (
+        db.query(models.TournamentMatch)
+        .options(
+            joinedload(models.TournamentMatch.participants),
+            joinedload(models.TournamentMatch.hole_results),
+        )
+        .filter(models.TournamentMatch.id == match_id)
+        .first()
+    )
+
+    if not match:
+        raise HTTPException(status_code=404, detail="Match no encontrado")
+
+    player_ids = [p.player_id for p in match.participants]
+    if player.id not in player_ids:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    if match.status == "finished":
+        return {
+            "ok": True,
+            "finished": True,
+            "winner_side": match.winner_side,
+            "result_text": match.result_text,
+        }
+
+    form = await request.form()
+
+    # leer 18 hoyos del form
+    posted: dict[int, str] = {}
+    for i in range(1, 19):
+        v = (form.get(f"o_{i}") or "").strip().upper()
+        if v in ("A", "B", "AS"):
+            posted[i] = v
+
+    # calcular resultado antes de guardar, para poder recortar hoyos sobrantes
+    winner_side, result_text, finished, closed_hole = _compute_team_matchplay_result(posted)
+
+    posted_to_save = posted
+    if finished and closed_hole is not None:
+        posted_to_save = {h: o for h, o in posted.items() if h <= closed_hole}
+
+    # borrar hoyos previos
+    (
+        db.query(models.TournamentMatchHole)
+        .filter(models.TournamentMatchHole.match_id == match.id)
+        .delete(synchronize_session=False)
+    )
+
+    # guardar solo hoyos válidos
+    for hole_number, outcome in posted_to_save.items():
+        db.add(
+            models.TournamentMatchHole(
+                match_id=match.id,
+                hole_number=hole_number,
+                outcome=outcome,
+            )
+        )
+
+    if posted_to_save and not match.started_at:
+        match.started_at = datetime.utcnow()
+
+    if finished:
+        match.winner_side = winner_side
+        match.result_text = result_text
+        match.status = "finished"
+        match.closed_at = datetime.utcnow()
+
+        if winner_side == "A":
+            match.points_a = 1.0
+            match.points_b = 0.0
+        elif winner_side == "B":
+            match.points_a = 0.0
+            match.points_b = 1.0
+        else:
+            # empate final
+            match.points_a = 0.5
+            match.points_b = 0.5
+    else:
+        match.winner_side = None
+        match.result_text = result_text
+        match.status = "live" if posted_to_save else "ready"
+        match.closed_at = None
+        match.points_a = None
+        match.points_b = None
+
+    db.commit()
+    _refresh_team_tournament_status(db, match.tournament_id)
+
+    return {
+        "ok": True,
+        "finished": finished,
+        "winner_side": winner_side,
+        "result_text": result_text,
+    }
 
 # __________________________ Play Training __________________________________________
 

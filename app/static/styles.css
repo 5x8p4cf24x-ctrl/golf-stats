@@ -35,6 +35,13 @@
 
   --admin-topbar-h: 96px;   /* con logo 84 + padding, suele rondar 96 */
   --admin-crumbs-h: 40px;   /* breadcrumbs */
+  
+  --team-a:#2563eb;   /* azul */
+  --team-b:#dc2626;   /* rojo */
+
+  --team-a-soft:rgba(37,99,235,.10);
+  --team-b-soft:rgba(220,38,38,.10);
+
 }
 
 *{box-sizing:border-box}
@@ -5835,93 +5842,64 @@ body.gm-body h1.public-title{
 /*                           PUBLIC TOURNAMENT                           */
 /* ===================================================================== */
 
-
-.round-type-chip.individual{
-  background: rgba(20,83,45,.10);
-  color: #14532d;
-  border: 1px solid rgba(20,83,45,.22);
-  text-transform: uppercase;
-}
-.round-type-chip.team{
-  background: rgba(120,0,180,.10);
-  color: rgba(120,0,180,1);
-  border: 1px solid rgba(120,0,180,.22);
-  text-transform: uppercase;
-}
-
-.tournament-status{
-  margin-top:8px;
-}
-
-.badge{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:.75rem;
-  font-weight:800;
-  white-space:nowrap;
-}
-
-.badge--live{
-  background: rgba(20,83,45,.12);
-  color: #14532d;
-  border:1px solid rgba(20,83,45,.20);
-}
-
-.badge--finished{
-  background: rgba(245,158,11,.16);
-  color: #92400e;
-  border:1px solid rgba(245,158,11,.25);
-}
-
-/* Layout base (desktop/tablet): avatar | info | status | chip */
-.round-item{
-  display:grid;
-  grid-template-columns: 64px 1fr auto auto;
-  align-items:center;
-  gap:14px;
-}
-
-/* Estado a la derecha */
-.round-status{
-  justify-self:end;
+.round-status--inline{
   display:flex;
   align-items:center;
-  max-width: 260px;            /* evita badges eternas en desktop */
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:6px;
 }
 
+/* Base pill compacta */
+.badge--sm{
+  font-size:10px;
+  line-height:1;
+  padding:5px 10px;
+  border-radius:999px;
+  font-weight:800;
+}
+
+/* Evita que herede fondos oscuros globales */
 .round-status .badge{
-  max-width: 260px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  background:transparent;
+  box-shadow:none;
 }
 
-/* ===== DESKTOP: más aire entre números y resultados ===== */
-@media (min-width: 521px){
-
-  /* separación entre filas de hoyos */
-  .ms-holes--nums{
-    margin-bottom: 6px;   /* prueba 6–8px */
-  }
-
-  .ms-holes--vals{
-    margin-top: 2px;
-  }
+/* Tipo de copa: más fino y elegante */
+.badge--mode{
+  font-size:10px;
+  line-height:1;
+  padding:5px 12px;
+  border-radius:999px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  opacity:.95;
 }
 
+/* Equipos: morado suave */
+.round-status .badge--mode-team{
+  background:#f3eefb;
+  color:#5f4b8b;
+  border:1px solid rgba(95,75,139,.16);
+}
 
-/* ====== COPAS LIST · MOBILE SIMPLE (sin recortes, sin líos) ====== */
+/* Individual: verde suave elegante */
+.round-status .badge--mode-individual{
+  background:#eef4ef;
+  color:#355f49;
+  border:1px solid rgba(53,95,73,.18);
+}
+
+/* ====== COPAS LIST · MOBILE SIMPLE ====== */
 @media (max-width: 640px){
 
-  /* Layout: 2 columnas (avatar | contenido) */
   .round-item{
     display:grid;
     grid-template-columns: 64px 1fr;
     grid-template-areas:
       "avatar info"
-      "avatar status"
-      "avatar chip";
+      "avatar status";
     align-items:start;
     gap:10px 12px;
   }
@@ -5929,69 +5907,46 @@ body.gm-body h1.public-title{
   .round-course-avatar{ grid-area: avatar; }
   .round-info{ grid-area: info; min-width:0; }
   .round-status{ grid-area: status; min-width:0; }
-  .round-type-chip{
-    grid-area: chip;
-    justify-self:start;
-    align-self:start;
-    max-width: none;
-    white-space: nowrap;
-  }
 
-  /* FECHA: siempre una línea */
   .round-date{
     display:block;
-    white-space: nowrap;
+    white-space:nowrap;
   }
 
-  /* ✅ NOMBRE + CAMPO: que se vean enteros (permitimos 2 líneas) */
   .round-field,
   .round-players{
     display:-webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;   /* 2 líneas, sin ... por 1 línea */
+    -webkit-line-clamp: 2;
     overflow:hidden;
-    white-space: normal;
-    word-break: break-word;
+    white-space:normal;
+    word-break:break-word;
   }
 
-  /* Badge del estado: que no se corte */
   .round-status .badge{
-    display:inline-block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
     max-width:100%;
-    white-space: normal;     /* deja partir si es largo */
-    line-height:1.15;
   }
 }
-@media (max-width: 640px){
-  .round-status .badge{
-    white-space: nowrap;     /* 1 línea */
-    overflow: hidden;
-    text-overflow: ellipsis; /* si no cabe, recorta bonito */
-    max-width: 100%;
-  }
-}
-/* ====== COPAS LIST · TUNING (solo móvil) ====== */
+
+/* ====== COPAS LIST · TUNING ====== */
 @media (max-width: 640px){
   :root{
-    /* Tipografías */
     --cups-date: 0.80rem;
     --cups-title: 0.90rem;
     --cups-course: 0.80rem;
-
-    /* Badges / chips */
     --cups-badge: 0.70rem;
-    --cups-chip: 0.60rem;
-
-    /* Alturas y espaciados */
     --cups-gap-row: 10px;
     --cups-gap-col: 12px;
     --cups-badge-pad-y: 6px;
     --cups-badge-pad-x: 10px;
-    --cups-chip-pad-y: 6px;
-    --cups-chip-pad-x: 12px;
   }
 
-  .round-item{ gap: var(--cups-gap-row) var(--cups-gap-col); }
+  .round-item{
+    gap: var(--cups-gap-row) var(--cups-gap-col);
+  }
 
   .round-date{ font-size: var(--cups-date); }
   .round-field{ font-size: var(--cups-title); }
@@ -6001,13 +5956,7 @@ body.gm-body h1.public-title{
     font-size: var(--cups-badge);
     padding: var(--cups-badge-pad-y) var(--cups-badge-pad-x);
   }
-
-  .round-type-chip{
-    font-size: var(--cups-chip);
-    padding: var(--cups-chip-pad-y) var(--cups-chip-pad-x);
-  }
 }
-
 /* =============================
    FIX MOBILE TABLES (sin romper desktop)
    ============================= */
