@@ -13,7 +13,6 @@
 {% block content %}
 <section class="play-wrap">
 
-  {# ===================== EN CURSO (solo si hay entrenamiento abierto) ===================== #}
   {% if open_training %}
     <article class="card card--highlight">
       <div class="card-top">
@@ -40,17 +39,17 @@
     </article>
   {% endif %}
 
-  {# ===================== TITULO ===================== #}
-  <header class="play-head">
-    <h1 class="play-title">Jugar</h1>
-    <p class="play-hello">Hola {{ player.name }} 👋</p>
+  <header class="play-hero">
+    <div class="play-hero-kicker">Golf Mode</div>
+    <h1 class="play-hero-title">Hola {{ player.name }}</h1>
+    <p class="play-hero-sub">Elige cómo quieres jugar hoy.</p>
   </header>
 
-  {# ===================== ACCIONES ===================== #}
   <div class="play-list">
 
-    {# ---------- ENTRENAMIENTO ---------- #}
-    <article class="card action-card">
+    <article class="card action-card action-card--training">
+      <div class="action-icon">⛳</div>
+
       <div class="action-left">
         <h3 class="action-title">Entrenamiento</h3>
         <p class="action-sub">Cuenta para estadísticas, no para victorias ni logros.</p>
@@ -65,11 +64,18 @@
       </div>
     </article>
 
-    {# ---------- PARTIDO ---------- #}
-    <a class="card action-card action-card--link" href="/play/matches">
+    <a class="card action-card action-card--link action-card--match" href="/play/matches">
+      <div class="action-icon">🏌️</div>
+
       <div class="action-left">
         <h3 class="action-title">Partido</h3>
-        <p class="action-sub">Aquí aparecerán tus partidos abiertos.</p>
+        <p class="action-sub">
+          {% if open_matches_count and open_matches_count > 0 %}
+            Tienes partidos pendientes por jugar.
+          {% else %}
+            Aquí aparecerán tus partidos abiertos.
+          {% endif %}
+        </p>
       </div>
 
       <div class="action-right">
@@ -80,11 +86,18 @@
       </div>
     </a>
 
-    {# ---------- COPA ---------- #}
-    <a class="card action-card action-card--link" href="/play/tournaments">
+    <a class="card action-card action-card--link action-card--cup" href="/play/tournaments">
+      <div class="action-icon">🏆</div>
+
       <div class="action-left">
         <h3 class="action-title">Copa</h3>
-        <p class="action-sub">Cruces pendientes de torneos activos.</p>
+        <p class="action-sub">
+          {% if open_cups_count and open_cups_count > 0 %}
+            Tienes cruces pendientes de torneos activos.
+          {% else %}
+            Cruces pendientes de torneos activos.
+          {% endif %}
+        </p>
       </div>
 
       <div class="action-right">
@@ -101,43 +114,74 @@
 <style>
   :root{
     --gm-green:#14532d;
-    --gm-border:rgba(0,0,0,.10);
-    --gm-muted:#6b7280;
+    --gm-green-2:#0f3e22;
+    --gm-border:rgba(0,0,0,.08);
+    --gm-muted:#64748b;
+    --gm-text:#0f172a;
     --gm-card:#fff;
     --gm-danger:#b91c1c;
+    --gm-shadow:0 8px 24px rgba(15,23,42,.05);
   }
 
   .play-wrap{
     max-width: 680px;
     margin: 0 auto;
-    padding: 14px 12px 22px;
+    padding: 12px 12px 24px;
   }
 
-  .play-head{ margin-top: 10px; }
-  .play-title{
-    margin: 0;
-    font-size: 28px;
-    line-height: 1.1;
-    color: #0f172a;
+  /* HERO */
+  .play-hero{
+    margin: 10px 0 14px;
+    padding: 16px 16px 14px;
+    border-radius: 22px;
+    background:
+      linear-gradient(135deg, rgba(20,83,45,.10) 0%, rgba(20,83,45,.04) 55%, rgba(255,255,255,.95) 100%);
+    border: 1px solid rgba(20,83,45,.10);
+    box-shadow: 0 8px 24px rgba(20,83,45,.04);
   }
-  .play-hello{
+
+  .play-hero-kicker{
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gm-green);
+    opacity: .8;
+  }
+
+  .play-hero-title{
     margin: 6px 0 0;
-    color: var(--gm-muted);
+    font-size: 30px;
+    line-height: 1.02;
+    color: var(--gm-text);
+    letter-spacing: -.03em;
   }
 
-  .play-list{ display:flex; flex-direction:column; gap:12px; }
+  .play-hero-sub{
+    margin: 8px 0 0;
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--gm-muted);
+    max-width: 26ch;
+  }
+
+  .play-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
 
   .card{
     background: var(--gm-card);
     border: 1px solid var(--gm-border);
-    border-radius: 18px;
+    border-radius: 20px;
     padding: 14px;
-    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+    box-shadow: 0 2px 8px rgba(15,23,42,.03);
   }
 
   .card--highlight{
     border-color: rgba(20,83,45,.25);
-    background: rgba(20,83,45,.05);
+    background: linear-gradient(180deg, rgba(20,83,45,.08) 0%, rgba(20,83,45,.04) 100%);
   }
 
   .kicker{
@@ -149,19 +193,30 @@
     margin-bottom: 6px;
   }
 
-  .card-title{ margin:0; font-size: 18px; color:#0f172a; }
-  .card-sub{ margin:6px 0 0; color: var(--gm-muted); font-size: 14px; }
+  .card-title{
+    margin:0;
+    font-size: 18px;
+    color: var(--gm-text);
+  }
+
+  .card-sub{
+    margin:6px 0 0;
+    color: var(--gm-muted);
+    font-size: 14px;
+    line-height: 1.4;
+  }
 
   .btn-row{
     display:flex;
     gap:10px;
     margin-top: 12px;
+    flex-wrap: wrap;
   }
 
   .btn{
     border: 0;
     border-radius: 14px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     font-weight: 900;
     font-size: 14px;
     cursor:pointer;
@@ -169,35 +224,103 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    min-width: 120px;
+    min-width: 112px;
     white-space: nowrap;
   }
 
   .btn.btn--primary,
   .btn--primary:link,
-  .btn--primary:visited {
+  .btn--primary:visited{
     background: var(--gm-green);
     color: #fff !important;
   }
-  .btn--danger{ background: var(--gm-danger); color:#fff; }
+
+  .btn--danger{
+    background: #fff;
+    color: var(--gm-danger);
+    border: 1px solid rgba(185,28,28,.18);
+  }
 
   .action-card{
+    display:grid;
+    grid-template-columns: 44px minmax(0,1fr) auto;
+    align-items:center;
+    gap:12px;
+    min-height: 92px;
+  }
+
+  .action-card--link{
+    text-decoration:none;
+    color:inherit;
+  }
+
+  .action-card--training{
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
+  }
+
+  .action-card--match{
+    background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+  }
+
+  .action-card--cup{
+    background: linear-gradient(180deg, #ffffff 0%, #fcfbff 100%);
+  }
+
+  .action-icon{
+    width:44px;
+    height:44px;
+    border-radius:14px;
     display:flex;
     align-items:center;
-    justify-content:space-between;
-    gap:12px;
+    justify-content:center;
+    font-size:20px;
+    line-height:1;
+    background: rgba(15,23,42,.04);
+    border: 1px solid rgba(15,23,42,.06);
   }
-  .action-card--link{ text-decoration:none; color:inherit; }
 
-  .action-left{ min-width:0; }
-  .action-title{ margin:0; font-size: 16px; color:#0f172a; }
-  .action-sub{ margin:6px 0 0; color: var(--gm-muted); font-size: 14px; }
+  .action-card--training .action-icon{
+    background: rgba(20,83,45,.08);
+    border-color: rgba(20,83,45,.12);
+  }
+
+  .action-card--match .action-icon{
+    background: rgba(59,130,246,.08);
+    border-color: rgba(59,130,246,.12);
+  }
+
+  .action-card--cup .action-icon{
+    background: rgba(139,92,246,.08);
+    border-color: rgba(139,92,246,.12);
+  }
+
+  .action-left{
+    min-width:0;
+  }
+
+  .action-title{
+    margin:0;
+    font-size: 18px;
+    line-height: 1.15;
+    color: var(--gm-text);
+    letter-spacing:-.01em;
+  }
+
+  .action-sub{
+    margin:6px 0 0;
+    color: var(--gm-muted);
+    font-size: 14px;
+    line-height: 1.38;
+    max-width: 28ch;
+  }
 
   .action-right{
     display:flex;
     align-items:center;
-    gap:10px;
+    justify-content:flex-end;
+    gap:8px;
     flex-shrink:0;
+    min-width:52px;
   }
 
   .pill{
@@ -207,29 +330,98 @@
     min-width: 34px;
     height: 34px;
     padding: 0 10px;
-    border-radius: 14px;
+    border-radius: 999px;
     font-weight: 900;
     font-size: 13px;
+    line-height:1;
   }
+
   .pill--count{
-    background: rgba(0,0,0,.06);
+    background: rgba(15,23,42,.06);
     color: #0f172a;
+    border: 1px solid rgba(15,23,42,.08);
   }
+
   .pill--muted{
     background: rgba(20,83,45,.10);
     color: var(--gm-green);
+    border: 1px solid rgba(20,83,45,.12);
   }
 
   .chev{
-    font-size: 24px;
-    color: rgba(0,0,0,.35);
+    font-size: 20px;
+    color: rgba(0,0,0,.28);
     line-height: 1;
-    margin-left: -2px;
   }
 
-  @media (min-width: 900px){
-    .play-wrap{ padding: 18px 16px 28px; }
-    .card{ padding: 16px; }
+  @media (max-width: 560px){
+    .play-wrap{
+      padding: 10px 12px 22px;
+    }
+
+    .play-hero{
+      margin: 8px 0 14px;
+      padding: 14px 14px 13px;
+      border-radius: 20px;
+    }
+
+    .play-hero-title{
+      font-size: 26px;
+    }
+
+    .play-hero-sub{
+      font-size: 14px;
+      max-width: 24ch;
+    }
+
+    .card{
+      padding: 14px;
+      border-radius: 18px;
+    }
+
+    .action-card{
+      grid-template-columns: 40px minmax(0,1fr) auto;
+      gap:10px;
+      min-height: 86px;
+    }
+
+    .action-icon{
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      font-size:18px;
+    }
+
+    .action-title{
+      font-size: 17px;
+    }
+
+    .action-sub{
+      font-size: 13px;
+      max-width: 24ch;
+    }
+
+    .action-right{
+      gap:6px;
+      min-width:48px;
+    }
+
+    .pill--count{
+      min-width:32px;
+      height:32px;
+      padding:0 9px;
+      font-size:12px;
+    }
+
+    .chev{
+      font-size:18px;
+    }
+
+    .btn{
+      min-width: 106px;
+      padding: 10px 12px;
+    }
   }
 </style>
+
 {% endblock %}

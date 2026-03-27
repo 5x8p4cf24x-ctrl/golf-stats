@@ -39,57 +39,56 @@
         {% endif %}
 
         <a class="match-card"
-           href="{{ href }}"
-           aria-label="Abrir partido del {{ r.date.strftime('%d/%m/%Y') }}">
+          href="{{ href }}"
+          aria-label="Abrir partido del {{ r.date.strftime('%d/%m/%Y') }}">
 
-          <div class="match-left">
+          <div class="match-avatar">
             <div class="course-logo">
-              <span class="logo-fallback">{{ (r.course.name[:1] if r.course and r.course.name else "G") }}</span>
-            </div>
-
-            <div class="match-info">
-              <div class="match-date">{{ r.date.strftime("%Y-%m-%d") }}</div>
-              <div class="match-course">{{ r.course.name }}</div>
-
-              <div class="match-player">
-                {% if r.round_players %}
-                  {% set names = [] %}
-                  {% for x in r.round_players %}
-                    {% if x.player %}
-                      {% set _ = names.append(x.player.name) %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ names | join(" · ") }}
-                {% else %}
-                  {{ player.name }}
-                {% endif %}
-              </div>
+              {% if r.course and r.course.logo_url %}
+                <img src="/uploads/{{ r.course.logo_url }}" alt="{{ r.course.name }}">
+              {% else %}
+                <span class="logo-fallback">
+                  {{ (r.course.name[:1] if r.course and r.course.name else "G") }}
+                </span>
+              {% endif %}
             </div>
           </div>
 
-          <div class="match-right">
-            <div class="pill-stack">
+          <div class="match-body">
+            <div class="match-date">{{ r.date.strftime("%Y-%m-%d") }}</div>
 
-              {# ✅ Si está finalizada por admin, mostramos SOLO Finalizada #}
-              {% if status == "finished" %}
-                <span class="pill pill--finished">🏁 Finalizada</span>
+            <div class="match-course">{{ r.course.name }}</div>
 
+            <div class="match-players">
+              {% if r.round_players %}
+                {% set names = [] %}
+                {% for x in r.round_players %}
+                  {% if x.player %}
+                    {% set _ = names.append(x.player.name) %}
+                  {% endif %}
+                {% endfor %}
+                {{ names | join(" · ") }}
               {% else %}
-                {# Tipo #}
+                {{ player.name }}
+              {% endif %}
+            </div>
+
+            <div class="match-status">
+              {% if status == "finished" %}
+                <span class="pill pill--finished">Finalizada</span>
+              {% else %}
                 {% if r.context == "league" or r.league_id %}
                   <span class="pill pill--league">Liga</span>
                 {% else %}
                   <span class="pill pill--friendly">Amistosa</span>
                 {% endif %}
 
-                {# Estado tarjeta del jugador #}
                 {% if status == "pending" %}
                   <span class="pill pill--pending">Pendiente</span>
                 {% else %}
                   <span class="pill pill--sent">Enviada</span>
                 {% endif %}
               {% endif %}
-
             </div>
           </div>
 
@@ -103,9 +102,13 @@
 <style>
   :root{
     --gm-green:#14532d;
+    --gm-green-2:#0f3e22;
     --gm-border:rgba(0,0,0,.10);
+    --gm-border-soft:rgba(15,23,42,.07);
     --gm-muted:#64748b;
     --gm-card:#fff;
+    --gm-text:#0f172a;
+    --gm-shadow:0 6px 18px rgba(15,23,42,.04);
   }
 
   .matches-wrap{
@@ -114,137 +117,194 @@
     padding: 14px 12px 26px;
   }
 
-  .matches-head{ margin: 8px 0 14px; }
+  .matches-head{
+    margin: 8px 0 16px;
+  }
+
   .matches-title{
     margin:0;
     font-size: 26px;
-    line-height: 1.1;
-    color:#0f172a;
+    line-height: 1.08;
+    color: var(--gm-text);
+    letter-spacing:-.02em;
   }
+
   .matches-sub{
     margin: 6px 0 0;
     color: var(--gm-muted);
+    line-height:1.4;
+    max-width:34ch;
   }
 
-  .matches-list{ display:flex; flex-direction:column; gap:12px; }
+  .matches-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
 
   .match-card{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap: 14px;
+    display:grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap:12px;
+    align-items:start;
 
-    background: var(--gm-card);
-    border: 1px solid var(--gm-border);
-    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfcfb 100%);
+    border: 1px solid var(--gm-border-soft);
+    border-radius: 20px;
     padding: 14px;
 
     text-decoration:none;
     color: inherit;
-    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+    box-shadow: var(--gm-shadow);
+    transition:
+      transform .08s ease,
+      box-shadow .18s ease,
+      border-color .18s ease;
   }
 
-  .match-left{
+  .match-card:hover{
+    border-color: rgba(20,83,45,.16);
+    box-shadow: 0 8px 22px rgba(15,23,42,.05);
+  }
+
+  .match-card:active{
+    transform: translateY(1px);
+  }
+
+  .match-avatar{
     display:flex;
-    align-items:center;
-    gap: 12px;
-    min-width: 0;
+    align-items:flex-start;
+    justify-content:center;
   }
 
   .course-logo{
     width: 58px;
     height: 58px;
-    border-radius: 14px;
-    border: 1px solid rgba(20,83,45,.35);
+    border-radius: 16px;
+    border: 1px solid rgba(20,83,45,.28);
     background: rgba(20,83,45,.06);
     display:flex;
     align-items:center;
     justify-content:center;
     flex-shrink:0;
   }
+
+  .course-logo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:inherit;
+  }
+
   .logo-fallback{
     font-weight: 900;
+    font-size: 1.1rem;
     color: var(--gm-green);
   }
 
-  .match-info{ min-width:0; }
-  .match-date{
-    font-weight: 900;
-    color: var(--gm-green);
-    letter-spacing: .03em;
-    font-size: 14px;
-  }
-  .match-course{
-    margin-top: 2px;
-    font-weight: 900;
-    color:#0f172a;
-    white-space: nowrap;
-    overflow:hidden;
-    text-overflow: ellipsis;
-    max-width: 62vw;
-  }
-  .match-player{
-    margin-top: 2px;
-    color: var(--gm-muted);
-    font-size: 14px;
-    white-space: nowrap;
-    overflow:hidden;
-    text-overflow: ellipsis;
-    max-width: 62vw;
-  }
-
-  .match-right{ flex-shrink:0; }
-
-  .pill-stack{
+  .match-body{
+    min-width:0;
     display:flex;
     flex-direction:column;
+  }
+
+  .match-date{
+    font-size: .82rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--gm-green);
+  }
+
+  .match-title{
+    margin-top: 4px;
+    font-size: 1.08rem;
+    line-height: 1.2;
+    font-weight: 600;
+    color: var(--gm-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .match-course{
+    margin-top: 4px;
+    font-size: .98rem;
+    line-height: 1.28;
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .match-players{
+    margin-top: 3px;
+    font-size: .90rem;
+    line-height: 1.32;
+    color: var(--gm-muted);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .match-status{
+    display:flex;
+    align-items:center;
     gap:8px;
-    align-items:flex-end;
+    flex-wrap:wrap;
+    margin-top:10px;
+    min-width:0;
   }
 
   .pill{
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    height: 34px;
-    padding: 0 14px;
+    min-height: 30px;
+    padding: 0 12px;
     border-radius: 999px;
-    font-weight: 900;
-    font-size: 13px;
-    border: 1px solid rgba(0,0,0,.10);
+    font-weight: 800;
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: .03em;
+    border: 1px solid rgba(0,0,0,.08);
     background: rgba(0,0,0,.03);
     color:#0f172a;
     white-space: nowrap;
   }
 
   .pill--league{
-    background: rgba(34,197,94,.12);
-    border-color: rgba(34,197,94,.30);
-    color: #14532d;
+    background:#eef4ef;
+    color:#355f49;
+    border-color:rgba(53,95,73,.18);
   }
 
   .pill--friendly{
-    background: rgba(148,163,184,.18);
-    border-color: rgba(148,163,184,.35);
-    color: #0f172a;
+    background:#eef2f7;
+    color:#475569;
+    border-color:rgba(71,85,105,.16);
   }
 
   .pill--pending{
-    background: rgba(245,158,11,.12);
-    border-color: rgba(245,158,11,.30);
-    color: #92400e;
+    background:#fff7ed;
+    color:#b45309;
+    border-color:rgba(245,158,11,.28);
   }
 
   .pill--sent{
-    background: rgba(96,165,250,.12);
-    border-color: rgba(96,165,250,.30);
-    color: #1e3a8a;
+    background:#eff6ff;
+    color:#1d4ed8;
+    border-color:rgba(59,130,246,.22);
   }
 
   .pill--finished{
-    background: rgba(20,83,45,.10);
-    border-color: rgba(20,83,45,.28);
-    color: #14532d;
+    background:#ecfdf3;
+    color:#166534;
+    border-color:rgba(34,197,94,.22);
   }
 
   /* Empty state */
@@ -254,8 +314,17 @@
     border-radius: 18px;
     padding: 16px;
   }
-  .empty-title{ font-weight: 900; color:#0f172a; }
-  .empty-sub{ margin-top:6px; color: var(--gm-muted); }
+
+  .empty-title{
+    font-weight: 900;
+    color: var(--gm-text);
+  }
+
+  .empty-sub{
+    margin-top:6px;
+    color: var(--gm-muted);
+  }
+
   .btn{
     display:inline-flex;
     align-items:center;
@@ -270,11 +339,74 @@
     color:#fff;
     min-width: 160px;
   }
+
   .btn.btn--primary,
   .btn--primary:link,
-  .btn--primary:visited {
+  .btn--primary:visited{
     background: var(--gm-green);
     color: #fff !important;
+  }
+
+  /* ============================= */
+  /* MOBILE */
+  /* ============================= */
+  @media (max-width: 640px){
+    .matches-wrap{
+      padding: 12px 12px 24px;
+    }
+
+    .matches-head{
+      margin: 6px 0 14px;
+    }
+
+    .matches-title{
+      font-size: 23px;
+      line-height: 1.08;
+    }
+
+    .matches-sub{
+      font-size: .96rem;
+      max-width: 28ch;
+    }
+
+    .matches-list{
+      gap: 12px;
+    }
+
+    .match-card{
+      grid-template-columns: 60px minmax(0,1fr);
+      gap:10px 12px;
+      padding:12px;
+      border-radius:18px;
+    }
+
+    .course-logo{
+      width:56px;
+      height:56px;
+      border-radius:14px;
+    }
+
+    .match-date{
+      font-size:.78rem;
+    }
+
+    .match-title{
+      font-size:.98rem;
+    }
+
+    .match-course{
+      font-size:.82rem;
+    }
+
+    .match-players{
+      font-size:.70rem;
+    }
+
+    .pill{
+      font-size:10px;
+      padding:6px 10px;
+      min-height:28px;
+    }
   }
 </style>
 {% endblock %}

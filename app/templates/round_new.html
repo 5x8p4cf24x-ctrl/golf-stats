@@ -71,7 +71,7 @@
           <p class="gm-hint">Añade todos los jugadores que participan en esta vuelta.</p>
         </div>
 
-        <button type="button" class="gm-btn-add" onclick="addPlayerRow()">+ Add</button>
+        <button type="button" class="gm-btn-add" onclick="addPlayerRow()">+ Añadir</button>
       </div>
 
       <div class="players-list" id="players-tbody">
@@ -99,152 +99,441 @@
 </section>
 
 <style>
-  /* ===== Solo para esta vista (Nueva vuelta) ===== */
+  /* =========================================================
+     NUEVA VUELTA · ADMIN ELEGANTE
+     ========================================================= */
 
-  .gm-roundnew, .gm-roundnew * { box-sizing: border-box; }
+  .gm-roundnew,
+  .gm-roundnew *{
+    box-sizing:border-box;
+  }
 
+  .gm-roundnew{
+    overflow-x:hidden;
+    --gm-green:#14532d;
+    --gm-green-2:#0f3e22;
+    --gm-green-soft:rgba(20,83,45,.05);
+    --gm-green-soft-2:rgba(20,83,45,.08);
+    --gm-line:rgba(15,23,42,.08);
+    --gm-line-2:rgba(15,23,42,.12);
+    --gm-text:#0f172a;
+    --gm-muted:#64748b;
+    --gm-muted-2:#94a3b8;
+    --gm-card:#ffffff;
+    --gm-shadow:0 8px 24px rgba(15,23,42,.04);
+    --gm-radius-card:22px;
+    --gm-radius-field:14px;
+  }
+
+  /* ============================= */
+  /* PAGE HEAD */
+  /* ============================= */
+  .admin-pagehead{
+    margin-bottom:18px;
+  }
+
+  .admin-title{
+    margin:0;
+    color:var(--gm-green);
+    line-height:1.02;
+    letter-spacing:-.02em;
+  }
+
+  .admin-subtitle{
+    margin:10px 0 0 0;
+    color:var(--gm-muted);
+    line-height:1.42;
+    max-width:42ch;
+  }
+
+  /* ============================= */
+  /* CARD */
+  /* ============================= */
+  .card.gm-roundnew{
+    padding:20px;
+    border-radius:var(--gm-radius-card);
+    background:linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(250,251,250,1) 100%);
+    border:1px solid rgba(15,23,42,.05);
+    box-shadow:var(--gm-shadow);
+  }
+
+  .gm-form{
+    min-width:0;
+  }
+
+  /* ============================= */
   /* GRID */
+  /* ============================= */
   .gm-form-grid{
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns:1fr 1fr;
     gap:12px;
   }
-  @media (max-width: 560px){
-    .gm-form-grid{ grid-template-columns: 1fr; }
-  }
-  .gm-field{ min-width:0; }
 
-  /* Labels menos gordas */
+  .gm-field{
+    min-width:0;
+  }
+
+  /* ============================= */
+  /* LABELS */
+  /* ============================= */
   .gm-label{
-    font-weight:600;
     display:block;
-    margin: 0 0 6px 0;
+    margin:0 0 6px 0;
+    font-size:.95rem;
+    font-weight:600;
+    line-height:1.2;
+    color:var(--gm-green-2);
+    letter-spacing:.01em;
   }
 
-  /* Inputs más compactos + nunca overflow */
-  .gm-input, .gm-select{
+  /* ============================= */
+  /* INPUTS / SELECTS */
+  /* ============================= */
+  .gm-input,
+  .gm-select{
     width:100%;
     max-width:100%;
     min-width:0;
     height:46px;
     padding:10px 12px;
-    border:1px solid rgba(0,0,0,.10);
-    border-radius:14px;
-    background:#fff;
-    font: inherit;
-    line-height: 1.2;
+    border:1px solid var(--gm-line);
+    border-radius:var(--gm-radius-field);
+    background:rgba(255,255,255,.92);
+    color:var(--gm-text);
+    font:inherit;
+    line-height:1.2;
+    box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+    transition:
+      border-color .18s ease,
+      box-shadow .18s ease,
+      background-color .18s ease,
+      transform .08s ease;
   }
 
-  /* iOS date: evita “campo alto” y desbordes */
+  .gm-input::placeholder{
+    color:var(--gm-muted-2);
+  }
+
+  .gm-input:hover,
+  .gm-select:hover{
+    border-color:var(--gm-line-2);
+    background:#fff;
+  }
+
+  .gm-input:focus,
+  .gm-select:focus{
+    outline:none;
+    background:#fff;
+    border-color:rgba(20,83,45,.24);
+    box-shadow:
+      0 0 0 3px rgba(20,83,45,.07),
+      0 1px 0 rgba(255,255,255,.9) inset;
+  }
+
   input[type="date"].gm-input{
     height:46px;
     min-height:46px;
-    -webkit-appearance: none;
-    appearance: none;
+    -webkit-appearance:none;
+    appearance:none;
   }
 
-  /* Mobile: todavía más compacto */
-  @media (max-width: 560px){
-    .gm-input, .gm-select{
-      height:42px;
-      padding:9px 12px;
-      border-radius:14px;
-    }
-    input[type="date"].gm-input{
-      height:42px;
-      min-height:42px;
-    }
-    .gm-label{ font-weight:500; }
+  /* ============================= */
+  /* SECTION */
+  /* ============================= */
+  .gm-section{
+    margin-top:14px;
+    min-width:0;
   }
 
-  /* Section */
-  .gm-section{ margin-top: 14px; }
-
-  /* Head: botón Add no rompe línea */
   .gm-section-head{
     display:flex;
     justify-content:space-between;
-    gap:12px;
     align-items:flex-start;
+    gap:12px;
+    min-width:0;
+    margin-bottom:2px;
   }
 
-  .gm-section-text{ min-width:0; }
+  .gm-section-text{
+    flex:1 1 auto;
+    min-width:0;
+  }
 
   .gm-section-title{
-    font-weight:650;   /* menos “mazacote” */
-    font-size:1.02rem;
     margin:0;
+    font-size:1rem;
+    line-height:1.2;
+    font-weight:650;
+    color:var(--gm-green-2);
   }
 
   .gm-hint{
-    font-size:0.92rem;
-    color:#6b7280;
-    margin:6px 0 0 0;
+    margin:5px 0 0 0;
+    font-size:.91rem;
+    line-height:1.36;
+    color:var(--gm-muted);
+    overflow-wrap:break-word;
+    max-width:48ch;
   }
 
   .gm-btn-add{
-    flex: 0 0 auto;
-    white-space: nowrap;     /* 1 sola fila */
-    border:1px solid rgba(20,83,45,.20);
-    background: rgba(20,83,45,.08);
-    border-radius: 14px;
-    height: 42px;
-    padding: 0 12px;
-    font-weight: 800;
-    font-size: .9rem;
-    line-height: 1;
-    cursor: pointer;
+    flex:0 0 auto;
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     gap:6px;
-    margin-top: 2px;
+    height:40px;
+    padding:0 13px;
+    border:1px solid rgba(20,83,45,.14);
+    border-radius:13px;
+    background:linear-gradient(180deg, rgba(20,83,45,.06) 0%, rgba(20,83,45,.09) 100%);
+    color:var(--gm-green-2);
+    font-size:.91rem;
+    font-weight:700;
+    line-height:1;
+    white-space:nowrap;
+    cursor:pointer;
+    transition:
+      background-color .18s ease,
+      border-color .18s ease,
+      transform .08s ease,
+      box-shadow .18s ease;
   }
 
-  /* Lista jugadores */
+  .gm-btn-add:hover{
+    border-color:rgba(20,83,45,.20);
+    box-shadow:0 4px 10px rgba(20,83,45,.06);
+  }
+
+  .gm-btn-add:active{
+    transform:translateY(1px);
+  }
+
+  /* ============================= */
+  /* PLAYERS */
+  /* ============================= */
   .players-list{
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:8px;
     margin-top:10px;
+    min-width:0;
   }
+
   .player-row{
     display:grid;
-    grid-template-columns: 1fr 42px;
-    gap:10px;
+    grid-template-columns:minmax(0,1fr) 40px;
+    gap:8px;
     align-items:center;
     min-width:0;
   }
 
+  .player-row .gm-select{
+    min-width:0;
+  }
+
   .gm-iconbtn{
-    border:1px solid rgba(0,0,0,.10);
-    background:#fff;
+    width:40px;
+    height:40px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:1px solid var(--gm-line);
     border-radius:12px;
-    padding:8px 8px;
+    background:#fff;
     cursor:pointer;
     line-height:1;
     box-shadow:none;
+    transition:
+      border-color .18s ease,
+      background-color .18s ease,
+      transform .08s ease,
+      box-shadow .18s ease;
   }
 
-  /* Sticky CTA */
+  .gm-iconbtn:hover{
+    background:#fcfcfc;
+    border-color:var(--gm-line-2);
+    box-shadow:0 4px 10px rgba(15,23,42,.04);
+  }
+
+  .gm-iconbtn:active{
+    transform:translateY(1px);
+  }
+
+  /* ============================= */
+  /* STICKY CTA */
+  /* ============================= */
   .gm-sticky-bar{
-    position: sticky;
-    bottom: 0;
-    z-index: 50;
-    padding: 12px 0 14px;
-    margin-top: 12px;
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(8px);
+    position:sticky;
+    bottom:0;
+    z-index:50;
+    margin-top:14px;
+    padding:10px 0 12px;
+    background:linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.92) 22%, rgba(255,255,255,.96) 100%);
+    backdrop-filter:blur(8px);
   }
+
   .gm-create{
-    width: 100%;
-    display: block;
-    height: 48px;
-    border-radius: 16px;
+    width:100%;
+    display:block;
+    height:46px;
+    border-radius:15px;
   }
 
-  /* Seguridad anti-overflow en móvil dentro del card */
-  .gm-roundnew{ overflow-x:hidden; }
+  /* ============================= */
+  /* MOBILE */
+  /* ============================= */
+  @media (max-width:560px){
+    .admin-pagehead{
+      margin-bottom:14px;
+    }
 
+    .admin-title{
+      font-size:2rem;
+      line-height:1.02;
+      margin-bottom:8px;
+    }
+
+    .admin-subtitle{
+      margin-top:0;
+      font-size:.97rem;
+      line-height:1.34;
+      max-width:26ch;
+    }
+
+    .card.gm-roundnew{
+      padding:14px;
+      border-radius:18px;
+      box-shadow:0 6px 18px rgba(15,23,42,.035);
+    }
+
+    .gm-form-grid{
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+
+    .gm-label{
+      margin-bottom:5px;
+      font-size:.9rem;
+    }
+
+    .gm-input,
+    .gm-select{
+      height:40px;
+      padding:8px 11px;
+      border-radius:13px;
+      font-size:.98rem;
+    }
+
+    input[type="date"].gm-input{
+      height:40px;
+      min-height:40px;
+    }
+
+    .gm-section{
+      margin-top:12px;
+    }
+
+    .gm-section-head{
+      flex-direction:column;
+      align-items:stretch;
+      gap:8px;
+    }
+
+    .gm-section-title{
+      font-size:.97rem;
+    }
+
+    .gm-hint{
+      margin-top:4px;
+      font-size:.87rem;
+      line-height:1.28;
+      max-width:34ch;
+    }
+
+    .gm-btn-add{
+      align-self:flex-start;
+      height:36px;
+      padding:0 11px;
+      border-radius:12px;
+      font-size:.89rem;
+    }
+
+    .players-list{
+      gap:7px;
+      margin-top:8px;
+    }
+
+    .player-row{
+      grid-template-columns:minmax(0,1fr) 38px;
+      gap:7px;
+    }
+
+    .gm-iconbtn{
+      width:38px;
+      height:38px;
+      border-radius:11px;
+      font-size:.92rem;
+    }
+
+    .gm-sticky-bar{
+      margin-top:12px;
+      padding:8px 0 10px;
+    }
+
+    .gm-create{
+      height:44px;
+      border-radius:14px;
+    }
+  }
+
+  /* ============================= */
+  /* EXTRA SMALL */
+  /* ============================= */
+  @media (max-width:390px){
+    .admin-title{
+      font-size:1.85rem;
+    }
+
+    .admin-subtitle{
+      font-size:.92rem;
+      max-width:24ch;
+    }
+
+    .card.gm-roundnew{
+      padding:12px;
+      border-radius:16px;
+    }
+
+    .gm-label{
+      font-size:.88rem;
+    }
+
+    .gm-input,
+    .gm-select{
+      font-size:.96rem;
+      padding:8px 10px;
+    }
+
+    .gm-hint{
+      font-size:.84rem;
+      line-height:1.24;
+    }
+
+    .gm-btn-add{
+      height:35px;
+      padding:0 10px;
+      font-size:.87rem;
+    }
+
+    .gm-create{
+      height:42px;
+    }
+  }
+  
 </style>
 
 {% endblock %}

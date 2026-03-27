@@ -5333,8 +5333,37 @@ def play_home(
             next_hole = 18 if last_hole >= 18 else last_hole + 1
             open_training.hole_label = f"Siguiente: Hoyo {next_hole}"
 
+    # ===================== PARTIDOS ABIERTOS / RECIÉN FINALIZADOS =====================
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+
+    my_rps = (
+        db.query(RoundPlayer)
+        .join(Round)
+        .filter(
+            RoundPlayer.player_id == player.id,
+            Round.context.in_(["friendly", "league"]),
+        )
+        .all()
+    )
+
     open_matches_count = 0
 
+    for rp in my_rps:
+        r = rp.round
+        if not r:
+            continue
+
+        closed_at = _as_aware_utc(getattr(r, "closed_at", None))
+        is_closed = (closed_at is not None)
+
+        # misma lógica que en /play/matches
+        if is_closed:
+            if closed_at < cutoff:
+                continue
+
+        open_matches_count += 1
+
+    # ===================== COPAS =====================
     team_matches = (
         db.query(models.TournamentMatch)
         .join(
